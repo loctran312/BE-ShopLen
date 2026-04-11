@@ -51,8 +51,8 @@ app.get('/api/docs', (req, res) => {
         status: 'success',
         message: 'API Documentation',
         endpoints: {
-            auth: { login: '/api/auth/login', register: '/api/auth/register', logout: '/api/auth/logout', profile: '/api/auth/me' },
-            users: { list: '/api/users', detail: '/api/users/:id' }
+            auth: { login: '/api/auth/login - POST', register: '/api/auth/register - POST', logout: '/api/auth/logout - POST', profile: '/api/auth/me - GET' },
+            users: { list: '/api/users - GET', detail: '/api/users/:id - GET' }
         }
     });
 });
