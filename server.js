@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
+require('./config/db');
 
 // ===== ROUTES =====
 const app = express();
@@ -20,6 +21,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== HEALTH CHECK =====
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'success',
@@ -28,7 +37,13 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ===== ROUTES =====
+const userRoutes = require('./routes/users');
+const authRoutes = require('./routes/auth');
+
 // ===== API ROUTES =====
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 
 
 // ===== 404 =====
