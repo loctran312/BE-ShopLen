@@ -45,6 +45,17 @@ const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
+// ===== API DOCUMENTATION =====
+app.get('/api/docs', (req, res) => {
+    res.json({
+        status: 'success',
+        message: 'API Documentation',
+        endpoints: {
+            auth: { login: '/api/auth/login', register: '/api/auth/register', logout: '/api/auth/logout', profile: '/api/auth/me' },
+            users: { list: '/api/users', detail: '/api/users/:id' }
+        }
+    });
+});
 
 // ===== 404 =====
 app.use((req, res) => {
