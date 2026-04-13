@@ -1,4 +1,9 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+const ipv4Lookup = (hostname, options, callback) => {
+  dns.lookup(hostname, { ...options, family: 4, all: false }, callback);
+};
 
 const isPlaceholderSmtpConfig = () => {
   const host = (process.env.SMTP_HOST || '').trim();
@@ -17,6 +22,7 @@ const createSmtpTransport = () => {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === 'true',
+    lookup: ipv4Lookup,
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS) || 10000,
     greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS) || 10000,
     socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS) || 15000,
