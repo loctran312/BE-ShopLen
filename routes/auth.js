@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, logout, getCurrentUser, forgotPassword, resetPassword } = require('../controllers/authController');
+const { register, login, logout, getCurrentUser, forgotPassword, verifyResetOtp, resetPassword } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -17,6 +17,9 @@ router.get('/me', getCurrentUser);
 
 // POST - Yêu cầu OTP quên mật khẩu
 router.post('/forgot-password', forgotPassword);
+
+// POST - Xác minh OTP để lấy phiên reset mật khẩu
+router.post('/verify-reset-otp', verifyResetOtp);
 
 // POST - Đặt lại mật khẩu bằng OTP
 router.post('/reset-password', resetPassword);

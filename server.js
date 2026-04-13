@@ -57,6 +57,7 @@ app.get('/api/docs', (req, res) => {
         logout: '/api/auth/logout - POST',
         profile: '/api/auth/me - GET',
         forgot_password: '/api/auth/forgot-password - POST',
+        verify_reset_otp: '/api/auth/verify-reset-otp - POST',
         reset_password: '/api/auth/reset-password - POST'
       },
             users: { list: '/api/users - GET', detail: '/api/users/:id - GET' }
