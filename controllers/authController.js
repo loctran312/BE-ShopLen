@@ -199,6 +199,7 @@ const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
+    console.error('[AUTH][FORGOT_PASSWORD] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
@@ -273,6 +274,7 @@ const verifyResetOtp = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
+    console.error('[AUTH][VERIFY_RESET_OTP] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
@@ -356,6 +358,7 @@ const resetPassword = async (req, res) => {
     return res.status(200).json({ message: 'Đặt lại mật khẩu thành công' });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
+    console.error('[AUTH][RESET_PASSWORD] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
