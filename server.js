@@ -2,8 +2,13 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const dns = require('dns');
 require('dotenv').config();
 require('./config/db');
+
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 // ===== ROUTES =====
 const app = express();
