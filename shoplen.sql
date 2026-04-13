@@ -16,6 +16,26 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE password_reset_tokens (
+  id BIGSERIAL PRIMARY KEY,
+  user_id INT NOT NULL,
+  channel VARCHAR(20) NOT NULL,
+  destination VARCHAR(100) NOT NULL,
+  otp_hash VARCHAR(255) NOT NULL,
+  attempt_count INT DEFAULT 0 CHECK (attempt_count >= 0),
+  expires_at TIMESTAMP NOT NULL,
+  used_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+ALTER TABLE password_reset_tokens ADD CONSTRAINT chk_password_reset_channel CHECK (
+  channel IN ('email','sms')
+);
+
+CREATE INDEX idx_password_reset_tokens_user_channel_created_at
+  ON password_reset_tokens (user_id, channel, created_at DESC);
+
 
 -- MULTI AUTH
 CREATE TABLE user_auth_provider (

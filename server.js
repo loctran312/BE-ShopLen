@@ -51,7 +51,14 @@ app.get('/api/docs', (req, res) => {
         status: 'success',
         message: 'API Documentation',
         endpoints: {
-            auth: { login: '/api/auth/login - POST', register: '/api/auth/register - POST', logout: '/api/auth/logout - POST', profile: '/api/auth/me - GET' },
+      auth: {
+        login: '/api/auth/login - POST',
+        register: '/api/auth/register - POST',
+        logout: '/api/auth/logout - POST',
+        profile: '/api/auth/me - GET',
+        forgot_password: '/api/auth/forgot-password - POST',
+        reset_password: '/api/auth/reset-password - POST'
+      },
             users: { list: '/api/users - GET', detail: '/api/users/:id - GET' }
         }
     });

@@ -1,6 +1,29 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { randomInt } = require('crypto');
+const { sendOtpNotification } = require('../services/otpService');
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const OTP_EXPIRY_MINUTES = Number(process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES || 10);
+
+const normalizeIdentifier = (value) => (value || '').trim();
+
+const getUserByEmail = async (client, email) => client.query(
+  'SELECT user_id, username, email FROM users WHERE email = $1',
+  [email]
+);
+
+const createPasswordResetToken = async (client, userId, channel, destination, otpHash) => {
+  const result = await client.query(
+    `INSERT INTO password_reset_tokens (user_id, channel, destination, otp_hash, expires_at)
+     VALUES ($1, $2, $3, $4, NOW() + ($5 || ' minutes')::interval)
+     RETURNING id, expires_at, created_at`,
+    [userId, channel, destination, otpHash, OTP_EXPIRY_MINUTES]
+  );
+
+  return result.rows[0];
+};
 
 // Đăng ký người dùng mới
 const register = async (req, res) => {
@@ -82,7 +105,7 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { user_id: user.user_id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
     res.json({ token });
   } catch (error) {
@@ -114,9 +137,154 @@ const getCurrentUser = async (req, res) => {
     }
 }
 
+// Quên mật khẩu qua email
+const forgotPassword = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const identifier = normalizeIdentifier(req.body.identifier || req.body.email);
+    const channel = normalizeIdentifier(req.body.channel || 'email').toLowerCase();
+
+    if (!identifier) {
+      return res.status(400).json({ message: 'Vui lòng nhập email' });
+    }
+
+    if (channel !== 'email') {
+      return res.status(400).json({ message: 'Chỉ hỗ trợ OTP qua email' });
+    }
+
+    const userResult = await getUserByEmail(client, identifier);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    const user = userResult.rows[0];
+    const destination = user.email;
+
+    if (!destination) {
+      return res.status(400).json({ message: 'Người dùng chưa có thông tin nhận OTP' });
+    }
+
+    const otp = String(randomInt(100000, 1000000));
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    await client.query('BEGIN');
+    await client.query(
+      'UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND channel = $2 AND used_at IS NULL',
+      [user.user_id, channel]
+    );
+
+    const resetToken = await createPasswordResetToken(client, user.user_id, channel, destination, otpHash);
+
+    await sendOtpNotification({
+      channel: 'email',
+      destination,
+      otp,
+      username: user.username,
+    });
+
+    await client.query('COMMIT');
+
+    return res.status(200).json({
+      message: 'Mã OTP đã được gửi',
+      reset_token_id: resetToken.id,
+      expires_at: resetToken.expires_at,
+      ...(process.env.NODE_ENV !== 'production' ? { otp } : {}),
+    });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
+  } finally {
+    client.release();
+  }
+}
+
+const resetPassword = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const identifier = normalizeIdentifier(req.body.identifier || req.body.email);
+    const channel = normalizeIdentifier(req.body.channel || 'email').toLowerCase();
+    const otp = normalizeIdentifier(req.body.otp);
+    const newPassword = req.body.new_password;
+
+    if (!identifier || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Thiếu thông tin đặt lại mật khẩu' });
+    }
+
+    if (channel !== 'email') {
+      return res.status(400).json({ message: 'Chỉ hỗ trợ OTP qua email' });
+    }
+
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt' });
+    }
+
+    const userResult = await getUserByEmail(client, identifier);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Người dùng không tồn tại' });
+    }
+
+    const user = userResult.rows[0];
+    const destination = user.email;
+
+    await client.query('BEGIN');
+
+    const tokenResult = await client.query(
+      `SELECT id, otp_hash, expires_at, used_at, attempt_count, (expires_at > NOW()) AS not_expired
+       FROM password_reset_tokens
+       WHERE user_id = $1 AND channel = $2 AND destination = $3
+       ORDER BY id DESC
+       LIMIT 1`,
+      [user.user_id, channel, destination]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'OTP không hợp lệ hoặc đã hết hạn' });
+    }
+
+    const token = tokenResult.rows[0];
+
+    if (token.used_at) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ message: 'OTP đã được sử dụng' });
+    }
+
+    if (!token.not_expired) {
+      await client.query('UPDATE password_reset_tokens SET attempt_count = attempt_count + 1 WHERE id = $1', [token.id]);
+      await client.query('COMMIT');
+      return res.status(400).json({ message: 'OTP đã hết hạn' });
+    }
+
+    const isOtpValid = await bcrypt.compare(otp, token.otp_hash);
+    if (!isOtpValid) {
+      await client.query('UPDATE password_reset_tokens SET attempt_count = attempt_count + 1 WHERE id = $1', [token.id]);
+      await client.query('COMMIT');
+      return res.status(400).json({ message: 'OTP không đúng' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await client.query('UPDATE users SET password = $1 WHERE user_id = $2', [hashedPassword, user.user_id]);
+    await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [token.id]);
+
+    await client.query('COMMIT');
+
+    return res.status(200).json({ message: 'Đặt lại mật khẩu thành công' });
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
     register,
     login,
     logout,
-    getCurrentUser
+    getCurrentUser,
+    forgotPassword,
+    resetPassword
 }
