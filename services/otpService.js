@@ -1,55 +1,42 @@
-const nodemailer = require('nodemailer');
-const dns = require('dns');
+const { Resend } = require('resend');
 
-const ipv4Lookup = (hostname, options, callback) => {
-  dns.lookup(hostname, { ...options, family: 4, all: false }, callback);
-};
+const isPlaceholderResendConfig = () => {
+  const apiKey = (process.env.RESEND_API_KEY || '').trim();
+  const from = (process.env.RESEND_FROM || '').trim();
 
-const isPlaceholderSmtpConfig = () => {
-  const host = (process.env.SMTP_HOST || '').trim();
-  const user = (process.env.SMTP_USER || '').trim();
-  const password = (process.env.SMTP_PASS || '').trim();
-
-  return !host || !user || !password || host === 'smtp.example.com' || user === 'your-smtp-username' || password === 'your-smtp-password';
-};
-
-const createSmtpTransport = () => {
-  if (isPlaceholderSmtpConfig()) {
-    return null;
-  }
-
-  // Render can be IPv6-restricted; force Gmail SMTP over IPv4.
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    lookup: ipv4Lookup,
-    family: 4,
-    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS) || 10000,
-    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS) || 10000,
-    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS) || 15000,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  return !apiKey || !from || apiKey === 'your-resend-api-key' || from === 'Your Name <your-email@domain.com>' || from === 'your-email@domain.com';
 };
 
 const sendEmailOtp = async ({ destination, otp, username }) => {
-  const transport = createSmtpTransport();
+  if (isPlaceholderResendConfig()) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[OTP][EMAIL][DEV] To: ${destination} | User: ${username} | OTP: ${otp}`);
+      return;
+    }
 
-  if (!transport) {
-    console.log(`[OTP][EMAIL][DEV] To: ${destination} | User: ${username} | OTP: ${otp}`);
-    return;
+    throw new Error('Missing Resend configuration');
   }
 
+  const resend = new Resend(process.env.RESEND_API_KEY.trim());
+  const from = process.env.RESEND_FROM.trim();
+  const message = `Xin chào ${username || ''}, OTP đặt lại mật khẩu của bạn là: ${otp}. Mã có hiệu lực trong ${process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES || 10} phút.`;
+
   try {
-    await transport.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    const { data, error } = await resend.emails.send({
+      from,
       to: destination,
       subject: 'ShopLen password reset OTP',
-      text: `Xin chào ${username || ''}, OTP đặt lại mật khẩu của bạn là: ${otp}. Mã có hiệu lực trong ${process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES || 10} phút.`,
+      text: message,
+      html: `<p>${message}</p>`,
     });
+
+    if (error) {
+      throw error;
+    }
+
+    if (data?.id) {
+      console.log(`[OTP][EMAIL] Sent via Resend: ${data.id}`);
+    }
   } catch (error) {
     console.error('[OTP][EMAIL] Send failed:', error.message);
     throw error;
