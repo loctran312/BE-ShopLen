@@ -195,7 +195,7 @@ const forgotPassword = async (req, res) => {
       message: 'Mã OTP đã được gửi',
       reset_token_id: resetToken.id,
       expires_at: resetToken.expires_at,
-      ...(process.env.NODE_ENV !== 'production' ? { otp } : {}),
+      // ...(process.env.NODE_ENV !== 'production' ? { otp } : {}),
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
