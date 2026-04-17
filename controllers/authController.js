@@ -11,6 +11,19 @@ const RESET_CHANNEL = 'email';
 
 const normalizeIdentifier = (value) => (value || '').trim();
 
+// Shared utility to extract and verify Bearer token
+const extractAndVerifyToken = (authHeader) => {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Invalid token format');
+  }
+  const token = authHeader.substring(7);
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    throw new Error('Token không hợp lệ hoặc hết hạn');
+  }
+};
+
 const getUserByEmail = async (client, email) => client.query(
   'SELECT user_id, username, email FROM users WHERE email = $1',
   [email]
@@ -101,7 +114,7 @@ const login = async (req, res) => {
     // Kiểm tra email có tồn tại không
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
-      return res.status(400).json({ message: 'Email không tồn tại' });
+      return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
     const user = userResult.rows[0];
@@ -109,12 +122,12 @@ const login = async (req, res) => {
     // So sánh mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Mật khẩu không đúng' });
+      return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
     // Tạo token JWT
     const token = jwt.sign(
-      { user_id: user.user_id, username: user.username, role: user.role },
+      { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
@@ -134,10 +147,16 @@ const getCurrentUser = async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader) {
-            return res.status(401).json({ message: 'Không có token' });
+            return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
         }
-        const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        let decoded;
+        try {
+            decoded = extractAndVerifyToken(authHeader);
+        } catch (error) {
+            return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
+        }
+
         const userResult = await pool.query('SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE user_id = $1', [decoded.user_id]);
         if (userResult.rows.length === 0) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
@@ -309,7 +328,7 @@ const resetPassword = async (req, res) => {
     try {
       decodedResetToken = jwt.verify(resetSessionToken, process.env.JWT_SECRET);
     } catch (error) {
-      return res.status(400).json({ message: 'Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn' });
+      return res.status(401).json({ message: 'Phiên đặt lại mật khẩu không hợp lệ hoặc đã hết hạn' });
     }
 
     if (
@@ -371,6 +390,6 @@ module.exports = {
     logout,
     getCurrentUser,
     forgotPassword,
-  verifyResetOtp,
+    verifyResetOtp,
     resetPassword
 }

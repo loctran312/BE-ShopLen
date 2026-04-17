@@ -4,6 +4,19 @@ const jwt = require('jsonwebtoken');
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
+// Shared utility to extract and verify Bearer token
+const extractAndVerifyToken = (authHeader) => {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new Error('Invalid token format');
+  }
+  const token = authHeader.substring(7);
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    throw new Error('Token không hợp lệ hoặc hết hạn');
+  }
+};
+
 // Lấy danh sách tất cả người dùng
 const getAllUsers = async (req, res) => {
   try {
@@ -33,11 +46,16 @@ const changePassword = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return res.status(401).json({ message: 'Không có token' });
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
     }
 
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+    try {
+      decoded = extractAndVerifyToken(authHeader);
+    } catch (error) {
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
+    }
+
     const user_id = decoded.user_id;
 
     const { currentPassword, newPassword, confirmPassword } = req.body;
@@ -84,9 +102,6 @@ const changePassword = async (req, res) => {
 
     res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ message: 'Token không hợp lệ' });
-    }
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
