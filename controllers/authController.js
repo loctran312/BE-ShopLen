@@ -131,7 +131,15 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
-    res.json({ token });
+    res.json(
+      { 
+        "token": token,
+        "user": {
+          "user_id": user.user_id,
+          "role": user.role
+        }
+      }
+    );
   } catch (error) {
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
