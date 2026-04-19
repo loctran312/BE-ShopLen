@@ -60,6 +60,8 @@ app.get('/api/docs', (req, res) => {
         login: '/api/auth/login - POST',
         register: '/api/auth/register - POST',
         logout: '/api/auth/logout - POST',
+        google: '/api/auth/google - GET',
+        google_callback: '/api/auth/google/callback - GET',
         profile: '/api/auth/me - GET',
         forgot_password: '/api/auth/forgot-password - POST',
         verify_reset_otp: '/api/auth/verify-reset-otp - POST',

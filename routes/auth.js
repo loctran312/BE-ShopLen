@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, logout, getCurrentUser, forgotPassword, verifyResetOtp, resetPassword } = require('../controllers/authController');
+const { register, login, logout, getCurrentUser, forgotPassword, verifyResetOtp, resetPassword, startGoogleLogin, handleGoogleCallback } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -8,6 +8,12 @@ router.post('/register', register);
 
 // POST - Đăng nhập người dùng
 router.post('/login', login);
+
+// GET - Bắt đầu đăng nhập Google
+router.get('/google', startGoogleLogin);
+
+// GET - Callback từ Google OAuth
+router.get('/google/callback', handleGoogleCallback);
 
 // POST - Đăng xuất người dùng
 router.post('/logout', logout);

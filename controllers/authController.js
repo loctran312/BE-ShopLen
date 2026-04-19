@@ -8,6 +8,15 @@ const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@
 const OTP_EXPIRY_MINUTES = Number(process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES || 10);
 const RESET_SESSION_EXPIRES_IN = process.env.PASSWORD_RESET_SESSION_EXPIRES_IN || '15m';
 const RESET_CHANNEL = 'email';
+const GOOGLE_AUTH_SCOPE = 'openid email profile';
+const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
+const GOOGLE_TOKEN_INFO_ENDPOINT = 'https://oauth2.googleapis.com/tokeninfo';
+const GOOGLE_OAUTH_STATE_EXPIRES_IN = process.env.GOOGLE_OAUTH_STATE_EXPIRES_IN || '10m';
+const envTrim = (value) => (value || '').trim();
+const GOOGLE_CLIENT_ID = envTrim(process.env.GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_SECRET = envTrim(process.env.GOOGLE_CLIENT_SECRET);
+const GOOGLE_REDIRECT_URI = envTrim(process.env.GOOGLE_REDIRECT_URI) || `http://localhost:${process.env.PORT || 3000}/api/auth/google/callback`;
+const GOOGLE_FRONTEND_REDIRECT_URI = envTrim(process.env.GOOGLE_FRONTEND_REDIRECT_URI) || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
 
 const normalizeIdentifier = (value) => (value || '').trim();
 
@@ -25,7 +34,7 @@ const extractAndVerifyToken = (authHeader) => {
 };
 
 const getUserByEmail = async (client, email) => client.query(
-  'SELECT user_id, username, email FROM users WHERE email = $1',
+  'SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE email = $1',
   [email]
 );
 
@@ -48,6 +57,208 @@ const getLatestResetToken = async (client, userId, channel, destination) => clie
    LIMIT 1`,
   [userId, channel, destination]
 );
+
+const getUserById = async (client, userId) => client.query(
+  'SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE user_id = $1',
+  [userId]
+);
+
+const getUserByGoogleProviderId = async (client, providerId) => client.query(
+  `SELECT u.user_id, u.username, u.email, u.phone_number, u.role, u.first_name, u.last_name
+   FROM user_auth_provider ap
+   INNER JOIN users u ON u.user_id = ap.user_id
+   WHERE ap.provider = 'google' AND ap.provider_id = $1
+   LIMIT 1`,
+  [providerId]
+);
+
+const getGoogleProviderByUserId = async (client, userId) => client.query(
+  `SELECT id, user_id, provider, provider_id
+   FROM user_auth_provider
+   WHERE user_id = $1 AND provider = 'google'
+   LIMIT 1`,
+  [userId]
+);
+
+const getNextUserId = async (client) => {
+  const nextIdResult = await client.query(`
+    SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM users
+  `);
+
+  return nextIdResult.rows[0].next_id;
+};
+
+const buildGoogleFrontendRedirectUrl = (params) => {
+  const url = new URL(GOOGLE_FRONTEND_REDIRECT_URI);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      url.searchParams.set(key, String(value));
+    }
+  });
+
+  return url.toString();
+};
+
+const buildGoogleOAuthUrl = (state) => {
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+
+  url.search = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: GOOGLE_REDIRECT_URI,
+    response_type: 'code',
+    scope: GOOGLE_AUTH_SCOPE,
+    access_type: 'online',
+    prompt: 'select_account',
+    include_granted_scopes: 'true',
+    state,
+  }).toString();
+
+  return url.toString();
+};
+
+const createGoogleStateToken = (redirectTo) => jwt.sign(
+  {
+    purpose: 'google_oauth_state',
+    redirect_to: redirectTo || GOOGLE_FRONTEND_REDIRECT_URI,
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: GOOGLE_OAUTH_STATE_EXPIRES_IN }
+);
+
+const verifyGoogleStateToken = (state) => {
+  const decoded = jwt.verify(state, process.env.JWT_SECRET);
+
+  if (decoded.purpose !== 'google_oauth_state') {
+    throw new Error('State không hợp lệ');
+  }
+
+  return decoded;
+};
+
+const fetchGoogleTokenPayload = async (code) => {
+  const tokenResponse = await fetch(GOOGLE_TOKEN_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    const errorText = await tokenResponse.text();
+    throw new Error(`Google token exchange failed: ${errorText}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+
+  if (!tokenData.id_token) {
+    throw new Error('Thiếu id_token từ Google');
+  }
+
+  const tokenInfoResponse = await fetch(`${GOOGLE_TOKEN_INFO_ENDPOINT}?id_token=${encodeURIComponent(tokenData.id_token)}`);
+
+  if (!tokenInfoResponse.ok) {
+    const errorText = await tokenInfoResponse.text();
+    throw new Error(`Google id_token verification failed: ${errorText}`);
+  }
+
+  const tokenInfo = await tokenInfoResponse.json();
+
+  if (tokenInfo.aud !== GOOGLE_CLIENT_ID) {
+    throw new Error('Google audience không khớp');
+  }
+
+  if (tokenInfo.iss !== 'https://accounts.google.com' && tokenInfo.iss !== 'accounts.google.com') {
+    throw new Error('Google issuer không hợp lệ');
+  }
+
+  if (!tokenInfo.email || (tokenInfo.email_verified !== true && tokenInfo.email_verified !== 'true')) {
+    throw new Error('Google email chưa được xác minh');
+  }
+
+  return tokenInfo;
+};
+
+const generateGoogleUsername = (email, googleSub) => {
+  const emailPrefix = normalizeIdentifier(email.split('@')[0]).toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const safePrefix = (emailPrefix || 'google').slice(0, 8);
+  const suffix = String(googleSub).slice(0, 12);
+
+  return `${safePrefix}_${suffix}`.slice(0, 20);
+};
+
+const ensureUniqueUsername = async (client, usernameCandidate) => {
+  const existingResult = await client.query('SELECT user_id FROM users WHERE username = $1 LIMIT 1', [usernameCandidate]);
+
+  if (existingResult.rows.length === 0) {
+    return usernameCandidate;
+  }
+
+  const fallback = `${usernameCandidate.slice(0, 17)}_${randomInt(100, 999)}`.slice(0, 20);
+  const fallbackResult = await client.query('SELECT user_id FROM users WHERE username = $1 LIMIT 1', [fallback]);
+
+  if (fallbackResult.rows.length === 0) {
+    return fallback;
+  }
+
+  return `${usernameCandidate.slice(0, 15)}_${Date.now().toString().slice(-4)}`.slice(0, 20);
+};
+
+const issueAuthToken = (user) => jwt.sign(
+  { user_id: user.user_id, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+);
+
+const createOrLinkGoogleUser = async (client, googleProfile) => {
+  const existingGoogleUserResult = await getUserByGoogleProviderId(client, googleProfile.sub);
+
+  if (existingGoogleUserResult.rows.length > 0) {
+    return existingGoogleUserResult.rows[0];
+  }
+
+  const existingUserResult = await getUserByEmail(client, googleProfile.email);
+
+  if (existingUserResult.rows.length > 0) {
+    const existingUser = existingUserResult.rows[0];
+    const existingProviderResult = await getGoogleProviderByUserId(client, existingUser.user_id);
+
+    if (existingProviderResult.rows.length === 0) {
+      await client.query(
+        'INSERT INTO user_auth_provider (user_id, provider, provider_id) VALUES ($1, $2, $3)',
+        [existingUser.user_id, 'google', googleProfile.sub]
+      );
+    }
+
+    return existingUser;
+  }
+
+  const nextId = await getNextUserId(client);
+  const usernameCandidate = await ensureUniqueUsername(client, generateGoogleUsername(googleProfile.email, googleProfile.sub));
+
+  const newUserResult = await client.query(
+    `INSERT INTO users (user_id, username, email, password, phone_number, role)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING user_id, username, email, phone_number, role, first_name, last_name`,
+    [nextId, usernameCandidate, googleProfile.email, null, null, 'customer']
+  );
+
+  const newUser = newUserResult.rows[0];
+
+  await client.query(
+    'INSERT INTO user_auth_provider (user_id, provider, provider_id) VALUES ($1, $2, $3)',
+    [newUser.user_id, 'google', googleProfile.sub]
+  );
+
+  return newUser;
+};
 
 // Đăng ký người dùng mới
 const register = async (req, res) => {
@@ -105,6 +316,81 @@ const register = async (req, res) => {
     res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
+
+const startGoogleLogin = async (req, res) => {
+  try {
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+      return res.status(500).json({ message: 'Thiếu cấu hình Google OAuth' });
+    }
+
+    const redirectTo = normalizeIdentifier(req.query.redirect_to) || GOOGLE_FRONTEND_REDIRECT_URI;
+    const state = createGoogleStateToken(redirectTo);
+    const googleOAuthUrl = buildGoogleOAuthUrl(state);
+
+    console.log('[AUTH][GOOGLE_START] redirect_uri =', GOOGLE_REDIRECT_URI);
+    console.log('[AUTH][GOOGLE_START] auth_url =', googleOAuthUrl);
+
+    return res.redirect(googleOAuthUrl);
+  } catch (error) {
+    return res.status(500).json({ message: 'Không thể bắt đầu đăng nhập Google' });
+  }
+};
+
+const handleGoogleCallback = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { code, state, error, error_description: errorDescription } = req.query;
+
+    if (error) {
+      return res.redirect(buildGoogleFrontendRedirectUrl({
+        error: 'google_login_failed',
+        message: errorDescription || error,
+      }));
+    }
+
+    if (!code || !state) {
+      return res.status(400).json({ message: 'Thiếu code hoặc state từ Google' });
+    }
+
+    let statePayload;
+
+    try {
+      statePayload = verifyGoogleStateToken(state);
+    } catch (verificationError) {
+      return res.redirect(buildGoogleFrontendRedirectUrl({
+        error: 'invalid_google_state',
+        message: verificationError.message,
+      }));
+    }
+
+    const googleProfile = await fetchGoogleTokenPayload(code);
+
+    await client.query('BEGIN');
+
+    const user = await createOrLinkGoogleUser(client, googleProfile);
+    const token = issueAuthToken(user);
+
+    await client.query('COMMIT');
+
+    return res.redirect(buildGoogleFrontendRedirectUrl({
+      token,
+      role: user.role,
+      user_id: user.user_id,
+      redirect_to: statePayload.redirect_to || GOOGLE_FRONTEND_REDIRECT_URI,
+    }));
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('[AUTH][GOOGLE_CALLBACK] Error:', error.message);
+
+    return res.redirect(buildGoogleFrontendRedirectUrl({
+      error: 'google_login_failed',
+      message: 'Đăng nhập Google thất bại',
+    }));
+  } finally {
+    client.release();
+  }
+};
 
 // Đăng nhập người dùng
 const login = async (req, res) => {
@@ -399,5 +685,7 @@ module.exports = {
     getCurrentUser,
     forgotPassword,
     verifyResetOtp,
-    resetPassword
-}
+    resetPassword,
+    startGoogleLogin,
+    handleGoogleCallback
+};
