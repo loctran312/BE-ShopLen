@@ -56,12 +56,15 @@ ALTER TABLE user_auth_provider ADD CONSTRAINT chk_provider CHECK (
 -- =========================
 CREATE TABLE categories (
   category_id SERIAL PRIMARY KEY,
-  category_name VARCHAR(100) NOT NULL,
+  category_name VARCHAR(100) UNIQUE NOT NULL,
   description TEXT,
   parent_category_id INT,
   slug VARCHAR(100) UNIQUE NOT NULL,
   FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)
 );
+
+CREATE UNIQUE INDEX idx_categories_unique_normalized_name
+  ON categories (LOWER(TRIM(category_name)));
 
 -- =========================
 -- PRODUCT

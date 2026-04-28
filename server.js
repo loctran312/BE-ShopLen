@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 const dns = require('dns');
 require('dotenv').config();
 require('./config/db');
@@ -45,31 +43,25 @@ app.get('/health', (req, res) => {
 // ===== ROUTES =====
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
+const categoryRoutes = require('./routes/categories');
+const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 
 // ===== API ROUTES =====
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // ===== API DOCUMENTATION =====
 app.get('/api/docs', (req, res) => {
-    res.json({
-        status: 'success',
-        message: 'API Documentation',
-        endpoints: {
-      auth: {
-        login: '/api/auth/login - POST',
-        register: '/api/auth/register - POST',
-        logout: '/api/auth/logout - POST',
-        google: '/api/auth/google - GET',
-        google_callback: '/api/auth/google/callback - GET',
-        profile: '/api/auth/me - GET',
-        forgot_password: '/api/auth/forgot-password - POST',
-        verify_reset_otp: '/api/auth/verify-reset-otp - POST',
-        reset_password: '/api/auth/reset-password - POST'
-      },
-            users: { list: '/api/users - GET', detail: '/api/users/:id - GET' }
-        }
-    });
+  res.type('html').send(renderDocsPage());
+});
+
+app.get('/api/docs.json', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'API Documentation',
+    ...apiDocs,
+  });
 });
 
 // ===== 404 =====
