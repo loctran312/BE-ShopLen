@@ -44,12 +44,14 @@ app.get('/health', (req, res) => {
 const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const categoryRoutes = require('./routes/categories');
+const productRoutes = require('./routes/products');
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 
 // ===== API ROUTES =====
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
 // ===== API DOCUMENTATION =====
 app.get('/api/docs', (req, res) => {
