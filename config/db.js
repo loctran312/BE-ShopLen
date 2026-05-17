@@ -2,11 +2,36 @@ const { Pool } = require('pg');
 
 const useConnectionString = Boolean(process.env.DATABASE_URL);
 
+const isSslHost = (value = '') => /render\.com$/i.test(value) || /render\.com/i.test(value);
+
+const shouldUseSsl = () => {
+    if (process.env.DB_SSL === 'true') {
+        return true;
+    }
+
+    if (process.env.DB_SSL === 'false') {
+        return false;
+    }
+
+    if (useConnectionString) {
+        try {
+            const connectionUrl = new URL(process.env.DATABASE_URL);
+            return isSslHost(connectionUrl.hostname);
+        } catch {
+            return false;
+        }
+    }
+
+    return isSslHost(process.env.DB_HOST || '');
+};
+
+const sslConfig = shouldUseSsl() ? { rejectUnauthorized: false } : false;
+
 const pool = new Pool(
     useConnectionString
         ? {
             connectionString: process.env.DATABASE_URL,
-            ssl: { rejectUnauthorized: false }
+            ssl: sslConfig
         }
         : {
             user: process.env.DB_USER || 'shoplen_user',
@@ -14,9 +39,7 @@ const pool = new Pool(
             host: process.env.DB_HOST || 'localhost',
             port: Number(process.env.DB_PORT) || 5432,
             database: process.env.DB_NAME || 'shoplen',
-            ssl: process.env.DB_SSL === 'true' || (process.env.DB_HOST || '').includes('render.com')
-                ? { rejectUnauthorized: false }
-                : false
+            ssl: sslConfig
         }
 );
 
