@@ -219,6 +219,24 @@ CREATE TABLE promotion_products (
 );
 
 -- =========================
+-- CITY
+-- =========================
+CREATE TABLE cities (
+  city_code VARCHAR(10) PRIMARY KEY,
+  city_name VARCHAR(100) NOT NULL
+);
+
+-- =========================
+-- WARD
+-- =========================
+CREATE TABLE wards (
+  ward_id SERIAL PRIMARY KEY,
+  ward_name VARCHAR(100) NOT NULL,
+  city_code VARCHAR(10),
+  FOREIGN KEY (city_code) REFERENCES cities(city_code)
+);
+
+-- =========================
 -- ORDER
 -- =========================
 CREATE TABLE orders (
@@ -299,25 +317,6 @@ CREATE TABLE refunds (
 ALTER TABLE refunds ADD CONSTRAINT chk_refund_status CHECK (
   status IN ('pending','success','failed')
 );
-
--- =========================
--- CITY
--- =========================
-CREATE TABLE cities (
-  city_code VARCHAR(10) PRIMARY KEY,
-  city_name VARCHAR(100) NOT NULL
-);
-
--- =========================
--- WARD
--- =========================
-CREATE TABLE wards (
-  ward_id SERIAL PRIMARY KEY,
-  ward_name VARCHAR(100) NOT NULL,
-  city_code VARCHAR(10),
-  FOREIGN KEY (city_code) REFERENCES cities(city_code)
-);
-
 
 -- =========================
 -- LOYALTY
