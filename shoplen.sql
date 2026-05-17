@@ -30,7 +30,7 @@ CREATE TABLE password_reset_tokens (
 );
 
 ALTER TABLE password_reset_tokens ADD CONSTRAINT chk_password_reset_channel CHECK (
-  channel IN ('email','sms')
+  channel IN ('email')
 );
 
 CREATE INDEX idx_password_reset_tokens_user_channel_created_at
@@ -69,7 +69,7 @@ CREATE UNIQUE INDEX idx_categories_unique_normalized_name
 -- =========================
 -- PRODUCT
 -- =========================
-CREATE TABLE product_types (
+CREATE TABLE product_types ( -- *Loại sản phẩm (vd: sợi len, dụng cụ, phụ kiện...)
   type_id SERIAL PRIMARY KEY,
   type_name VARCHAR(100) NOT NULL,
   description TEXT
@@ -82,7 +82,6 @@ CREATE TABLE products (
   product_name VARCHAR(150) NOT NULL,
   description TEXT,
   product_status VARCHAR(20) DEFAULT 'active',
-  deleted_at TIMESTAMP,
   FOREIGN KEY (type_id) REFERENCES product_types(type_id),
   FOREIGN KEY (category_id) REFERENCES categories(category_id)
 );
@@ -91,13 +90,13 @@ CREATE TABLE product_variants (
   variant_id SERIAL PRIMARY KEY,
   product_id INT NOT NULL,
   sku VARCHAR(50) UNIQUE NOT NULL,
+  slug VARCHAR(150) UNIQUE NOT NULL,
   price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
   color VARCHAR(50),
   size VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
-
-
 
 CREATE TABLE inventory (
   inventory_id SERIAL PRIMARY KEY,
@@ -123,25 +122,25 @@ CREATE TABLE workshops (
   product_id INT NOT NULL,
   title VARCHAR(150) NOT NULL,
   description TEXT,
-  start_date TIMESTAMP NOT NULL,
-  end_date TIMESTAMP NOT NULL,
   location VARCHAR(255),
-  status VARCHAR(20) DEFAULT 'open',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (product_id) REFERENCES products(product_id)
-);
-
-ALTER TABLE workshops ADD CONSTRAINT chk_workshop_status CHECK (
-  status IN ('open','closed','cancelled')
 );
 
 CREATE TABLE workshop_variants (
   id SERIAL PRIMARY KEY,
   workshop_id INT NOT NULL,
   variant_id INT NOT NULL,
+  start_date TIMESTAMP NOT NULL,
+  end_date TIMESTAMP NOT NULL,
+  status VARCHAR(20) DEFAULT 'open',
   UNIQUE(workshop_id, variant_id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (workshop_id) REFERENCES workshops(workshop_id),
   FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
+);
+
+ALTER TABLE workshop_variants ADD CONSTRAINT chk_workshop_status CHECK (
+  status IN ('open','closed','cancelled')
 );
 
 -- =========================
@@ -163,13 +162,14 @@ CREATE TABLE cart (
 CREATE TABLE vouchers (
   voucher_id SERIAL PRIMARY KEY,
   code VARCHAR(50) UNIQUE NOT NULL,
-  voucher_type VARCHAR(20),
+  voucher_name VARCHAR(20),
   discount_type VARCHAR(20),
   value NUMERIC(10,2) CHECK (value >= 0),
   minimum_value NUMERIC(10,2),
   max_discount NUMERIC(10,2),
   quantity INT,
   used_count INT DEFAULT 0,
+  start_date TIMESTAMP,
   end_date TIMESTAMP
 );
 
@@ -229,25 +229,31 @@ CREATE TABLE orders (
   voucher_id INT,
   discount_amount NUMERIC(10,2),
   idempotency_key VARCHAR(100) UNIQUE,
+  ward_id INT,
+  shipping_address VARCHAR(255) NOT NULL,
+  recipient_name VARCHAR(100) NOT NULL,
+  recipient_phone VARCHAR(15) NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id)
+  FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id),
+  FOREIGN KEY (ward_id) REFERENCES wards(ward_id)
 );
 
 ALTER TABLE orders ADD CONSTRAINT chk_order_status CHECK (
   status IN ('pending','processing','shipping','completed','cancelled')
 );
 
-
 CREATE TABLE order_details (
   order_detail_id SERIAL PRIMARY KEY,
   order_id VARCHAR(25) NOT NULL,
+  variant_id INT,
   product_name VARCHAR(150) NOT NULL,
   price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
   quantity INT NOT NULL CHECK (quantity > 0),
-  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+  FOREIGN KEY (order_id) REFERENCES orders(order_id),
+  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON DELETE SET NULL
 );
 
-CREATE TABLE order_status_history (
+CREATE TABLE order_status_history ( -- LỊCH SỬ TRẠNG THÁI ĐƠN HÀNG LƯU LẠI MỖI KHI CÓ THAY ĐỔI TRẠNG THÁI
   id SERIAL PRIMARY KEY,
   order_id VARCHAR(25),
   status VARCHAR(20),
@@ -316,7 +322,7 @@ CREATE TABLE wards (
 -- =========================
 -- LOYALTY
 -- =========================
-CREATE TABLE loyalty_points (
+CREATE TABLE loyalty_points ( -- ĐIỂM THƯỞNG CHO KHÁCH HÀNG
   user_id INT PRIMARY KEY,
   total_points INT DEFAULT 0 CHECK (total_points >= 0),
   FOREIGN KEY (user_id) REFERENCES users(user_id)

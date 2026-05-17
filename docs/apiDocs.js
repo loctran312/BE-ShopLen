@@ -207,36 +207,60 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/categories',
-          summary: 'List categories',
+          summary: 'List categories as a nested tree',
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: [
             {
-              category_id: 1,
-              category_name: 'Electronics',
-              description: 'Devices and gadgets',
-              parent_category_id: null,
-              slug: 'electronics',
-              parent_category_name: null,
-              children_count: 0
+              category_name: 'Sợi Len',
+              description: 'Danh mục chính cho sợi len',
+              slug: 'soi-len',
+              children: [
+                {
+                  category_name: 'Sợi len bông',
+                  description: 'Sợi len làm từ cotton',
+                  slug: 'soi-len-bong',
+                  children: [
+                    { category_name: 'Sợi len bông - mịn',description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
+                    { category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
+                  ]
+                },
+                {
+                  category_name: 'Sợi len acrylic',
+                  description: 'Sợi len acrylic phổ biến',
+                  slug: 'soi-len-acrylic',
+                  children: [
+                    { category_name: 'Sợi len acrylic - 4 ply', description: 'Sợi len acrylic - 4 ply', slug: 'soi-len-acrylic-4-ply' },
+                    { category_name: 'Sợi len acrylic - 8 ply', description: 'Sợi len acrylic - 8 ply', slug: 'soi-len-acrylic-8-ply' }
+                  ]
+                }
+              ]
             }
           ]
         },
         {
           method: 'GET',
           path: '/api/categories/:category_id',
-          summary: 'Get category detail by id',
+          summary: 'Get category detail by id as nested subtree',
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: {
-            category_id: 1,
-            category_name: 'Electronics',
-            description: 'Devices and gadgets',
-            parent_category_id: null,
-            slug: 'electronics',
-            parent_category_name: null
+            category_name: 'Sợi Len',
+            description: 'Danh mục chính cho sợi len',
+            slug: 'soi-len',
+            children: [
+              {
+                category_name: 'Sợi len bông',
+                description: 'Sợi len làm từ cotton',
+                slug: 'soi-len-bong',
+                children: [
+                  { category_name: 'Sợi len bông - mịn', description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
+                  { category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
+                ]
+              }
+            ]
           }
         },
         {

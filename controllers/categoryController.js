@@ -319,17 +319,46 @@ const isDescendantCategory = async (ancestorCategoryId, targetCategoryId) => {
 const getAllCategories = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.category_id, c.category_name, c.description, c.parent_category_id, c.slug,
-              p.category_name AS parent_category_name,
-              COUNT(ch.category_id)::int AS children_count
-       FROM categories c
-       LEFT JOIN categories p ON p.category_id = c.parent_category_id
-       LEFT JOIN categories ch ON ch.parent_category_id = c.category_id
-       GROUP BY c.category_id, c.category_name, c.description, c.parent_category_id, c.slug, p.category_name
-       ORDER BY c.parent_category_id NULLS FIRST, c.category_name ASC`
+      `SELECT category_id, category_name, description, parent_category_id, slug
+       FROM categories
+       ORDER BY category_name ASC`
     );
 
-    return res.json(result.rows);
+    const rows = result.rows;
+
+    const nodesById = Object.create(null);
+    for (const row of rows) {
+      nodesById[row.category_id] = {
+        category_id: row.category_id,
+        category_name: row.category_name,
+        description: row.description === null ? null : row.description,
+        slug: row.slug,
+        parent_category_id: row.parent_category_id,
+        children: [],
+      };
+    }
+
+    const roots = [];
+    for (const id in nodesById) {
+      const node = nodesById[id];
+      if (node.parent_category_id && nodesById[node.parent_category_id]) {
+        nodesById[node.parent_category_id].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+
+    const formatNode = (n) => {
+      const out = { category_name: n.category_name };
+      out.description = n.description || '';
+      out.slug = n.slug || '';
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        out.children = n.children.map(formatNode);
+      }
+      return out;
+    };
+
+    return res.json(roots.map(formatNode));
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
@@ -344,13 +373,62 @@ const getCategoryDetail = async (req, res) => {
       return res.status(400).json({ message: 'category_id không hợp lệ' });
     }
 
-    const result = await getCategoryById(parsedCategoryId);
+
+    const result = await pool.query(
+      `WITH RECURSIVE subtree AS (
+         SELECT category_id, category_name, description, parent_category_id, slug
+         FROM categories
+         WHERE category_id = $1
+       UNION ALL
+         SELECT c.category_id, c.category_name, c.description, c.parent_category_id, c.slug
+         FROM categories c
+         INNER JOIN subtree s ON c.parent_category_id = s.category_id
+       )
+       SELECT * FROM subtree`,
+      [parsedCategoryId]
+    );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Danh mục không tồn tại' });
     }
 
-    return res.json(result.rows[0]);
+
+    const nodesById = Object.create(null);
+    for (const row of result.rows) {
+      nodesById[row.category_id] = {
+        category_id: row.category_id,
+        category_name: row.category_name,
+        description: row.description === null ? null : row.description,
+        slug: row.slug,
+        parent_category_id: row.parent_category_id,
+        children: [],
+      };
+    }
+
+    let root = null;
+
+    for (const id in nodesById) {
+      const node = nodesById[id];
+      if (node.category_id === parsedCategoryId) {
+        root = node;
+      }
+
+      if (node.parent_category_id && nodesById[node.parent_category_id]) {
+        nodesById[node.parent_category_id].children.push(node);
+      }
+    }
+
+    const formatNode = (n) => {
+      const out = { category_name: n.category_name };
+      out.description = n.description || '';
+      out.slug = n.slug !== undefined ? (n.slug || '') : '';
+      if (Array.isArray(n.children) && n.children.length > 0) {
+        out.children = n.children.map(formatNode);
+      }
+      return out;
+    };
+
+    return res.json(formatNode(root));
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
