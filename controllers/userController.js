@@ -20,7 +20,7 @@ const extractAndVerifyToken = (authHeader) => {
 // Lấy danh sách tất cả người dùng
 const getAllUsers = async (req, res) => {
   try {
-    const result = await pool.query('SELECT user_id, username, email, phone_number, role FROM users');
+    const result = await pool.query('SELECT user_id, username, first_name, last_name, email, phone_number, status, role FROM users');
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi máy chủ' });
@@ -31,7 +31,7 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const result = await pool.query('SELECT user_id, username, email, phone_number, role FROM users WHERE user_id = $1', [user_id]);
+    const result = await pool.query('SELECT user_id, username, first_name, last_name, email, phone_number, role FROM users WHERE user_id = $1', [user_id]);
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }

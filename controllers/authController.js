@@ -411,6 +411,8 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
+    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['active', user.user_id]);
+
     // Tạo token JWT
     const token = jwt.sign(
       { user_id: user.user_id, role: user.role },
@@ -432,8 +434,26 @@ const login = async (req, res) => {
 }
 
 // Đăng xuất người dùng
-const logout = (req, res) => {
+const logout = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
+    }
+
+    let decoded;
+    try {
+      decoded = extractAndVerifyToken(authHeader);
+    } catch (error) {
+      return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
+    }
+
+    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['inactive', decoded.user_id]);
+
     res.json({ message: 'Đăng xuất thành công' });
+  } catch (error) {
+    res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
 }
 
 // Lấy thông tin người dùng hiện tại
