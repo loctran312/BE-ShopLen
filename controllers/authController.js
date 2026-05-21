@@ -369,6 +369,7 @@ const handleGoogleCallback = async (req, res) => {
     await client.query('BEGIN');
 
     const user = await createOrLinkGoogleUser(client, googleProfile);
+    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['active', user.user_id]);
     const token = issueAuthToken(user);
 
     await client.query('COMMIT');
