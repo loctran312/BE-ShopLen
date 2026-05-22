@@ -156,7 +156,7 @@ const apiDocs = {
           method: 'GET',
           path: '/api/users',
           summary: 'List users',
-          auth: false,
+          auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: [
@@ -173,7 +173,7 @@ const apiDocs = {
           method: 'GET',
           path: '/api/users/:user_id',
           summary: 'Get user detail by id',
-          auth: false,
+          auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
@@ -182,6 +182,75 @@ const apiDocs = {
             email: 'user@example.com',
             phone_number: '0901234567',
             role: 'customer'
+          }
+        },
+        {
+          method: 'POST',
+          path: '/api/users',
+          summary: 'Create a user as admin',
+          auth: true,
+          requestExample: {
+            username: 'newuser',
+            email: 'newuser@example.com',
+            password: 'Password@123',
+            phone_number: '0901234567',
+            first_name: 'New',
+            last_name: 'User',
+            role: 'customer'
+          },
+          successStatus: 201,
+          successExample: {
+            message: 'Tạo người dùng thành công',
+            user: {
+              user_id: 2,
+              username: 'newuser',
+              first_name: 'New',
+              last_name: 'User',
+              email: 'newuser@example.com',
+              phone_number: '0901234567',
+              status: 'active',
+              role: 'customer'
+            }
+          }
+        },
+        {
+          method: 'PUT',
+          path: '/api/users/:user_id',
+          summary: 'Update a user as admin',
+          auth: true,
+          requestExample: {
+            username: 'updateduser',
+            email: 'updated@example.com',
+            phone_number: '0901234567',
+            first_name: 'Updated',
+            last_name: 'User',
+            status: 'active',
+            role: 'customer'
+          },
+          successStatus: 200,
+          successExample: {
+            message: 'Cập nhật người dùng thành công',
+            user: {
+              user_id: 2,
+              username: 'updateduser',
+              first_name: 'Updated',
+              last_name: 'User',
+              email: 'updated@example.com',
+              phone_number: '0901234567',
+              status: 'active',
+              role: 'customer'
+            }
+          }
+        },
+        {
+          method: 'DELETE',
+          path: '/api/users/:user_id',
+          summary: 'Delete a user as admin',
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            message: 'Xóa người dùng thành công'
           }
         },
         {
@@ -267,7 +336,7 @@ const apiDocs = {
           method: 'POST',
           path: '/api/categories',
           summary: 'Create a category or bulk-create a tree of categories',
-          auth: false,
+          auth: true,
           requestExample: {
             category_name: 'Sợi Len',
             description: 'Danh mục chính cho sợi len',
@@ -306,7 +375,7 @@ const apiDocs = {
           method: 'PUT',
           path: '/api/categories/:category_id',
           summary: 'Update a category',
-          auth: false,
+          auth: true,
           requestExample: {
             category_name: 'Updated Electronics',
             description: 'Updated description',
@@ -328,7 +397,7 @@ const apiDocs = {
           method: 'DELETE',
           path: '/api/categories/:category_id',
           summary: 'Delete a category',
-          auth: false,
+          auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
