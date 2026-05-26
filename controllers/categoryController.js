@@ -319,6 +319,7 @@ const formatCategoryTreeNode = (node) => {
     category_name: node.category_name,
     description: node.description || '',
     slug: node.slug || '',
+    children: [],
   };
 
   if (Array.isArray(node.children) && node.children.length > 0) {
