@@ -271,6 +271,219 @@ const apiDocs = {
       ]
     },
     {
+      name: 'Products',
+      endpoints: [
+        {
+          method: 'GET',
+          path: '/api/products/types',
+          summary: 'List all product types',
+          auth: false,
+          requestExample: null,
+          successStatus: 200,
+          successExample: [
+            {
+              type_id: 1,
+              type_name: 'Sợi len',
+              description: 'Các loại sợi len dùng để đan móc',
+            },
+            {
+              type_id: 2,
+              type_name: 'Phụ kiện đan móc',
+              description: 'Các loại phụ kiện đi kèm như kim đan, kim móc, thước dây...',
+            },
+            {
+              type_id: 3,
+              type_name: 'Workshop',
+              description: 'Các lớp học đan móc trực tiếp tại cửa hàng',
+            }
+          ]
+        },
+        {
+          method: 'GET',
+          path: '/api/products',
+          summary: 'List products with nested variants and images',
+          auth: false,
+          requestExample: {
+            page: 1,
+            limit: 10
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: 'Lấy danh sách sản phẩm thành công',
+            data: {
+              products: [
+                {
+                  product_id: 1,
+                  product_name: 'Cuộn len Cotton Milk 50g',
+                  category_name: 'Len sợi',
+                  type_name: 'Sợi len',
+                  product_status: 'active',
+                  variants: [
+                    {
+                      variant_id: 1,
+                      sku: 'LEN-CM-RED-50G',
+                      slug: 'cuon-len-cotton-milk-50g-mau-do',
+                      price: '15000.00',
+                      color: 'Đỏ',
+                      size: '50g',
+                      images: [
+                        {
+                          image_url: 'https://example.com/images/len-red-1.jpg',
+                          sort_order: 1
+                        },
+                        {
+                          image_url: 'https://example.com/images/len-red-2.jpg',
+                          sort_order: 2
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              pagination: {
+                total_items: 125,
+                total_pages: 13,
+                current_page: 1,
+                limit: 10
+              }
+            }
+          }
+        },
+        {
+          method: 'GET',
+          path: '/api/products/:product_id',
+          summary: 'Get product detail',
+          auth: false,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: 'Lấy chi tiết sản phẩm thành công',
+            data: {
+              product: {
+                product_id: 1,
+                type_id: 1,
+                category_id: 2,
+                product_name: 'Cuộn len Cotton Milk 50g',
+                description: 'Len sợi mềm mại...',
+                product_status: 'active',
+                category_name: 'Len sợi',
+                type_name: 'Sợi len',
+                variants: [
+                  {
+                    variant_id: 1,
+                    sku: 'LEN-CM-RED-50G',
+                    slug: 'cuon-len-cotton-milk-50g-mau-do',
+                    price: '15000.00',
+                    color: 'Đỏ',
+                    size: '50g',
+                    stock_quantity: 150,
+                    images: [
+                      {
+                        image_url: 'https://i.ibb.co/example.jpg',
+                        sort_order: 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          method: 'POST',
+          path: '/api/products',
+          summary: 'Create a product with variants and imgBB images',
+          auth: true,
+          requestExample: {
+            type_id: 1,
+            category_id: 2,
+            product_name: 'Cuộn len Cotton Milk 50g',
+            description: 'Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...',
+            product_status: 'active',
+            variants: [
+              {
+                sku: 'LEN-CM-RED-50G',
+                price: 15000,
+                color: 'Đỏ',
+                size: '50g',
+                stock_quantity: 150,
+                images: [
+                  {
+                    image_url: 'https://example.com/images/len-red-1.jpg',
+                    sort_order: 1
+                  },
+                  {
+                    image_url: 'https://example.com/images/len-red-2.jpg',
+                    sort_order: 2
+                  }
+                ]
+              }
+            ]
+          },
+          successStatus: 201,
+          successExample: {
+            success: true,
+            message: 'Tạo sản phẩm thành công',
+            data: {
+              product: {
+                product_id: 1
+              }
+            }
+          }
+        },
+        {
+          method: 'PUT',
+          path: '/api/products/:product_id',
+          summary: 'Update a product and optionally its variants',
+          auth: true,
+          requestExample: {
+            product_name: 'Cuộn len Cotton Milk 50g - mới',
+            product_status: 'active',
+            variants: [
+              {
+                variant_id: 1,
+                sku: 'LEN-CM-RED-50G',
+                price: 16000,
+                color: 'Đỏ',
+                size: '50g',
+                stock_quantity: 120,
+                images: [
+                  {
+                    image_url: 'https://example.com/images/len-red-1.jpg',
+                    sort_order: 1
+                  }
+                ]
+              }
+            ]
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: 'Cập nhật sản phẩm thành công',
+            data: {
+              product: {
+                product_id: 1
+              }
+            }
+          }
+        },
+        {
+          method: 'DELETE',
+          path: '/api/products/:product_id',
+          summary: 'Delete a product',
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: 'Xóa sản phẩm thành công'
+          }
+        }
+      ]
+    },
+    {
       name: 'Categories',
       endpoints: [
         {
