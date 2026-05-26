@@ -282,26 +282,29 @@ const apiDocs = {
           successStatus: 200,
           successExample: [
             {
+              id: 1,
               category_name: 'Sợi Len',
               description: 'Danh mục chính cho sợi len',
               slug: 'soi-len',
               children: [
                 {
+                  id: 2,
                   category_name: 'Sợi len bông',
                   description: 'Sợi len làm từ cotton',
                   slug: 'soi-len-bong',
                   children: [
-                    { category_name: 'Sợi len bông - mịn',description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
-                    { category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
+                    { id: 3, category_name: 'Sợi len bông - mịn',description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
+                    { id: 4, category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
                   ]
                 },
                 {
+                  id: 5,
                   category_name: 'Sợi len acrylic',
                   description: 'Sợi len acrylic phổ biến',
                   slug: 'soi-len-acrylic',
                   children: [
-                    { category_name: 'Sợi len acrylic - 4 ply', description: 'Sợi len acrylic - 4 ply', slug: 'soi-len-acrylic-4-ply' },
-                    { category_name: 'Sợi len acrylic - 8 ply', description: 'Sợi len acrylic - 8 ply', slug: 'soi-len-acrylic-8-ply' }
+                    { id: 6, category_name: 'Sợi len acrylic - 4 ply', description: 'Sợi len acrylic - 4 ply', slug: 'soi-len-acrylic-4-ply' },
+                    { id: 7, category_name: 'Sợi len acrylic - 8 ply', description: 'Sợi len acrylic - 8 ply', slug: 'soi-len-acrylic-8-ply' }
                   ]
                 }
               ]
@@ -316,17 +319,19 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
+            id: 1,
             category_name: 'Sợi Len',
             description: 'Danh mục chính cho sợi len',
             slug: 'soi-len',
             children: [
               {
+                id: 2,
                 category_name: 'Sợi len bông',
                 description: 'Sợi len làm từ cotton',
                 slug: 'soi-len-bong',
                 children: [
-                  { category_name: 'Sợi len bông - mịn', description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
-                  { category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
+                  { id: 3, category_name: 'Sợi len bông - mịn', description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min' },
+                  { id: 4, category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho' }
                 ]
               }
             ]

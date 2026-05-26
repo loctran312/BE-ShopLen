@@ -1,7 +1,6 @@
 const pool = require('../config/db');
 
 const normalizeText = (value) => (value || '').trim();
-const normalizeSlug = (value) => normalizeText(value).toLowerCase();
 
 const slugifyText = (value) => normalizeText(value)
   .normalize('NFD')
@@ -177,7 +176,6 @@ const createCategoriesBulk = async (req, res) => {
     const items = rawItems.map((item, index) => normalizeBulkCategoryItem(item, index));
     const tempKeySet = new Set();
     const normalizedNameSet = new Set();
-    const normalizedNames = [];
 
     items.forEach((item, index) => {
       const normalizedTempKey = item.tempKey.toLowerCase();
@@ -191,7 +189,6 @@ const createCategoriesBulk = async (req, res) => {
         throw new Error(`category_name bị trùng trong mảng ở mục ${index + 1}`);
       }
       normalizedNameSet.add(normalizedName);
-      normalizedNames.push(normalizedName);
     });
 
     const [existingNamesResult, existingSlugsResult] = await Promise.all([
@@ -316,6 +313,21 @@ const isDescendantCategory = async (ancestorCategoryId, targetCategoryId) => {
   return result.rows.length > 0;
 };
 
+const formatCategoryTreeNode = (node) => {
+  const out = {
+    id: node.category_id,
+    category_name: node.category_name,
+    description: node.description || '',
+    slug: node.slug || '',
+  };
+
+  if (Array.isArray(node.children) && node.children.length > 0) {
+    out.children = node.children.map(formatCategoryTreeNode);
+  }
+
+  return out;
+};
+
 const getAllCategories = async (req, res) => {
   try {
     const result = await pool.query(
@@ -348,17 +360,7 @@ const getAllCategories = async (req, res) => {
       }
     }
 
-    const formatNode = (n) => {
-      const out = { category_name: n.category_name };
-      out.description = n.description || '';
-      out.slug = n.slug || '';
-      if (Array.isArray(n.children) && n.children.length > 0) {
-        out.children = n.children.map(formatNode);
-      }
-      return out;
-    };
-
-    return res.json(roots.map(formatNode));
+    return res.json(roots.map(formatCategoryTreeNode));
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
@@ -418,17 +420,7 @@ const getCategoryDetail = async (req, res) => {
       }
     }
 
-    const formatNode = (n) => {
-      const out = { category_name: n.category_name };
-      out.description = n.description || '';
-      out.slug = n.slug !== undefined ? (n.slug || '') : '';
-      if (Array.isArray(n.children) && n.children.length > 0) {
-        out.children = n.children.map(formatNode);
-      }
-      return out;
-    };
-
-    return res.json(formatNode(root));
+    return res.json(formatCategoryTreeNode(root));
   } catch (error) {
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
