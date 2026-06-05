@@ -1,380 +1,631 @@
 -- =========================
--- USER
+-- NGUOI DUNG
 -- =========================
-CREATE TABLE users (
-  user_id INT PRIMARY KEY,
-  email VARCHAR(100) UNIQUE NOT NULL,
-  username VARCHAR(50) UNIQUE NOT NULL,
-  password VARCHAR(255),
-  first_name VARCHAR(50),
-  last_name VARCHAR(50),
-  phone_number VARCHAR(15),
-  role VARCHAR(20) DEFAULT 'customer',
-  status VARCHAR(20) DEFAULT 'active',
-  failed_login_attempts INT DEFAULT 0 CHECK (failed_login_attempts >= 0),
-  last_login TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE nguoi_dung (
+  nguoi_dung_id INT PRIMARY KEY,
+  thu_dien_tu VARCHAR(100) UNIQUE NOT NULL,
+  ten_dang_nhap VARCHAR(50) UNIQUE NOT NULL,
+  mat_khau VARCHAR(255),
+  ho VARCHAR(50),
+  ten VARCHAR(50),
+  so_dien_thoai VARCHAR(15),
+  vai_tro VARCHAR(20) DEFAULT 'customer',
+  trang_thai VARCHAR(20) DEFAULT 'active',
+  so_lan_dang_nhap_sai INT DEFAULT 0 CHECK (so_lan_dang_nhap_sai >= 0),
+  lan_dang_nhap_cuoi TIMESTAMP,
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE password_reset_tokens (
-  id BIGSERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  channel VARCHAR(20) NOT NULL,
-  destination VARCHAR(100) NOT NULL,
-  otp_hash VARCHAR(255) NOT NULL,
-  attempt_count INT DEFAULT 0 CHECK (attempt_count >= 0),
-  expires_at TIMESTAMP NOT NULL,
-  used_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+CREATE TABLE ma_dat_lai_mat_khau (
+  ma_id BIGSERIAL PRIMARY KEY,
+  nguoi_dung_id INT NOT NULL,
+  kenh VARCHAR(20) NOT NULL,
+  dia_chi_nhan VARCHAR(100) NOT NULL,
+  ma_otp_hash VARCHAR(255) NOT NULL,
+  so_lan_thu INT DEFAULT 0 CHECK (so_lan_thu >= 0),
+  het_han_luc TIMESTAMP NOT NULL,
+  da_su_dung_luc TIMESTAMP,
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE CASCADE
 );
 
-ALTER TABLE password_reset_tokens ADD CONSTRAINT chk_password_reset_channel CHECK (
-  channel IN ('email')
+ALTER TABLE ma_dat_lai_mat_khau ADD CONSTRAINT chk_ma_dat_lai_kenh CHECK (
+  kenh IN ('email')
 );
 
-CREATE INDEX idx_password_reset_tokens_user_channel_created_at
-  ON password_reset_tokens (user_id, channel, created_at DESC);
+CREATE INDEX idx_ma_dat_lai_mat_khau_nguoi_dung_kenh_ngay_tao
+  ON ma_dat_lai_mat_khau (nguoi_dung_id, kenh, ngay_tao DESC);
 
-
--- MULTI AUTH
-CREATE TABLE user_auth_provider (
-  id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  provider VARCHAR(20) NOT NULL,
-  provider_id VARCHAR(255),
-  UNIQUE(provider, provider_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+CREATE TABLE nguoi_dung_xac_thuc (
+  xac_thuc_id SERIAL PRIMARY KEY,
+  nguoi_dung_id INT NOT NULL,
+  nha_cung_cap VARCHAR(20) NOT NULL,
+  nha_cung_cap_id VARCHAR(255),
+  UNIQUE(nha_cung_cap, nha_cung_cap_id),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE CASCADE
 );
 
-ALTER TABLE user_auth_provider ADD CONSTRAINT chk_provider CHECK (
-  provider IN ('local','google')
+ALTER TABLE nguoi_dung_xac_thuc ADD CONSTRAINT chk_nha_cung_cap CHECK (
+  nha_cung_cap IN ('local','google')
 );
 
 -- =========================
--- CATEGORY
+-- DANH MUC
 -- =========================
-CREATE TABLE categories (
-  category_id SERIAL PRIMARY KEY,
-  category_name VARCHAR(100) UNIQUE NOT NULL,
-  description TEXT,
-  parent_category_id INT,
+CREATE TABLE danh_muc (
+  danh_muc_id SERIAL PRIMARY KEY,
+  ten_danh_muc VARCHAR(100) UNIQUE NOT NULL,
+  mo_ta TEXT,
+  danh_muc_cha_id INT,
   slug VARCHAR(100) UNIQUE NOT NULL,
-  FOREIGN KEY (parent_category_id) REFERENCES categories(category_id)
+  FOREIGN KEY (danh_muc_cha_id) REFERENCES danh_muc(danh_muc_id)
 );
 
-CREATE UNIQUE INDEX idx_categories_unique_normalized_name
-  ON categories (LOWER(TRIM(category_name)));
+CREATE UNIQUE INDEX idx_danh_muc_unique_normalized_name
+  ON danh_muc (LOWER(TRIM(ten_danh_muc)));
 
 -- =========================
--- PRODUCT
+-- SAN PHAM
 -- =========================
-CREATE TABLE product_types ( -- *Loại sản phẩm (vd: sợi len, dụng cụ, phụ kiện...)
-  type_id SERIAL PRIMARY KEY,
-  type_name VARCHAR(100) NOT NULL,
-  description TEXT
+CREATE TABLE loai_san_pham (
+  loai_san_pham_id SERIAL PRIMARY KEY,
+  ten_loai VARCHAR(100) NOT NULL,
+  mo_ta TEXT
 );
 
-CREATE TABLE products (
-  product_id SERIAL PRIMARY KEY,
-  type_id INT,
-  category_id INT,
-  product_name VARCHAR(150) NOT NULL,
-  description TEXT,
-  product_status VARCHAR(20) DEFAULT 'active',
-  FOREIGN KEY (type_id) REFERENCES product_types(type_id),
-  FOREIGN KEY (category_id) REFERENCES categories(category_id)
+CREATE TABLE san_pham (
+  san_pham_id SERIAL PRIMARY KEY,
+  loai_san_pham_id INT,
+  danh_muc_id INT,
+  ten_san_pham VARCHAR(150) NOT NULL,
+  mo_ta TEXT,
+  trang_thai_san_pham VARCHAR(20) DEFAULT 'active',
+  FOREIGN KEY (loai_san_pham_id) REFERENCES loai_san_pham(loai_san_pham_id),
+  FOREIGN KEY (danh_muc_id) REFERENCES danh_muc(danh_muc_id)
 );
 
-CREATE TABLE product_variants (
-  variant_id SERIAL PRIMARY KEY,
-  product_id INT NOT NULL,
+CREATE TABLE bien_the_san_pham (
+  bien_the_id SERIAL PRIMARY KEY,
+  san_pham_id INT NOT NULL,
   sku VARCHAR(50) UNIQUE NOT NULL,
   slug VARCHAR(150) UNIQUE NOT NULL,
-  price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
-  color VARCHAR(50),
-  size VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(product_id)
+  gia NUMERIC(10,2) NOT NULL CHECK (gia >= 0),
+  mau_sac VARCHAR(50),
+  kich_co VARCHAR(50),
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (san_pham_id) REFERENCES san_pham(san_pham_id)
 );
 
-CREATE TABLE inventory (
-  inventory_id SERIAL PRIMARY KEY,
-  variant_id INT NOT NULL,
-  stock_quantity INT DEFAULT 0 CHECK (stock_quantity >= 0),
-  UNIQUE(variant_id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
+CREATE TABLE ton_kho (
+  ton_kho_id SERIAL PRIMARY KEY,
+  bien_the_id INT NOT NULL,
+  so_luong_ton INT DEFAULT 0 CHECK (so_luong_ton >= 0),
+  UNIQUE(bien_the_id),
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
 );
 
-CREATE TABLE variant_images (
-  image_id SERIAL PRIMARY KEY,
-  variant_id INT NOT NULL,
-  image_url VARCHAR(255) NOT NULL,
-  sort_order INT DEFAULT 0,
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
+CREATE TABLE hinh_anh_bien_the (
+  hinh_anh_id SERIAL PRIMARY KEY,
+  bien_the_id INT NOT NULL,
+  duong_dan_anh VARCHAR(255) NOT NULL,
+  thu_tu_hien_thi INT DEFAULT 0,
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
 );
 
 -- =========================
 -- WORKSHOP
 -- =========================
-CREATE TABLE workshops (
-  workshop_id SERIAL PRIMARY KEY,
-  product_id INT NOT NULL,
-  title VARCHAR(150) NOT NULL,
-  description TEXT,
-  location VARCHAR(255),
-  FOREIGN KEY (product_id) REFERENCES products(product_id)
+CREATE TABLE hoi_thao (
+  hoi_thao_id SERIAL PRIMARY KEY,
+  san_pham_id INT NOT NULL,
+  tieu_de VARCHAR(150) NOT NULL,
+  mo_ta TEXT,
+  dia_diem VARCHAR(255),
+  FOREIGN KEY (san_pham_id) REFERENCES san_pham(san_pham_id)
 );
 
-CREATE TABLE workshop_variants (
+CREATE TABLE hoi_thao_bien_the (
+  hoi_thao_bien_the_id SERIAL PRIMARY KEY,
+  hoi_thao_id INT NOT NULL,
+  bien_the_id INT NOT NULL,
+  ngay_bat_dau TIMESTAMP NOT NULL,
+  ngay_ket_thuc TIMESTAMP NOT NULL,
+  trang_thai VARCHAR(20) DEFAULT 'open',
+  UNIQUE(hoi_thao_id, bien_the_id),
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (hoi_thao_id) REFERENCES hoi_thao(hoi_thao_id),
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
+);
+
+ALTER TABLE hoi_thao_bien_the ADD CONSTRAINT chk_hoi_thao_trang_thai CHECK (
+  trang_thai IN ('open','closed','cancelled')
+);
+
+-- =========================
+-- GIO HANG
+-- =========================
+CREATE TABLE gio_hang (
+  gio_hang_id SERIAL PRIMARY KEY,
+  nguoi_dung_id INT NOT NULL,
+  bien_the_id INT NOT NULL,
+  so_luong INT DEFAULT 1 CHECK (so_luong > 0),
+  UNIQUE(nguoi_dung_id, bien_the_id),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
+);
+
+-- =========================
+-- PHIEU GIAM GIA
+-- =========================
+CREATE TABLE phieu_giam_gia (
+  phieu_giam_gia_id SERIAL PRIMARY KEY,
+  ma VARCHAR(50) UNIQUE NOT NULL,
+  ten_phieu VARCHAR(20),
+  kieu_giam_gia VARCHAR(20),
+  gia_tri NUMERIC(10,2) CHECK (gia_tri >= 0),
+  gia_tri_toi_thieu NUMERIC(10,2),
+  giam_toi_da NUMERIC(10,2),
+  so_luong INT,
+  da_dung INT DEFAULT 0,
+  ngay_bat_dau TIMESTAMP,
+  ngay_ket_thuc TIMESTAMP
+);
+
+ALTER TABLE phieu_giam_gia ADD CONSTRAINT chk_kieu_giam_gia CHECK (
+  kieu_giam_gia IN ('percent','fixed')
+);
+
+CREATE TABLE nguoi_dung_phieu_giam_gia (
   id SERIAL PRIMARY KEY,
-  workshop_id INT NOT NULL,
-  variant_id INT NOT NULL,
-  start_date TIMESTAMP NOT NULL,
-  end_date TIMESTAMP NOT NULL,
-  status VARCHAR(20) DEFAULT 'open',
-  UNIQUE(workshop_id, variant_id),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (workshop_id) REFERENCES workshops(workshop_id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
+  phieu_giam_gia_id INT NOT NULL,
+  nguoi_dung_id INT NOT NULL,
+  so_lan_su_dung INT DEFAULT 0,
+  UNIQUE(phieu_giam_gia_id, nguoi_dung_id),
+  FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id)
 );
 
-ALTER TABLE workshop_variants ADD CONSTRAINT chk_workshop_status CHECK (
-  status IN ('open','closed','cancelled')
-);
-
--- =========================
--- CART
--- =========================
-CREATE TABLE cart (
-  cart_id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  variant_id INT NOT NULL,
-  quantity INT DEFAULT 1 CHECK (quantity > 0),
-  UNIQUE(user_id, variant_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
-);
-
--- =========================
--- VOUCHER
--- =========================
-CREATE TABLE vouchers (
-  voucher_id SERIAL PRIMARY KEY,
-  code VARCHAR(50) UNIQUE NOT NULL,
-  voucher_name VARCHAR(20),
-  discount_type VARCHAR(20),
-  value NUMERIC(10,2) CHECK (value >= 0),
-  minimum_value NUMERIC(10,2),
-  max_discount NUMERIC(10,2),
-  quantity INT,
-  used_count INT DEFAULT 0,
-  start_date TIMESTAMP,
-  end_date TIMESTAMP
-);
-
-ALTER TABLE vouchers ADD CONSTRAINT chk_discount_type CHECK (
-  discount_type IN ('percent','fixed')
-);
-
-CREATE TABLE user_vouchers (
+CREATE TABLE phieu_giam_gia_san_pham (
   id SERIAL PRIMARY KEY,
-  voucher_id INT NOT NULL,
-  user_id INT NOT NULL,
-  usage_count INT DEFAULT 0,
-  UNIQUE(voucher_id, user_id),
-  FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id)
+  phieu_giam_gia_id INT,
+  san_pham_id INT,
+  bien_the_id INT,
+  FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id)
 );
 
-CREATE TABLE voucher_products (
+-- =========================
+-- KHUYEN MAI
+-- =========================
+CREATE TABLE khuyen_mai (
+  khuyen_mai_id SERIAL PRIMARY KEY,
+  tieu_de VARCHAR(100),
+  kieu_giam_gia VARCHAR(20) DEFAULT 'percent' CHECK (kieu_giam_gia IN ('percent','fixed')),
+  gia_tri NUMERIC(10,2) NOT NULL,
+  gia_tri_don_hang_toi_thieu NUMERIC(10,2) DEFAULT 0,
+  ngay_bat_dau TIMESTAMP,
+  ngay_ket_thuc TIMESTAMP,
+  trang_thai VARCHAR(20) DEFAULT 'active' CHECK (trang_thai IN ('active','inactive')),
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE khuyen_mai_san_pham (
   id SERIAL PRIMARY KEY,
-  voucher_id INT,
-  product_id INT,
-  variant_id INT,
-  FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id)
+  khuyen_mai_id INT NOT NULL,
+  san_pham_id INT,
+  bien_the_id INT,
+  FOREIGN KEY (khuyen_mai_id) REFERENCES khuyen_mai(khuyen_mai_id)
 );
 
 -- =========================
--- PROMOTION (KHUYẾN MÃI)
+-- TINH THANH
 -- =========================
-CREATE TABLE promotions (
-  promotion_id SERIAL PRIMARY KEY,
-  title VARCHAR(100),
-  discount_type VARCHAR(20) DEFAULT 'percent' CHECK (discount_type IN ('percent','fixed')),
-  value NUMERIC(10,2) NOT NULL,
-  min_order_value NUMERIC(10,2) DEFAULT 0,
-  start_date TIMESTAMP,
-  end_date TIMESTAMP,
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','inactive')),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE promotion_products (
-  id SERIAL PRIMARY KEY,
-  promotion_id INT NOT NULL,
-  product_id INT,
-  variant_id INT,
-  FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id)
+CREATE TABLE tinh_thanh (
+  ma_tinh VARCHAR(10) PRIMARY KEY,
+  ten_tinh VARCHAR(100) NOT NULL
 );
 
 -- =========================
--- CITY
+-- PHUONG XA
 -- =========================
-CREATE TABLE cities (
-  city_code VARCHAR(10) PRIMARY KEY,
-  city_name VARCHAR(100) NOT NULL
+CREATE TABLE phuong_xa (
+  phuong_xa_id SERIAL PRIMARY KEY,
+  ten_phuong_xa VARCHAR(100) NOT NULL,
+  ma_tinh VARCHAR(10),
+  FOREIGN KEY (ma_tinh) REFERENCES tinh_thanh(ma_tinh)
 );
 
 -- =========================
--- WARD
+-- DON HANG
 -- =========================
-CREATE TABLE wards (
-  ward_id SERIAL PRIMARY KEY,
-  ward_name VARCHAR(100) NOT NULL,
-  city_code VARCHAR(10),
-  FOREIGN KEY (city_code) REFERENCES cities(city_code)
-);
-
--- =========================
--- ORDER
--- =========================
-CREATE TABLE orders (
-  order_id VARCHAR(25) PRIMARY KEY,
-  user_id INT,
-  status VARCHAR(20) DEFAULT 'pending',
-  total_amount NUMERIC(10,2) CHECK (total_amount >= 0),
-  voucher_id INT,
-  discount_amount NUMERIC(10,2),
+CREATE TABLE don_hang (
+  don_hang_id VARCHAR(25) PRIMARY KEY,
+  nguoi_dung_id INT,
+  trang_thai VARCHAR(20) DEFAULT 'pending',
+  tong_tien NUMERIC(10,2) CHECK (tong_tien >= 0),
+  phieu_giam_gia_id INT,
+  so_tien_giam NUMERIC(10,2),
   idempotency_key VARCHAR(100) UNIQUE,
-  ward_id INT,
-  shipping_address VARCHAR(255) NOT NULL,
-  recipient_name VARCHAR(100) NOT NULL,
-  recipient_phone VARCHAR(15) NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (voucher_id) REFERENCES vouchers(voucher_id),
-  FOREIGN KEY (ward_id) REFERENCES wards(ward_id)
+  phuong_xa_id INT,
+  dia_chi_giao_hang VARCHAR(255) NOT NULL,
+  ten_nguoi_nhan VARCHAR(100) NOT NULL,
+  sdt_nguoi_nhan VARCHAR(15) NOT NULL,
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
+  FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id),
+  FOREIGN KEY (phuong_xa_id) REFERENCES phuong_xa(phuong_xa_id)
 );
 
-ALTER TABLE orders ADD CONSTRAINT chk_order_status CHECK (
-  status IN ('pending','processing','shipping','completed','cancelled')
+ALTER TABLE don_hang ADD CONSTRAINT chk_trang_thai_don_hang CHECK (
+  trang_thai IN ('pending','processing','shipping','completed','cancelled')
 );
 
-CREATE TABLE order_details (
-  order_detail_id SERIAL PRIMARY KEY,
-  order_id VARCHAR(25) NOT NULL,
-  variant_id INT,
-  product_name VARCHAR(150) NOT NULL,
-  price NUMERIC(10,2) NOT NULL CHECK (price >= 0),
-  quantity INT NOT NULL CHECK (quantity > 0),
-  FOREIGN KEY (order_id) REFERENCES orders(order_id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id) ON DELETE SET NULL
+CREATE TABLE chi_tiet_don_hang (
+  chi_tiet_don_hang_id SERIAL PRIMARY KEY,
+  don_hang_id VARCHAR(25) NOT NULL,
+  bien_the_id INT,
+  ten_san_pham VARCHAR(150) NOT NULL,
+  gia NUMERIC(10,2) NOT NULL CHECK (gia >= 0),
+  so_luong INT NOT NULL CHECK (so_luong > 0),
+  FOREIGN KEY (don_hang_id) REFERENCES don_hang(don_hang_id),
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id) ON DELETE SET NULL
 );
 
-CREATE TABLE order_status_history ( -- LỊCH SỬ TRẠNG THÁI ĐƠN HÀNG LƯU LẠI MỖI KHI CÓ THAY ĐỔI TRẠNG THÁI
-  id SERIAL PRIMARY KEY,
-  order_id VARCHAR(25),
-  status VARCHAR(20),
-  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(order_id)
-);
-
--- =========================
--- PAYMENT
--- =========================
-CREATE TABLE payments (
-  payment_id SERIAL PRIMARY KEY,
-  order_id VARCHAR(25) UNIQUE NOT NULL,
-  method VARCHAR(20) DEFAULT 'COD',
-  status VARCHAR(20) DEFAULT 'pending',
-  reference_code VARCHAR(100),
-  FOREIGN KEY (order_id) REFERENCES orders(order_id)
-);
-
--- PAYMENT METHOD
-ALTER TABLE payments ADD CONSTRAINT chk_payment_method CHECK (
-  method IN ('COD','MOMO')
-);
-
--- PAYMENT STATUS
-ALTER TABLE payments ADD CONSTRAINT chk_payment_status CHECK (
-  status IN ('pending','paid','failed','refunded')
+CREATE TABLE lich_su_trang_thai_don_hang (
+  lich_su_id SERIAL PRIMARY KEY,
+  don_hang_id VARCHAR(25),
+  trang_thai VARCHAR(20),
+  thay_doi_luc TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (don_hang_id) REFERENCES don_hang(don_hang_id)
 );
 
 -- =========================
--- REFUND (HOÀN TIỀN)
+-- THANH TOAN
 -- =========================
-CREATE TABLE refunds (
-  refund_id SERIAL PRIMARY KEY,
-  order_id VARCHAR(25) NOT NULL,
-  amount NUMERIC(10,2) NOT NULL CHECK (amount >= 0),
-  reason TEXT,
-  status VARCHAR(20) DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+CREATE TABLE thanh_toan (
+  thanh_toan_id SERIAL PRIMARY KEY,
+  don_hang_id VARCHAR(25) UNIQUE NOT NULL,
+  phuong_thuc VARCHAR(20) DEFAULT 'COD',
+  trang_thai VARCHAR(20) DEFAULT 'pending',
+  ma_tham_chieu VARCHAR(100),
+  FOREIGN KEY (don_hang_id) REFERENCES don_hang(don_hang_id)
 );
 
-ALTER TABLE refunds ADD CONSTRAINT chk_refund_status CHECK (
-  status IN ('pending','success','failed')
+ALTER TABLE thanh_toan ADD CONSTRAINT chk_phuong_thuc_thanh_toan CHECK (
+  phuong_thuc IN ('COD','MOMO')
+);
+
+ALTER TABLE thanh_toan ADD CONSTRAINT chk_trang_thai_thanh_toan CHECK (
+  trang_thai IN ('pending','paid','failed','refunded')
+);
+
+-- =========================
+-- HOAN TIEN
+-- =========================
+CREATE TABLE hoan_tien (
+  hoan_tien_id SERIAL PRIMARY KEY,
+  don_hang_id VARCHAR(25) NOT NULL,
+  so_tien NUMERIC(10,2) NOT NULL CHECK (so_tien >= 0),
+  ly_do TEXT,
+  trang_thai VARCHAR(20) DEFAULT 'pending',
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (don_hang_id) REFERENCES don_hang(don_hang_id)
+);
+
+ALTER TABLE hoan_tien ADD CONSTRAINT chk_trang_thai_hoan_tien CHECK (
+  trang_thai IN ('pending','success','failed')
 );
 
 -- =========================
 -- LOYALTY
 -- =========================
-CREATE TABLE loyalty_points ( -- ĐIỂM THƯỞNG CHO KHÁCH HÀNG
-  user_id INT PRIMARY KEY,
-  total_points INT DEFAULT 0 CHECK (total_points >= 0),
-  FOREIGN KEY (user_id) REFERENCES users(user_id)
+CREATE TABLE diem_tich_luy (
+  nguoi_dung_id INT PRIMARY KEY,
+  tong_diem INT DEFAULT 0 CHECK (tong_diem >= 0),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id)
 );
 
 -- =========================
--- WISHLIST
+-- DANH SACH YEU THICH
 -- =========================
-CREATE TABLE wishlist (
-  wishlist_id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  variant_id INT NOT NULL,
-  UNIQUE(user_id, variant_id),
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (variant_id) REFERENCES product_variants(variant_id)
+CREATE TABLE danh_sach_yeu_thich (
+  danh_sach_yeu_thich_id SERIAL PRIMARY KEY,
+  nguoi_dung_id INT NOT NULL,
+  bien_the_id INT NOT NULL,
+  UNIQUE(nguoi_dung_id, bien_the_id),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
 );
 
-CREATE TABLE wishlist_notifications (
-  id SERIAL PRIMARY KEY,
-  user_id INT,
-  product_id INT,
-  notification_type VARCHAR(20) CHECK (notification_type IN ('price_drop','back_in_stock')),
-  sent BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE thong_bao_yeu_thich (
+  thong_bao_id SERIAL PRIMARY KEY,
+  nguoi_dung_id INT,
+  san_pham_id INT,
+  loai_thong_bao VARCHAR(20) CHECK (loai_thong_bao IN ('price_drop','back_in_stock')),
+  da_gui BOOLEAN DEFAULT FALSE,
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =========================
 -- SPIN
 -- =========================
-CREATE TABLE spin_turns (
-  user_id INT PRIMARY KEY,
-  turn_count INT DEFAULT 0 CHECK (turn_count >= 0),
-  FOREIGN KEY (user_id) REFERENCES users(user_id)
+CREATE TABLE luot_quay (
+  nguoi_dung_id INT PRIMARY KEY,
+  so_luot INT DEFAULT 0 CHECK (so_luot >= 0),
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id)
 );
 
-CREATE TABLE spin_reward_config (
-  reward_id SERIAL PRIMARY KEY,
-  reward_type VARCHAR(20),
-  value INT CHECK (value >= 0),
-  win_rate NUMERIC(5,2) CHECK (win_rate >= 0 AND win_rate <= 100),
-  remaining_quantity INT,
-  status VARCHAR(20) DEFAULT 'active'
+CREATE TABLE cau_hinh_qua_quay (
+  cau_hinh_qua_quay_id SERIAL PRIMARY KEY,
+  loai_qua VARCHAR(20),
+  gia_tri INT CHECK (gia_tri >= 0),
+  ty_le_thang NUMERIC(5,2) CHECK (ty_le_thang >= 0 AND ty_le_thang <= 100),
+  so_luong_con_lai INT,
+  trang_thai VARCHAR(20) DEFAULT 'active'
 );
 
-ALTER TABLE spin_reward_config ADD CONSTRAINT chk_spin_reward CHECK (
-  reward_type IN ('voucher','point','none')
+ALTER TABLE cau_hinh_qua_quay ADD CONSTRAINT chk_qua_quay CHECK (
+  loai_qua IN ('voucher','point','none')
 );
 
-CREATE TABLE spin_history (
-  history_id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL,
-  reward_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(user_id),
-  FOREIGN KEY (reward_id) REFERENCES spin_reward_config(reward_id)
+CREATE TABLE lich_su_quay (
+  lich_su_quay_id SERIAL PRIMARY KEY,
+  nguoi_dung_id INT NOT NULL,
+  cau_hinh_qua_quay_id INT NOT NULL,
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
+  FOREIGN KEY (cau_hinh_qua_quay_id) REFERENCES cau_hinh_qua_quay(cau_hinh_qua_quay_id)
 );
+
+-- =========================
+-- COMPATIBILITY VIEWS
+-- =========================
+CREATE VIEW users AS
+SELECT nguoi_dung_id AS user_id,
+       thu_dien_tu AS email,
+       ten_dang_nhap AS username,
+       mat_khau AS password,
+       ho AS first_name,
+       ten AS last_name,
+       so_dien_thoai AS phone_number,
+       vai_tro AS role,
+       trang_thai AS status,
+       so_lan_dang_nhap_sai AS failed_login_attempts,
+       lan_dang_nhap_cuoi AS last_login,
+       ngay_tao AS created_at
+FROM nguoi_dung;
+
+CREATE VIEW password_reset_tokens AS
+SELECT ma_id AS id,
+       nguoi_dung_id AS user_id,
+       kenh AS channel,
+       dia_chi_nhan AS destination,
+       ma_otp_hash AS otp_hash,
+       so_lan_thu AS attempt_count,
+       het_han_luc AS expires_at,
+       da_su_dung_luc AS used_at,
+       ngay_tao AS created_at
+FROM ma_dat_lai_mat_khau;
+
+CREATE VIEW user_auth_provider AS
+SELECT xac_thuc_id AS id,
+       nguoi_dung_id AS user_id,
+       nha_cung_cap AS provider,
+       nha_cung_cap_id AS provider_id
+FROM nguoi_dung_xac_thuc;
+
+CREATE VIEW categories AS
+SELECT danh_muc_id AS category_id,
+       ten_danh_muc AS category_name,
+       mo_ta AS description,
+       danh_muc_cha_id AS parent_category_id,
+       slug
+FROM danh_muc;
+
+CREATE VIEW product_types AS
+SELECT loai_san_pham_id AS type_id,
+       ten_loai AS type_name,
+       mo_ta AS description
+FROM loai_san_pham;
+
+CREATE VIEW products AS
+SELECT san_pham_id AS product_id,
+       loai_san_pham_id AS type_id,
+       danh_muc_id AS category_id,
+       ten_san_pham AS product_name,
+       mo_ta AS description,
+       trang_thai_san_pham AS product_status
+FROM san_pham;
+
+CREATE VIEW product_variants AS
+SELECT bien_the_id AS variant_id,
+       san_pham_id AS product_id,
+       sku,
+       slug,
+       gia AS price,
+       mau_sac AS color,
+       kich_co AS size,
+       ngay_tao AS created_at
+FROM bien_the_san_pham;
+
+CREATE VIEW inventory AS
+SELECT ton_kho_id AS inventory_id,
+       bien_the_id AS variant_id,
+       so_luong_ton AS stock_quantity
+FROM ton_kho;
+
+CREATE VIEW variant_images AS
+SELECT hinh_anh_id AS image_id,
+       bien_the_id AS variant_id,
+       duong_dan_anh AS image_url,
+       thu_tu_hien_thi AS sort_order
+FROM hinh_anh_bien_the;
+
+CREATE VIEW workshops AS
+SELECT hoi_thao_id AS workshop_id,
+       san_pham_id AS product_id,
+       tieu_de AS title,
+       mo_ta AS description,
+       dia_diem AS location
+FROM hoi_thao;
+
+CREATE VIEW workshop_variants AS
+SELECT hoi_thao_bien_the_id AS id,
+       hoi_thao_id AS workshop_id,
+       bien_the_id AS variant_id,
+       ngay_bat_dau AS start_date,
+       ngay_ket_thuc AS end_date,
+       trang_thai AS status,
+       ngay_tao AS created_at
+FROM hoi_thao_bien_the;
+
+CREATE VIEW cart AS
+SELECT gio_hang_id AS cart_id,
+       nguoi_dung_id AS user_id,
+       bien_the_id AS variant_id,
+       so_luong AS quantity
+FROM gio_hang;
+
+CREATE VIEW vouchers AS
+SELECT phieu_giam_gia_id AS voucher_id,
+       ma AS code,
+       ten_phieu AS voucher_name,
+       kieu_giam_gia AS discount_type,
+       gia_tri AS value,
+       gia_tri_toi_thieu AS minimum_value,
+       giam_toi_da AS max_discount,
+       so_luong AS quantity,
+       da_dung AS used_count,
+       ngay_bat_dau AS start_date,
+       ngay_ket_thuc AS end_date
+FROM phieu_giam_gia;
+
+CREATE VIEW user_vouchers AS
+SELECT id,
+       phieu_giam_gia_id AS voucher_id,
+       nguoi_dung_id AS user_id,
+       so_lan_su_dung AS usage_count
+FROM nguoi_dung_phieu_giam_gia;
+
+CREATE VIEW voucher_products AS
+SELECT id,
+       phieu_giam_gia_id AS voucher_id,
+       san_pham_id AS product_id,
+       bien_the_id AS variant_id
+FROM phieu_giam_gia_san_pham;
+
+CREATE VIEW promotions AS
+SELECT khuyen_mai_id AS promotion_id,
+       tieu_de AS title,
+       kieu_giam_gia AS discount_type,
+       gia_tri AS value,
+       gia_tri_don_hang_toi_thieu AS min_order_value,
+       ngay_bat_dau AS start_date,
+       ngay_ket_thuc AS end_date,
+       trang_thai AS status,
+       ngay_tao AS created_at
+FROM khuyen_mai;
+
+CREATE VIEW promotion_products AS
+SELECT id,
+       khuyen_mai_id AS promotion_id,
+       san_pham_id AS product_id,
+       bien_the_id AS variant_id
+FROM khuyen_mai_san_pham;
+
+CREATE VIEW cities AS
+SELECT ma_tinh AS city_code,
+       ten_tinh AS city_name
+FROM tinh_thanh;
+
+CREATE VIEW wards AS
+SELECT phuong_xa_id AS ward_id,
+       ten_phuong_xa AS ward_name,
+       ma_tinh AS city_code
+FROM phuong_xa;
+
+CREATE VIEW orders AS
+SELECT don_hang_id AS order_id,
+       nguoi_dung_id AS user_id,
+       trang_thai AS status,
+       tong_tien AS total_amount,
+       phieu_giam_gia_id AS voucher_id,
+       so_tien_giam AS discount_amount,
+       idempotency_key,
+       phuong_xa_id AS ward_id,
+       dia_chi_giao_hang AS shipping_address,
+       ten_nguoi_nhan AS recipient_name,
+       sdt_nguoi_nhan AS recipient_phone
+FROM don_hang;
+
+CREATE VIEW order_details AS
+SELECT chi_tiet_don_hang_id AS order_detail_id,
+       don_hang_id AS order_id,
+       bien_the_id AS variant_id,
+       ten_san_pham AS product_name,
+       gia AS price,
+       so_luong AS quantity
+FROM chi_tiet_don_hang;
+
+CREATE VIEW order_status_history AS
+SELECT lich_su_id AS id,
+       don_hang_id AS order_id,
+       trang_thai AS status,
+       thay_doi_luc AS changed_at
+FROM lich_su_trang_thai_don_hang;
+
+CREATE VIEW payments AS
+SELECT thanh_toan_id AS payment_id,
+       don_hang_id AS order_id,
+       phuong_thuc AS method,
+       trang_thai AS status,
+       ma_tham_chieu AS reference_code
+FROM thanh_toan;
+
+CREATE VIEW refunds AS
+SELECT hoan_tien_id AS refund_id,
+       don_hang_id AS order_id,
+       so_tien AS amount,
+       ly_do AS reason,
+       trang_thai AS status,
+       ngay_tao AS created_at
+FROM hoan_tien;
+
+CREATE VIEW loyalty_points AS
+SELECT nguoi_dung_id AS user_id,
+       tong_diem AS total_points
+FROM diem_tich_luy;
+
+CREATE VIEW wishlist AS
+SELECT danh_sach_yeu_thich_id AS wishlist_id,
+       nguoi_dung_id AS user_id,
+       bien_the_id AS variant_id
+FROM danh_sach_yeu_thich;
+
+CREATE VIEW wishlist_notifications AS
+SELECT thong_bao_id AS id,
+       nguoi_dung_id AS user_id,
+       san_pham_id AS product_id,
+       loai_thong_bao AS notification_type,
+       da_gui AS sent,
+       ngay_tao AS created_at
+FROM thong_bao_yeu_thich;
+
+CREATE VIEW spin_turns AS
+SELECT nguoi_dung_id AS user_id,
+       so_luot AS turn_count
+FROM luot_quay;
+
+CREATE VIEW spin_reward_config AS
+SELECT cau_hinh_qua_quay_id AS reward_id,
+       loai_qua AS reward_type,
+       gia_tri AS value,
+       ty_le_thang AS win_rate,
+       so_luong_con_lai AS remaining_quantity,
+       trang_thai AS status
+FROM cau_hinh_qua_quay;
+
+CREATE VIEW spin_history AS
+SELECT lich_su_quay_id AS history_id,
+       nguoi_dung_id AS user_id,
+       cau_hinh_qua_quay_id AS reward_id,
+       ngay_tao AS created_at
+FROM lich_su_quay;

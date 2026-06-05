@@ -23,14 +23,14 @@ const extractAndVerifyToken = (authHeader) => {
 const normalizeText = (value) => (value || '').trim();
 
 const getNextUserId = async () => {
-  const nextIdResult = await pool.query('SELECT COALESCE(MAX(user_id), 0) + 1 AS next_id FROM users');
+  const nextIdResult = await pool.query('SELECT COALESCE(MAX(nguoi_dung_id), 0) + 1 AS next_id FROM nguoi_dung');
   return nextIdResult.rows[0].next_id;
 };
 
 const isUsernameTaken = async (username, ignoreUserId = null) => {
   const query = ignoreUserId
-    ? 'SELECT user_id FROM users WHERE LOWER(TRIM(username)) = LOWER(TRIM($1)) AND user_id <> $2 LIMIT 1'
-    : 'SELECT user_id FROM users WHERE LOWER(TRIM(username)) = LOWER(TRIM($1)) LIMIT 1';
+    ? 'SELECT nguoi_dung_id FROM nguoi_dung WHERE LOWER(TRIM(ten_dang_nhap)) = LOWER(TRIM($1)) AND nguoi_dung_id <> $2 LIMIT 1'
+    : 'SELECT nguoi_dung_id FROM nguoi_dung WHERE LOWER(TRIM(ten_dang_nhap)) = LOWER(TRIM($1)) LIMIT 1';
   const params = ignoreUserId ? [username, ignoreUserId] : [username];
 
   const result = await pool.query(query, params);
@@ -39,8 +39,8 @@ const isUsernameTaken = async (username, ignoreUserId = null) => {
 
 const isEmailTaken = async (email, ignoreUserId = null) => {
   const query = ignoreUserId
-    ? 'SELECT user_id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) AND user_id <> $2 LIMIT 1'
-    : 'SELECT user_id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM($1)) LIMIT 1';
+    ? 'SELECT nguoi_dung_id FROM nguoi_dung WHERE LOWER(TRIM(thu_dien_tu)) = LOWER(TRIM($1)) AND nguoi_dung_id <> $2 LIMIT 1'
+    : 'SELECT nguoi_dung_id FROM nguoi_dung WHERE LOWER(TRIM(thu_dien_tu)) = LOWER(TRIM($1)) LIMIT 1';
   const params = ignoreUserId ? [email, ignoreUserId] : [email];
 
   const result = await pool.query(query, params);
@@ -58,7 +58,17 @@ const normalizeRole = (value) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const result = await pool.query('SELECT user_id, username, first_name, last_name, email, phone_number, status, role FROM users');
+    const result = await pool.query(
+      `SELECT nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              ho AS first_name,
+              ten AS last_name,
+              thu_dien_tu AS email,
+              so_dien_thoai AS phone_number,
+              trang_thai AS status,
+              vai_tro AS role
+       FROM nguoi_dung`
+    );
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Lỗi máy chủ' });
@@ -69,7 +79,18 @@ const getAllUsers = async (req, res) => {
 const getUserById = async (req, res) => {
   try {
     const { user_id } = req.params;
-    const result = await pool.query('SELECT user_id, username, first_name, last_name, email, phone_number, role FROM users WHERE user_id = $1', [user_id]);
+    const result = await pool.query(
+      `SELECT nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              ho AS first_name,
+              ten AS last_name,
+              thu_dien_tu AS email,
+              so_dien_thoai AS phone_number,
+              vai_tro AS role
+       FROM nguoi_dung
+       WHERE nguoi_dung_id = $1`,
+      [user_id]
+    );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
@@ -130,9 +151,16 @@ const createUser = async (req, res) => {
     const nextId = await getNextUserId();
 
     const result = await pool.query(
-      `INSERT INTO users (user_id, username, email, password, first_name, last_name, phone_number, role)
+      `INSERT INTO nguoi_dung (nguoi_dung_id, ten_dang_nhap, thu_dien_tu, mat_khau, ho, ten, so_dien_thoai, vai_tro)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING user_id, username, first_name, last_name, email, phone_number, status, role`,
+       RETURNING nguoi_dung_id AS user_id,
+                 ten_dang_nhap AS username,
+                 ho AS first_name,
+                 ten AS last_name,
+                 thu_dien_tu AS email,
+                 so_dien_thoai AS phone_number,
+                 trang_thai AS status,
+                 vai_tro AS role`,
       [nextId, username, email, hashedPassword, firstName, lastName, phoneNumber, role]
     );
 
@@ -154,7 +182,20 @@ const updateUser = async (req, res) => {
       return res.status(400).json({ message: 'user_id không hợp lệ' });
     }
 
-    const currentResult = await pool.query('SELECT * FROM users WHERE user_id = $1', [parsedUserId]);
+    const currentResult = await pool.query(
+      `SELECT nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              thu_dien_tu AS email,
+              so_dien_thoai AS phone_number,
+              ho AS first_name,
+              ten AS last_name,
+              trang_thai AS status,
+              vai_tro AS role,
+              mat_khau AS password
+       FROM nguoi_dung
+       WHERE nguoi_dung_id = $1`,
+      [parsedUserId]
+    );
 
     if (currentResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
@@ -210,17 +251,24 @@ const updateUser = async (req, res) => {
     const hashedPassword = newPassword ? await bcrypt.hash(newPassword, 10) : currentUser.password;
 
     const result = await pool.query(
-      `UPDATE users
-       SET username = $1,
-           email = $2,
-           password = $3,
-           first_name = $4,
-           last_name = $5,
-           phone_number = $6,
-           status = $7,
-           role = $8
-       WHERE user_id = $9
-       RETURNING user_id, username, first_name, last_name, email, phone_number, status, role`,
+      `UPDATE nguoi_dung
+         SET ten_dang_nhap = $1,
+           thu_dien_tu = $2,
+           mat_khau = $3,
+           ho = $4,
+           ten = $5,
+           so_dien_thoai = $6,
+           trang_thai = $7,
+           vai_tro = $8
+         WHERE nguoi_dung_id = $9
+         RETURNING nguoi_dung_id AS user_id,
+             ten_dang_nhap AS username,
+             ho AS first_name,
+             ten AS last_name,
+             thu_dien_tu AS email,
+             so_dien_thoai AS phone_number,
+             trang_thai AS status,
+             vai_tro AS role`,
       [username, email, hashedPassword, firstName, lastName, phoneNumber, status, role, parsedUserId]
     );
 
@@ -242,13 +290,13 @@ const deleteUser = async (req, res) => {
       return res.status(400).json({ message: 'user_id không hợp lệ' });
     }
 
-    const currentResult = await pool.query('SELECT user_id FROM users WHERE user_id = $1', [parsedUserId]);
+    const currentResult = await pool.query('SELECT nguoi_dung_id FROM nguoi_dung WHERE nguoi_dung_id = $1', [parsedUserId]);
 
     if (currentResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
 
-    await pool.query('DELETE FROM users WHERE user_id = $1', [parsedUserId]);
+    await pool.query('DELETE FROM nguoi_dung WHERE nguoi_dung_id = $1', [parsedUserId]);
 
     return res.json({ message: 'Xóa người dùng thành công' });
   } catch (error) {
@@ -296,7 +344,7 @@ const changePassword = async (req, res) => {
     }
 
     // Lấy mật khẩu hiện tại của người dùng từ cơ sở dữ liệu
-    const userResult = await pool.query('SELECT password FROM users WHERE user_id = $1', [user_id]);
+    const userResult = await pool.query('SELECT mat_khau AS password FROM nguoi_dung WHERE nguoi_dung_id = $1', [user_id]);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
@@ -313,7 +361,7 @@ const changePassword = async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // Cập nhật mật khẩu mới
-    await pool.query('UPDATE users SET password = $1 WHERE user_id = $2', [hashedNewPassword, user_id]);
+    await pool.query('UPDATE nguoi_dung SET mat_khau = $1 WHERE nguoi_dung_id = $2', [hashedNewPassword, user_id]);
 
     res.json({ message: 'Đổi mật khẩu thành công' });
   } catch (error) {

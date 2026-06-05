@@ -34,15 +34,23 @@ const extractAndVerifyToken = (authHeader) => {
 };
 
 const getUserByEmail = async (client, email) => client.query(
-  'SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE email = $1',
+  `SELECT nguoi_dung_id AS user_id,
+          ten_dang_nhap AS username,
+          thu_dien_tu AS email,
+          so_dien_thoai AS phone_number,
+          vai_tro AS role,
+          ho AS first_name,
+          ten AS last_name
+   FROM nguoi_dung
+   WHERE thu_dien_tu = $1`,
   [email]
 );
 
 const createPasswordResetToken = async (client, userId, channel, destination, otpHash) => {
   const result = await client.query(
-    `INSERT INTO password_reset_tokens (user_id, channel, destination, otp_hash, expires_at)
+    `INSERT INTO ma_dat_lai_mat_khau (nguoi_dung_id, kenh, dia_chi_nhan, ma_otp_hash, het_han_luc)
      VALUES ($1, $2, $3, $4, NOW() + ($5 || ' minutes')::interval)
-     RETURNING id, expires_at, created_at`,
+     RETURNING ma_id AS id, het_han_luc AS expires_at, ngay_tao AS created_at`,
     [userId, channel, destination, otpHash, OTP_EXPIRY_MINUTES]
   );
 
@@ -50,39 +58,61 @@ const createPasswordResetToken = async (client, userId, channel, destination, ot
 };
 
 const getLatestResetToken = async (client, userId, channel, destination) => client.query(
-  `SELECT id, otp_hash, expires_at, used_at, attempt_count, (expires_at > NOW()) AS not_expired
-   FROM password_reset_tokens
-   WHERE user_id = $1 AND channel = $2 AND destination = $3
-   ORDER BY id DESC
+  `SELECT ma_id AS id,
+          ma_otp_hash AS otp_hash,
+          het_han_luc AS expires_at,
+          da_su_dung_luc AS used_at,
+          so_lan_thu AS attempt_count,
+          (het_han_luc > NOW()) AS not_expired
+   FROM ma_dat_lai_mat_khau
+   WHERE nguoi_dung_id = $1 AND kenh = $2 AND dia_chi_nhan = $3
+   ORDER BY ma_id DESC
    LIMIT 1`,
   [userId, channel, destination]
 );
 
 const getUserById = async (client, userId) => client.query(
-  'SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE user_id = $1',
+  `SELECT nguoi_dung_id AS user_id,
+          ten_dang_nhap AS username,
+          thu_dien_tu AS email,
+          so_dien_thoai AS phone_number,
+          vai_tro AS role,
+          ho AS first_name,
+          ten AS last_name
+   FROM nguoi_dung
+   WHERE nguoi_dung_id = $1`,
   [userId]
 );
 
 const getUserByGoogleProviderId = async (client, providerId) => client.query(
-  `SELECT u.user_id, u.username, u.email, u.phone_number, u.role, u.first_name, u.last_name
-   FROM user_auth_provider ap
-   INNER JOIN users u ON u.user_id = ap.user_id
-   WHERE ap.provider = 'google' AND ap.provider_id = $1
+  `SELECT u.nguoi_dung_id AS user_id,
+          u.ten_dang_nhap AS username,
+          u.thu_dien_tu AS email,
+          u.so_dien_thoai AS phone_number,
+          u.vai_tro AS role,
+          u.ho AS first_name,
+          u.ten AS last_name
+   FROM nguoi_dung_xac_thuc ap
+   INNER JOIN nguoi_dung u ON u.nguoi_dung_id = ap.nguoi_dung_id
+   WHERE ap.nha_cung_cap = 'google' AND ap.nha_cung_cap_id = $1
    LIMIT 1`,
   [providerId]
 );
 
 const getGoogleProviderByUserId = async (client, userId) => client.query(
-  `SELECT id, user_id, provider, provider_id
-   FROM user_auth_provider
-   WHERE user_id = $1 AND provider = 'google'
+  `SELECT xac_thuc_id AS id,
+          nguoi_dung_id AS user_id,
+          nha_cung_cap AS provider,
+          nha_cung_cap_id AS provider_id
+   FROM nguoi_dung_xac_thuc
+   WHERE nguoi_dung_id = $1 AND nha_cung_cap = 'google'
    LIMIT 1`,
   [userId]
 );
 
 const getNextUserId = async (client) => {
   const nextIdResult = await client.query(`
-    SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM users
+    SELECT COALESCE(MAX(nguoi_dung_id), 0) + 1 as next_id FROM nguoi_dung
   `);
 
   return nextIdResult.rows[0].next_id;
@@ -195,14 +225,14 @@ const generateGoogleUsername = (email, googleSub) => {
 };
 
 const ensureUniqueUsername = async (client, usernameCandidate) => {
-  const existingResult = await client.query('SELECT user_id FROM users WHERE username = $1 LIMIT 1', [usernameCandidate]);
+  const existingResult = await client.query('SELECT nguoi_dung_id FROM nguoi_dung WHERE ten_dang_nhap = $1 LIMIT 1', [usernameCandidate]);
 
   if (existingResult.rows.length === 0) {
     return usernameCandidate;
   }
 
   const fallback = `${usernameCandidate.slice(0, 17)}_${randomInt(100, 999)}`.slice(0, 20);
-  const fallbackResult = await client.query('SELECT user_id FROM users WHERE username = $1 LIMIT 1', [fallback]);
+  const fallbackResult = await client.query('SELECT nguoi_dung_id FROM nguoi_dung WHERE ten_dang_nhap = $1 LIMIT 1', [fallback]);
 
   if (fallbackResult.rows.length === 0) {
     return fallback;
@@ -232,7 +262,7 @@ const createOrLinkGoogleUser = async (client, googleProfile) => {
 
     if (existingProviderResult.rows.length === 0) {
       await client.query(
-        'INSERT INTO user_auth_provider (user_id, provider, provider_id) VALUES ($1, $2, $3)',
+        'INSERT INTO nguoi_dung_xac_thuc (nguoi_dung_id, nha_cung_cap, nha_cung_cap_id) VALUES ($1, $2, $3)',
         [existingUser.user_id, 'google', googleProfile.sub]
       );
     }
@@ -244,16 +274,22 @@ const createOrLinkGoogleUser = async (client, googleProfile) => {
   const usernameCandidate = await ensureUniqueUsername(client, generateGoogleUsername(googleProfile.email, googleProfile.sub));
 
   const newUserResult = await client.query(
-    `INSERT INTO users (user_id, username, email, password, phone_number, role)
+    `INSERT INTO nguoi_dung (nguoi_dung_id, ten_dang_nhap, thu_dien_tu, mat_khau, so_dien_thoai, vai_tro)
      VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING user_id, username, email, phone_number, role, first_name, last_name`,
+     RETURNING nguoi_dung_id AS user_id,
+               ten_dang_nhap AS username,
+               thu_dien_tu AS email,
+               so_dien_thoai AS phone_number,
+               vai_tro AS role,
+               ho AS first_name,
+               ten AS last_name`,
     [nextId, usernameCandidate, googleProfile.email, null, null, 'customer']
   );
 
   const newUser = newUserResult.rows[0];
 
   await client.query(
-    'INSERT INTO user_auth_provider (user_id, provider, provider_id) VALUES ($1, $2, $3)',
+    'INSERT INTO nguoi_dung_xac_thuc (nguoi_dung_id, nha_cung_cap, nha_cung_cap_id) VALUES ($1, $2, $3)',
     [newUser.user_id, 'google', googleProfile.sub]
   );
 
@@ -267,7 +303,7 @@ const register = async (req, res) => {
 
     // Kiểm tra username hoặc email đã tồn tại chưa
     const existingUser = await pool.query(
-      'SELECT * FROM users WHERE username = $1 OR email = $2', [username, email]
+      'SELECT * FROM nguoi_dung WHERE ten_dang_nhap = $1 OR thu_dien_tu = $2', [username, email]
     );
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'Username hoặc email đã tồn tại' });
@@ -301,13 +337,13 @@ const register = async (req, res) => {
 
     // Lấy ID tiếp theo (MAX + 1), nếu không có user thì bắt đầu từ 1
     const nextIdResult = await pool.query(`
-      SELECT COALESCE(MAX(user_id), 0) + 1 as next_id FROM users
+      SELECT COALESCE(MAX(nguoi_dung_id), 0) + 1 as next_id FROM nguoi_dung
     `);
     const nextId = nextIdResult.rows[0].next_id;
 
     // Thêm người dùng mới vào cơ sở dữ liệu
     const newUser = await pool.query(
-      'INSERT INTO users (user_id, username, email, password, phone_number, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      'INSERT INTO nguoi_dung (nguoi_dung_id, ten_dang_nhap, thu_dien_tu, mat_khau, so_dien_thoai, vai_tro) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
       [nextId, username, email, hashedPassword, phone_number, role]
     );
 
@@ -369,7 +405,7 @@ const handleGoogleCallback = async (req, res) => {
     await client.query('BEGIN');
 
     const user = await createOrLinkGoogleUser(client, googleProfile);
-    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['active', user.user_id]);
+    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['active', user.user_id]);
     const token = issueAuthToken(user);
 
     await client.query('COMMIT');
@@ -399,7 +435,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Kiểm tra email có tồn tại không
-    const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userResult = await pool.query('SELECT * FROM nguoi_dung WHERE thu_dien_tu = $1', [email]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
@@ -412,7 +448,7 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
-    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['active', user.user_id]);
+    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['active', user.user_id]);
 
     // Tạo token JWT
     const token = jwt.sign(
@@ -449,7 +485,7 @@ const logout = async (req, res) => {
       return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
     }
 
-    await pool.query('UPDATE users SET status = $1 WHERE user_id = $2', ['inactive', decoded.user_id]);
+    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['inactive', decoded.user_id]);
 
     res.json({ message: 'Đăng xuất thành công' });
   } catch (error) {
@@ -472,7 +508,18 @@ const getCurrentUser = async (req, res) => {
             return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
         }
 
-        const userResult = await pool.query('SELECT user_id, username, email, phone_number, role, first_name, last_name FROM users WHERE user_id = $1', [decoded.user_id]);
+        const userResult = await pool.query(
+          `SELECT nguoi_dung_id AS user_id,
+                  ten_dang_nhap AS username,
+                  thu_dien_tu AS email,
+                  so_dien_thoai AS phone_number,
+                  vai_tro AS role,
+                  ho AS first_name,
+                  ten AS last_name
+           FROM nguoi_dung
+           WHERE nguoi_dung_id = $1`,
+          [decoded.user_id]
+        );
         if (userResult.rows.length === 0) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
@@ -510,7 +557,7 @@ const forgotPassword = async (req, res) => {
 
     await client.query('BEGIN');
     await client.query(
-      'UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND channel = $2 AND used_at IS NULL',
+      'UPDATE ma_dat_lai_mat_khau SET da_su_dung_luc = NOW() WHERE nguoi_dung_id = $1 AND kenh = $2 AND da_su_dung_luc IS NULL',
       [user.user_id, RESET_CHANNEL]
     );
 
@@ -576,14 +623,14 @@ const verifyResetOtp = async (req, res) => {
     }
 
     if (!token.not_expired) {
-      await client.query('UPDATE password_reset_tokens SET attempt_count = attempt_count + 1 WHERE id = $1', [token.id]);
+      await client.query('UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1', [token.id]);
       await client.query('COMMIT');
       return res.status(400).json({ message: 'OTP đã hết hạn' });
     }
 
     const isOtpValid = await bcrypt.compare(otp, token.otp_hash);
     if (!isOtpValid) {
-      await client.query('UPDATE password_reset_tokens SET attempt_count = attempt_count + 1 WHERE id = $1', [token.id]);
+      await client.query('UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1', [token.id]);
       await client.query('COMMIT');
       return res.status(400).json({ message: 'OTP không đúng' });
     }
@@ -659,8 +706,8 @@ const resetPassword = async (req, res) => {
 
     const tokenResult = await client.query(
       `SELECT id, used_at, (expires_at > NOW()) AS not_expired
-       FROM password_reset_tokens
-       WHERE id = $1 AND user_id = $2 AND channel = $3 AND destination = $4
+       FROM ma_dat_lai_mat_khau
+       WHERE ma_id = $1 AND nguoi_dung_id = $2 AND kenh = $3 AND dia_chi_nhan = $4
        LIMIT 1`,
       [decodedResetToken.reset_token_id, user.user_id, RESET_CHANNEL, destination]
     );
@@ -684,8 +731,8 @@ const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await client.query('UPDATE users SET password = $1 WHERE user_id = $2', [hashedPassword, user.user_id]);
-    await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [token.id]);
+    await client.query('UPDATE nguoi_dung SET mat_khau = $1 WHERE nguoi_dung_id = $2', [hashedPassword, user.user_id]);
+    await client.query('UPDATE ma_dat_lai_mat_khau SET da_su_dung_luc = NOW() WHERE ma_id = $1', [token.id]);
 
     await client.query('COMMIT');
 

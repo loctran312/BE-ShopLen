@@ -12,9 +12,13 @@ const slugifyText = (value) => normalizeText(value)
 // Low-level insert helper that accepts either a `client` from `pool.connect()` or the `pool` itself
 const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug }) => {
   const result = await client.query(
-    `INSERT INTO categories (category_name, description, parent_category_id, slug)
+    `INSERT INTO danh_muc (ten_danh_muc, mo_ta, danh_muc_cha_id, slug)
      VALUES ($1, $2, $3, $4)
-     RETURNING category_id, category_name, description, parent_category_id, slug`,
+     RETURNING danh_muc_id AS category_id,
+               ten_danh_muc AS category_name,
+               mo_ta AS description,
+               danh_muc_cha_id AS parent_category_id,
+               slug`,
     [categoryName, description, parentCategoryId, slug]
   );
 
@@ -52,34 +56,38 @@ const parseParentCategoryId = (value) => {
 };
 
 const getCategoryById = async (categoryId) => pool.query(
-  `SELECT c.category_id, c.category_name, c.description, c.parent_category_id, c.slug,
-          p.category_name AS parent_category_name
-   FROM categories c
-   LEFT JOIN categories p ON p.category_id = c.parent_category_id
-   WHERE c.category_id = $1`,
+  `SELECT c.danh_muc_id AS category_id,
+          c.ten_danh_muc AS category_name,
+          c.mo_ta AS description,
+          c.danh_muc_cha_id AS parent_category_id,
+          c.slug,
+          p.ten_danh_muc AS parent_category_name
+   FROM danh_muc c
+   LEFT JOIN danh_muc p ON p.danh_muc_id = c.danh_muc_cha_id
+   WHERE c.danh_muc_id = $1`,
   [categoryId]
 );
 
 const hasChildCategories = async (categoryId) => pool.query(
-  'SELECT 1 FROM categories WHERE parent_category_id = $1 LIMIT 1',
+  'SELECT 1 FROM danh_muc WHERE danh_muc_cha_id = $1 LIMIT 1',
   [categoryId]
 );
 
 const hasProductsUsingCategory = async (categoryId) => pool.query(
-  'SELECT 1 FROM products WHERE category_id = $1 LIMIT 1',
+  'SELECT 1 FROM san_pham WHERE danh_muc_id = $1 LIMIT 1',
   [categoryId]
 );
 
 const isCategoryNameTaken = async (categoryName, ignoreCategoryId = null) => {
   const query = ignoreCategoryId
-    ? `SELECT category_id
-       FROM categories
-       WHERE LOWER(TRIM(category_name)) = LOWER(TRIM($1))
-         AND category_id <> $2
+     ? `SELECT danh_muc_id
+       FROM danh_muc
+       WHERE LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM($1))
+        AND danh_muc_id <> $2
        LIMIT 1`
-    : `SELECT category_id
-       FROM categories
-       WHERE LOWER(TRIM(category_name)) = LOWER(TRIM($1))
+     : `SELECT danh_muc_id
+       FROM danh_muc
+       WHERE LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM($1))
        LIMIT 1`;
   const params = ignoreCategoryId ? [categoryName, ignoreCategoryId] : [categoryName];
 
@@ -89,8 +97,8 @@ const isCategoryNameTaken = async (categoryName, ignoreCategoryId = null) => {
 
 const isSlugTaken = async (slug, ignoreCategoryId = null) => {
   const query = ignoreCategoryId
-    ? 'SELECT category_id FROM categories WHERE slug = $1 AND category_id <> $2 LIMIT 1'
-    : 'SELECT category_id FROM categories WHERE slug = $1 LIMIT 1';
+    ? 'SELECT danh_muc_id FROM danh_muc WHERE slug = $1 AND danh_muc_id <> $2 LIMIT 1'
+    : 'SELECT danh_muc_id FROM danh_muc WHERE slug = $1 LIMIT 1';
   const params = ignoreCategoryId ? [slug, ignoreCategoryId] : [slug];
 
   const result = await pool.query(query, params);
@@ -106,9 +114,9 @@ const generateUniqueSlug = async (categoryName, ignoreCategoryId = null) => {
 
   const existingCategories = await pool.query(
     `SELECT slug
-     FROM categories
+     FROM danh_muc
      WHERE (slug = $1 OR slug LIKE $2)
-       ${ignoreCategoryId ? 'AND category_id <> $3' : ''}`,
+       ${ignoreCategoryId ? 'AND danh_muc_id <> $3' : ''}`,
     ignoreCategoryId ? [baseSlug, `${baseSlug}-%`, ignoreCategoryId] : [baseSlug, `${baseSlug}-%`]
   );
 
@@ -192,8 +200,8 @@ const createCategoriesBulk = async (req, res) => {
     });
 
     const [existingNamesResult, existingSlugsResult] = await Promise.all([
-      client.query('SELECT LOWER(TRIM(category_name)) AS normalized_name FROM categories'),
-      client.query('SELECT slug FROM categories'),
+      client.query('SELECT LOWER(TRIM(ten_danh_muc)) AS normalized_name FROM danh_muc'),
+      client.query('SELECT slug FROM danh_muc'),
     ]);
 
     const existingNames = new Set(existingNamesResult.rows.map((row) => row.normalized_name));
@@ -246,7 +254,7 @@ const createCategoriesBulk = async (req, res) => {
         const parentItem = await createItem(parentTempKey);
         parentCategoryId = parentItem.category_id;
       } else if (item.parentCategoryId !== null) {
-        const parentResult = await client.query('SELECT category_id FROM categories WHERE category_id = $1', [item.parentCategoryId]);
+        const parentResult = await client.query('SELECT danh_muc_id FROM danh_muc WHERE danh_muc_id = $1', [item.parentCategoryId]);
 
         if (parentResult.rows.length === 0) {
           throw new Error(`Danh mục cha không tồn tại ở mục ${item.rawIndex + 1}`);
@@ -295,17 +303,17 @@ const createCategoriesBulk = async (req, res) => {
 const isDescendantCategory = async (ancestorCategoryId, targetCategoryId) => {
   const result = await pool.query(
     `WITH RECURSIVE descendants AS ( 
-       SELECT category_id
-       FROM categories
-       WHERE parent_category_id = $1
+       SELECT danh_muc_id
+       FROM danh_muc
+       WHERE danh_muc_cha_id = $1
        UNION ALL
-       SELECT c.category_id
-       FROM categories c
-       INNER JOIN descendants d ON c.parent_category_id = d.category_id
+       SELECT c.danh_muc_id
+       FROM danh_muc c
+       INNER JOIN descendants d ON c.danh_muc_cha_id = d.danh_muc_id
      )
-     SELECT category_id
+     SELECT danh_muc_id AS category_id
      FROM descendants
-     WHERE category_id = $2
+     WHERE danh_muc_id = $2
      LIMIT 1`,
     [ancestorCategoryId, targetCategoryId]
   );
@@ -332,9 +340,13 @@ const formatCategoryTreeNode = (node) => {
 const getAllCategories = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT category_id, category_name, description, parent_category_id, slug
-       FROM categories
-       ORDER BY category_name ASC`
+      `SELECT danh_muc_id AS category_id,
+            ten_danh_muc AS category_name,
+            mo_ta AS description,
+            danh_muc_cha_id AS parent_category_id,
+            slug
+       FROM danh_muc
+       ORDER BY ten_danh_muc ASC`
     );
 
     const rows = result.rows;
@@ -379,13 +391,21 @@ const getCategoryDetail = async (req, res) => {
 
     const result = await pool.query(
       `WITH RECURSIVE subtree AS (
-         SELECT category_id, category_name, description, parent_category_id, slug
-         FROM categories
-         WHERE category_id = $1
+         SELECT danh_muc_id AS category_id,
+                ten_danh_muc AS category_name,
+                mo_ta AS description,
+                danh_muc_cha_id AS parent_category_id,
+                slug
+         FROM danh_muc
+         WHERE danh_muc_id = $1
        UNION ALL
-         SELECT c.category_id, c.category_name, c.description, c.parent_category_id, c.slug
-         FROM categories c
-         INNER JOIN subtree s ON c.parent_category_id = s.category_id
+         SELECT c.danh_muc_id AS category_id,
+                c.ten_danh_muc AS category_name,
+                c.mo_ta AS description,
+                c.danh_muc_cha_id AS parent_category_id,
+                c.slug
+         FROM danh_muc c
+         INNER JOIN subtree s ON c.danh_muc_cha_id = s.category_id
        )
        SELECT * FROM subtree`,
       [parsedCategoryId]
@@ -557,13 +577,17 @@ const updateCategory = async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE categories
-       SET category_name = $1,
-           description = $2,
-           parent_category_id = $3,
+      `UPDATE danh_muc
+       SET ten_danh_muc = $1,
+           mo_ta = $2,
+           danh_muc_cha_id = $3,
            slug = $4
-       WHERE category_id = $5
-       RETURNING category_id, category_name, description, parent_category_id, slug`,
+       WHERE danh_muc_id = $5
+       RETURNING danh_muc_id AS category_id,
+                 ten_danh_muc AS category_name,
+                 mo_ta AS description,
+                 danh_muc_cha_id AS parent_category_id,
+                 slug`,
       [categoryName, description, parentCategoryId, slug, parsedCategoryId]
     );
 
@@ -601,7 +625,7 @@ const deleteCategory = async (req, res) => {
       return res.status(400).json({ message: 'Không thể xóa danh mục đang được sử dụng bởi sản phẩm' });
     }
 
-    await pool.query('DELETE FROM categories WHERE category_id = $1', [parsedCategoryId]);
+    await pool.query('DELETE FROM danh_muc WHERE danh_muc_id = $1', [parsedCategoryId]);
 
     return res.json({ message: 'Xóa danh mục thành công' });
   } catch (error) {
@@ -621,8 +645,8 @@ const createCategoriesTree = async (req, res) => {
     }
 
     const [existingNamesResult, existingSlugsResult] = await Promise.all([
-      client.query('SELECT LOWER(TRIM(category_name)) AS normalized_name FROM categories'),
-      client.query('SELECT slug FROM categories'),
+      client.query('SELECT LOWER(TRIM(ten_danh_muc)) AS normalized_name FROM danh_muc'),
+      client.query('SELECT slug FROM danh_muc'),
     ]);
 
     const existingNames = new Set(existingNamesResult.rows.map((r) => r.normalized_name));

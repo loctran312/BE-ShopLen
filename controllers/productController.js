@@ -160,13 +160,13 @@ const generateUniqueVariantSlug = async (baseSlug, ignoreVariantId = null) => {
         : [baseSlug, `${baseSlug}-%`];
 
     const query = ignoreVariantId
-        ? `SELECT slug
-             FROM product_variants
-             WHERE (slug = $1 OR slug LIKE $2)
-                 AND variant_id <> $3`
-        : `SELECT slug
-             FROM product_variants
-             WHERE slug = $1 OR slug LIKE $2`;
+           ? `SELECT slug
+               FROM bien_the_san_pham
+               WHERE (slug = $1 OR slug LIKE $2)
+                  AND bien_the_id <> $3`
+           : `SELECT slug
+               FROM bien_the_san_pham
+               WHERE slug = $1 OR slug LIKE $2`;
 
     const result = await pool.query(query, params);
     const usedSlugs = new Set(result.rows.map((row) => row.slug));
@@ -252,12 +252,12 @@ const normalizeVariantPayload = (variant, index) => {
 };
 
 const getCategoryById = (categoryId) => pool.query(
-    'SELECT category_id FROM categories WHERE category_id = $1 LIMIT 1',
+    'SELECT danh_muc_id AS category_id FROM danh_muc WHERE danh_muc_id = $1 LIMIT 1',
     [categoryId]
 );
 
 const getProductTypeById = (typeId) => pool.query(
-    'SELECT type_id FROM product_types WHERE type_id = $1 LIMIT 1',
+    'SELECT loai_san_pham_id AS type_id FROM loai_san_pham WHERE loai_san_pham_id = $1 LIMIT 1',
     [typeId]
 );
 
@@ -265,17 +265,17 @@ const buildProductsList = async ({ page, limit }) => {
     const offset = (page - 1) * limit;
 
     const [countResult, productsResult] = await Promise.all([
-        pool.query('SELECT COUNT(*)::int AS total_items FROM products'),
+        pool.query('SELECT COUNT(*)::int AS total_items FROM san_pham'),
         pool.query(
-            `SELECT p.product_id,
-                    p.product_name,
-                    p.product_status,
-                    c.category_name,
-                    pt.type_name
-             FROM products p
-             LEFT JOIN categories c ON c.category_id = p.category_id
-             LEFT JOIN product_types pt ON pt.type_id = p.type_id
-             ORDER BY p.product_id DESC
+            `SELECT p.san_pham_id AS product_id,
+                    p.ten_san_pham AS product_name,
+                    p.trang_thai_san_pham AS product_status,
+                    c.ten_danh_muc AS category_name,
+                    pt.ten_loai AS type_name
+             FROM san_pham p
+             LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
+             LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
+             ORDER BY p.san_pham_id DESC
              LIMIT $1 OFFSET $2`,
             [limit, offset]
         ),
@@ -298,13 +298,13 @@ const buildProductsList = async ({ page, limit }) => {
     const productIds = products.map((product) => product.product_id);
 
     const variantsResult = await pool.query(
-        `SELECT pv.product_id,
-                pv.variant_id,
+        `SELECT pv.san_pham_id AS product_id,
+                pv.bien_the_id AS variant_id,
                 pv.sku,
                 pv.slug,
-                pv.price,
-                pv.color,
-                pv.size,
+                pv.gia AS price,
+                pv.mau_sac AS color,
+                pv.kich_co AS size,
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -315,11 +315,11 @@ const buildProductsList = async ({ page, limit }) => {
                     ) FILTER (WHERE vi.image_id IS NOT NULL),
                     '[]'
                 ) AS images
-         FROM product_variants pv
-         LEFT JOIN variant_images vi ON vi.variant_id = pv.variant_id
-         WHERE pv.product_id = ANY($1::int[])
-         GROUP BY pv.product_id, pv.variant_id, pv.sku, pv.slug, pv.price, pv.color, pv.size
-         ORDER BY pv.product_id DESC, pv.variant_id ASC`,
+         FROM bien_the_san_pham pv
+         LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
+         WHERE pv.san_pham_id = ANY($1::int[])
+         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co
+         ORDER BY pv.san_pham_id DESC, pv.bien_the_id ASC`,
         [productIds]
     );
 
@@ -361,18 +361,18 @@ const buildProductsList = async ({ page, limit }) => {
 
 const buildProductDetail = async (productId) => {
     const productResult = await pool.query(
-        `SELECT p.product_id,
-                        p.type_id,
-                        p.category_id,
-                        p.product_name,
-                        p.description,
-                        p.product_status,
-                        c.category_name,
-                        pt.type_name
-         FROM products p
-         LEFT JOIN categories c ON c.category_id = p.category_id
-         LEFT JOIN product_types pt ON pt.type_id = p.type_id
-         WHERE p.product_id = $1`,
+        `SELECT p.san_pham_id AS product_id,
+                        p.loai_san_pham_id AS type_id,
+                        p.danh_muc_id AS category_id,
+                        p.ten_san_pham AS product_name,
+                        p.mo_ta AS description,
+                        p.trang_thai_san_pham AS product_status,
+                        c.ten_danh_muc AS category_name,
+                        pt.ten_loai AS type_name
+         FROM san_pham p
+         LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
+         LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
+         WHERE p.san_pham_id = $1`,
         [productId]
     );
 
@@ -381,21 +381,21 @@ const buildProductDetail = async (productId) => {
     }
 
     const variantResult = await pool.query(
-        `SELECT pv.variant_id,
+        `SELECT pv.bien_the_id AS variant_id,
                         pv.sku,
                         pv.slug,
-                        pv.price,
-                        pv.color,
-                        pv.size,
-                        COALESCE(i.stock_quantity, 0) AS stock_quantity,
-                        vi.image_id,
-                        vi.image_url,
-                        vi.sort_order
-         FROM product_variants pv
-         LEFT JOIN inventory i ON i.variant_id = pv.variant_id
-         LEFT JOIN variant_images vi ON vi.variant_id = pv.variant_id
-         WHERE pv.product_id = $1
-         ORDER BY pv.variant_id ASC, vi.sort_order ASC, vi.image_id ASC`,
+                        pv.gia AS price,
+                        pv.mau_sac AS color,
+                        pv.kich_co AS size,
+                        COALESCE(i.so_luong_ton, 0) AS stock_quantity,
+                        vi.hinh_anh_id AS image_id,
+                        vi.duong_dan_anh AS image_url,
+                        vi.thu_tu_hien_thi AS sort_order
+         FROM bien_the_san_pham pv
+         LEFT JOIN ton_kho i ON i.bien_the_id = pv.bien_the_id
+         LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
+         WHERE pv.san_pham_id = $1
+         ORDER BY pv.bien_the_id ASC, vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC`,
         [productId]
     );
 
@@ -441,28 +441,28 @@ const buildProductDetail = async (productId) => {
 
 const ensureProductDependenciesAreClear = async (client, productId) => {
     const [workshops, cartItems, wishlistItems, workshopVariants] = await Promise.all([
-        client.query('SELECT 1 FROM workshops WHERE product_id = $1 LIMIT 1', [productId]),
+        client.query('SELECT 1 FROM hoi_thao WHERE san_pham_id = $1 LIMIT 1', [productId]),
         client.query(
             `SELECT 1
-             FROM cart c
-             INNER JOIN product_variants pv ON pv.variant_id = c.variant_id
-             WHERE pv.product_id = $1
+             FROM gio_hang c
+             INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = c.bien_the_id
+             WHERE pv.san_pham_id = $1
              LIMIT 1`,
             [productId]
         ),
         client.query(
             `SELECT 1
-             FROM wishlist w
-             INNER JOIN product_variants pv ON pv.variant_id = w.variant_id
-             WHERE pv.product_id = $1
+             FROM danh_sach_yeu_thich w
+             INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = w.bien_the_id
+             WHERE pv.san_pham_id = $1
              LIMIT 1`,
             [productId]
         ),
         client.query(
             `SELECT 1
-             FROM workshop_variants wv
-             INNER JOIN workshops ws ON ws.workshop_id = wv.workshop_id
-             WHERE ws.product_id = $1
+             FROM hoi_thao_bien_the wv
+             INNER JOIN hoi_thao ws ON ws.hoi_thao_id = wv.hoi_thao_id
+             WHERE ws.san_pham_id = $1
              LIMIT 1`,
             [productId]
         ),
@@ -476,7 +476,7 @@ const ensureProductDependenciesAreClear = async (client, productId) => {
 
 const getAllProductTypes = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM product_types ORDER BY type_id ASC');
+        const result = await pool.query('SELECT loai_san_pham_id AS type_id, ten_loai AS type_name, mo_ta AS description FROM loai_san_pham ORDER BY loai_san_pham_id ASC');
         res.json(result.rows);
     } catch (error) {
         res.status(500).json({ error: 'Lỗi máy chủ' });
@@ -575,16 +575,16 @@ const uploadVariantImages = async (images, slugPrefix, variantIndex) => {
 
 const upsertVariantInventory = async (client, variantId, stockQuantity) => {
     await client.query(
-        `INSERT INTO inventory (variant_id, stock_quantity)
+        `INSERT INTO ton_kho (bien_the_id, so_luong_ton)
          VALUES ($1, $2)
-         ON CONFLICT (variant_id)
-         DO UPDATE SET stock_quantity = EXCLUDED.stock_quantity`,
+         ON CONFLICT (bien_the_id)
+         DO UPDATE SET so_luong_ton = EXCLUDED.so_luong_ton`,
         [variantId, stockQuantity]
     );
 };
 
 const replaceVariantImages = async (client, variantId, images) => {
-    await client.query('DELETE FROM variant_images WHERE variant_id = $1', [variantId]);
+    await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = $1', [variantId]);
 
     if (!Array.isArray(images) || images.length === 0) {
         return;
@@ -592,7 +592,7 @@ const replaceVariantImages = async (client, variantId, images) => {
 
     for (const image of images) {
         await client.query(
-            `INSERT INTO variant_images (variant_id, image_url, sort_order)
+            `INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi)
              VALUES ($1, $2, $3)`,
             [variantId, image.image_url, image.sort_order]
         );
@@ -674,9 +674,9 @@ const createProduct = async (req, res) => {
         await client.query('BEGIN');
 
         const productResult = await client.query(
-            `INSERT INTO products (type_id, category_id, product_name, description, product_status)
+            `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham)
              VALUES ($1, $2, $3, $4, $5)
-             RETURNING product_id, type_id, category_id, product_name, description, product_status`,
+             RETURNING san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status`,
             [typeId, categoryId, productName, description, productStatus]
         );
 
@@ -684,9 +684,9 @@ const createProduct = async (req, res) => {
 
         for (const variant of preparedVariants) {
             const variantResult = await client.query(
-                `INSERT INTO product_variants (product_id, sku, slug, price, color, size)
+                `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
                  VALUES ($1, $2, $3, $4, $5, $6)
-                 RETURNING variant_id, product_id, sku, slug, price, color, size`,
+                 RETURNING bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size`,
                 [createdProduct.product_id, variant.sku, variant.slug, variant.price, variant.color, variant.size]
             );
 
@@ -729,9 +729,9 @@ const updateProduct = async (req, res) => {
     try {
         const productId = parseInteger(req.params.product_id, 'product_id');
         const currentProductResult = await client.query(
-            `SELECT product_id, type_id, category_id, product_name, description, product_status
-             FROM products
-             WHERE product_id = $1`,
+            `SELECT san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status
+             FROM san_pham
+             WHERE san_pham_id = $1`,
             [productId]
         );
 
@@ -824,14 +824,14 @@ const updateProduct = async (req, res) => {
         await client.query('BEGIN');
 
         const updatedProductResult = await client.query(
-            `UPDATE products
-             SET type_id = $1,
-                     category_id = $2,
-                     product_name = $3,
-                     description = $4,
-                     product_status = $5
-             WHERE product_id = $6
-             RETURNING product_id, type_id, category_id, product_name, description, product_status`,
+            `UPDATE san_pham
+             SET loai_san_pham_id = $1,
+                 danh_muc_id = $2,
+                 ten_san_pham = $3,
+                 mo_ta = $4,
+                 trang_thai_san_pham = $5
+             WHERE san_pham_id = $6
+             RETURNING san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status`,
             [typeId, categoryId, productName, description, productStatus, productId]
         );
 
@@ -839,9 +839,9 @@ const updateProduct = async (req, res) => {
             for (const variant of preparedVariants) {
                 if (variant.variant_id) {
                     const currentVariantResult = await client.query(
-                        `SELECT variant_id, product_id, sku, slug, price, color, size
-                         FROM product_variants
-                         WHERE variant_id = $1 AND product_id = $2`,
+                        `SELECT bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size
+                         FROM bien_the_san_pham
+                         WHERE bien_the_id = $1 AND san_pham_id = $2`,
                         [variant.variant_id, productId]
                     );
 
@@ -857,18 +857,18 @@ const updateProduct = async (req, res) => {
                     : null;
 
                     await client.query(
-                        `UPDATE product_variants
+                        `UPDATE bien_the_san_pham
                          SET slug = $1,
-                                 sku = $2,
-                                 price = $3,
-                                 color = $4,
-                                 size = $5
-                         WHERE variant_id = $6`,
+                             sku = $2,
+                             gia = $3,
+                             mau_sac = $4,
+                             kich_co = $5
+                         WHERE bien_the_id = $6`,
                         [nextSlug, variant.sku, variant.price, variant.color, variant.size, variant.variant_id]
                     );
 
                     const currentStockResult = await client.query(
-                        'SELECT stock_quantity FROM inventory WHERE variant_id = $1 LIMIT 1',
+                        'SELECT so_luong_ton AS stock_quantity FROM ton_kho WHERE bien_the_id = $1 LIMIT 1',
                         [variant.variant_id]
                     );
 
@@ -889,9 +889,9 @@ const updateProduct = async (req, res) => {
                     : null;
 
                     const insertedVariantResult = await client.query(
-                        `INSERT INTO product_variants (product_id, sku, slug, price, color, size)
+                        `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
                          VALUES ($1, $2, $3, $4, $5, $6)
-                         RETURNING variant_id, product_id, sku, slug, price, color, size`,
+                         RETURNING bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size`,
                         [productId, variant.sku, nextSlug, variant.price, variant.color, variant.size]
                     );
 
@@ -937,7 +937,7 @@ const deleteProduct = async (req, res) => {
         const productId = parseInteger(req.params.product_id, 'product_id');
 
         const currentProductResult = await client.query(
-            'SELECT product_id FROM products WHERE product_id = $1',
+            'SELECT san_pham_id AS product_id FROM san_pham WHERE san_pham_id = $1',
             [productId]
         );
 
@@ -960,24 +960,24 @@ const deleteProduct = async (req, res) => {
         await client.query('BEGIN');
 
         const variantResult = await client.query(
-            'SELECT variant_id FROM product_variants WHERE product_id = $1',
+            'SELECT bien_the_id AS variant_id FROM bien_the_san_pham WHERE san_pham_id = $1',
             [productId]
         );
         const variantIds = variantResult.rows.map((row) => row.variant_id);
 
         if (variantIds.length > 0) {
-            await client.query('DELETE FROM variant_images WHERE variant_id = ANY($1::int[])', [variantIds]);
-            await client.query('DELETE FROM inventory WHERE variant_id = ANY($1::int[])', [variantIds]);
-            await client.query('DELETE FROM voucher_products WHERE product_id = $1 OR variant_id = ANY($2::int[])', [productId, variantIds]);
-            await client.query('DELETE FROM promotion_products WHERE product_id = $1 OR variant_id = ANY($2::int[])', [productId, variantIds]);
+            await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])', [variantIds]);
+            await client.query('DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])', [variantIds]);
+            await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE san_pham_id = $1 OR bien_the_id = ANY($2::int[])', [productId, variantIds]);
+            await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1 OR bien_the_id = ANY($2::int[])', [productId, variantIds]);
         } else {
-            await client.query('DELETE FROM voucher_products WHERE product_id = $1', [productId]);
-            await client.query('DELETE FROM promotion_products WHERE product_id = $1', [productId]);
+            await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE san_pham_id = $1', [productId]);
+            await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1', [productId]);
         }
 
-        await client.query('DELETE FROM wishlist_notifications WHERE product_id = $1', [productId]);
-        await client.query('DELETE FROM product_variants WHERE product_id = $1', [productId]);
-        await client.query('DELETE FROM products WHERE product_id = $1', [productId]);
+        await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
+        await client.query('DELETE FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
+        await client.query('DELETE FROM san_pham WHERE san_pham_id = $1', [productId]);
 
         await client.query('COMMIT');
 
