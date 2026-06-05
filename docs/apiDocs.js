@@ -394,6 +394,8 @@ const apiDocs = {
         {
           method: 'POST',
           auth: true,
+          path: '/api/products',
+          summary: 'Tạo sản phẩm mới kèm biến thể và ảnh',
           requestExample: {
             type_id: 1,
             category_id: 2,

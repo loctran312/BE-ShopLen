@@ -434,8 +434,19 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Kiểm tra email có tồn tại không
-    const userResult = await pool.query('SELECT * FROM nguoi_dung WHERE thu_dien_tu = $1', [email]);
+    // Kiểm tra email có tồn tại không (select and alias password and id)
+    const userResult = await pool.query(
+      `SELECT nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              thu_dien_tu AS email,
+              mat_khau AS password,
+              vai_tro AS role
+       FROM nguoi_dung
+       WHERE thu_dien_tu = $1
+       LIMIT 1`,
+      [email]
+    );
+
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
@@ -443,7 +454,7 @@ const login = async (req, res) => {
     const user = userResult.rows[0];
 
     // So sánh mật khẩu
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password || '');
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
@@ -456,17 +467,17 @@ const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
-    res.json(
-      { 
-        "token": token,
-        "user": {
-          "user_id": user.user_id,
-          "role": user.role
-        }
-      }
-    );
+
+    return res.json({
+      token,
+      user: {
+        user_id: user.user_id,
+        role: user.role,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi máy chủ' });
+    console.error('[AUTH][LOGIN] Error:', error);
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
 
@@ -705,7 +716,9 @@ const resetPassword = async (req, res) => {
     await client.query('BEGIN');
 
     const tokenResult = await client.query(
-      `SELECT id, used_at, (expires_at > NOW()) AS not_expired
+      `SELECT ma_id AS id,
+              da_su_dung_luc AS used_at,
+              (het_han_luc > NOW()) AS not_expired
        FROM ma_dat_lai_mat_khau
        WHERE ma_id = $1 AND nguoi_dung_id = $2 AND kenh = $3 AND dia_chi_nhan = $4
        LIMIT 1`,

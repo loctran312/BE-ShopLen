@@ -308,11 +308,11 @@ const buildProductsList = async ({ page, limit }) => {
                 COALESCE(
                     json_agg(
                         json_build_object(
-                            'image_url', vi.image_url,
-                            'sort_order', vi.sort_order
+                            'image_url', vi.duong_dan_anh,
+                            'sort_order', vi.thu_tu_hien_thi
                         )
-                        ORDER BY vi.sort_order ASC, vi.image_id ASC
-                    ) FILTER (WHERE vi.image_id IS NOT NULL),
+                        ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC
+                    ) FILTER (WHERE vi.hinh_anh_id IS NOT NULL),
                     '[]'
                 ) AS images
          FROM bien_the_san_pham pv
@@ -485,8 +485,16 @@ const getAllProductTypes = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
     try {
-        const page = req.query.page === undefined ? 1 : parsePositiveInteger(req.query.page, 'page');
-        const limit = req.query.limit === undefined ? 10 : parsePositiveInteger(req.query.limit, 'limit');
+        const rawPage = req.query.page !== undefined
+            ? req.query.page
+            : (isObject(req.body) && req.body.page !== undefined ? req.body.page : 1);
+
+        const rawLimit = req.query.limit !== undefined
+            ? req.query.limit
+            : (isObject(req.body) && req.body.limit !== undefined ? req.body.limit : 10);
+
+        const page = parsePositiveInteger(rawPage, 'page');
+        const limit = parsePositiveInteger(rawLimit, 'limit');
         const { products, pagination } = await buildProductsList({ page, limit });
 
         return res.json({
