@@ -629,3 +629,64 @@ SELECT lich_su_quay_id AS history_id,
        cau_hinh_qua_quay_id AS reward_id,
        ngay_tao AS created_at
 FROM lich_su_quay;
+
+
+-- =========================
+-- SAMPLE DATA
+-- =========================
+
+-- Admin
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro) 
+VALUES (1, 'haunghia1512@gmail.com', 'admin', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '0', '0900000000', 'admin'), 
+(2, 'lommlay@gmail.com', 'admin1', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '1', '0900000001', 'admin');
+
+-- 1. NGUOI DUNG
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai) 
+VALUES (3, 'khachhang3@gmail.com', 'user03', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Tran', 'Van C', '0909876543');
+
+-- 2. DANH MUC
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, slug) VALUES (1, 'Len đan', 'len-dan');
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, danh_muc_cha_id, slug) VALUES (2, 'Len Cotton', 1, 'len-cotton');
+
+-- 3. SAN PHAM
+INSERT INTO loai_san_pham (loai_san_pham_id, ten_loai) VALUES (1, 'Len cuộn');
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham) VALUES (1, 1, 2, 'Len Cotton Milk');
+
+-- 4. BIEN THE & TON KHO
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac) 
+VALUES (1, 1, 'L-COTTON-001', 'len-cotton-milk-trang', 25000, 'Trắng');
+
+INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES (1, 1, 100);
+
+-- 5. WORKSHOP
+INSERT INTO hoi_thao (hoi_thao_id, san_pham_id, tieu_de, dia_diem) VALUES (1, 1, 'Workshop đan khăn', 'TP.HCM');
+INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc) 
+VALUES (1, 1, '2026-06-10 09:00:00', '2026-06-10 12:00:00');
+
+-- 6. PHIEU GIAM GIA & KHUYEN MAI
+INSERT INTO phieu_giam_gia (phieu_giam_gia_id, ma, ten_phieu, kieu_giam_gia, gia_tri) 
+VALUES (1, 'WELCOME10', 'Giảm 10%', 'percent', 10);
+
+INSERT INTO khuyen_mai (khuyen_mai_id, tieu_de, gia_tri, ngay_bat_dau, ngay_ket_thuc) 
+VALUES (1, 'Sale hè', 5000, '2026-06-01', '2026-06-30');
+
+-- 7. TINH THANH & PHUONG XA
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HCM', 'Hồ Chí Minh');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (1, 'Phường Bến Nghé', 'HCM');
+
+-- 8. DON HANG
+INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) 
+VALUES ('DH000003', 3, 25000, 1, '456 Đường Nguyễn Trãi', 'Tran Van C', '0909876543');
+
+INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) 
+VALUES ('DH000003', 1, 'Len Cotton Milk', 25000, 1);
+
+-- 9. THANH TOAN
+INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ('DH000003', 'COD', 'pending');
+
+-- 10. LOYALTY, YEU THICH & SPIN
+INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES (3, 50);
+INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES (3, 1);
+INSERT INTO luot_quay (nguoi_dung_id, so_luot) VALUES (3, 3);
+INSERT INTO cau_hinh_qua_quay (cau_hinh_qua_quay_id, loai_qua, gia_tri, ty_le_thang, so_luong_con_lai) 
+VALUES (1, 'point', 10, 20.00, 100);
