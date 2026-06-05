@@ -6,18 +6,18 @@ const escapeHtml = (value) => String(value)
   .replace(/'/g, '&#39;');
 
 const apiDocs = {
-  title: 'ShopLen API Documentation',
+  title: 'Tài liệu API ShopLen',
   version: '1.0.0',
-  description: 'Backend-hosted API docs with request examples and sample responses for current endpoints.',
+  description: 'Tài liệu API hiển thị ví dụ request và response cho các endpoint hiện tại. Tên bảng/cột nội bộ đã được Việt hóa, nhưng field API vẫn giữ nguyên để tương thích frontend.',
   baseUrl: '/api',
   groups: [
     {
-      name: 'Auth',
+      name: 'Xác thực',
       endpoints: [
         {
           method: 'POST',
           path: '/api/auth/register',
-          summary: 'Register a new user',
+          summary: 'Đăng ký tài khoản mới',
           auth: false,
           requestExample: {
             username: 'user123',
@@ -34,7 +34,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/auth/login',
-          summary: 'Login with email and password',
+          summary: 'Đăng nhập bằng email và mật khẩu',
           auth: false,
           requestExample: {
             email: 'user@example.com',
@@ -50,20 +50,9 @@ const apiDocs = {
           }
         },
         {
-          method: 'POST',
-          path: '/api/auth/logout',
-          summary: 'Logout current session',
-          auth: false,
-          requestExample: {},
-          successStatus: 200,
-          successExample: {
-            message: 'Đăng xuất thành công'
-          }
-        },
-        {
           method: 'GET',
           path: '/api/auth/google',
-          summary: 'Start Google login',
+          summary: 'Bắt đầu đăng nhập bằng Google',
           auth: false,
           requestExample: null,
           successStatus: 302,
@@ -74,7 +63,7 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/auth/google/callback',
-          summary: 'Handle Google OAuth callback',
+          summary: 'Xử lý callback từ Google OAuth',
           auth: false,
           requestExample: {
             code: 'google-auth-code',
@@ -86,9 +75,20 @@ const apiDocs = {
           }
         },
         {
+          method: 'POST',
+          path: '/api/auth/logout',
+          summary: 'Đăng xuất phiên hiện tại',
+          auth: false,
+          requestExample: {},
+          successStatus: 200,
+          successExample: {
+            message: 'Đăng xuất thành công'
+          }
+        },
+        {
           method: 'GET',
           path: '/api/auth/me',
-          summary: 'Get current authenticated user',
+          summary: 'Lấy thông tin người dùng hiện tại',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -105,7 +105,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/auth/forgot-password',
-          summary: 'Send password reset OTP',
+          summary: 'Gửi OTP đặt lại mật khẩu',
           auth: false,
           requestExample: {
             email: 'user@example.com'
@@ -120,7 +120,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/auth/verify-reset-otp',
-          summary: 'Verify OTP and get reset session token',
+          summary: 'Xác thực OTP và lấy token phiên đặt lại',
           auth: false,
           requestExample: {
             email: 'user@example.com',
@@ -135,7 +135,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/auth/reset-password',
-          summary: 'Reset password with reset session token',
+          summary: 'Đặt lại mật khẩu bằng token phiên',
           auth: false,
           requestExample: {
             email: 'user@example.com',
@@ -150,12 +150,12 @@ const apiDocs = {
       ]
     },
     {
-      name: 'Users',
+      name: 'Người dùng',
       endpoints: [
         {
           method: 'GET',
           path: '/api/users',
-          summary: 'List users',
+          summary: 'Lấy danh sách người dùng',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -172,7 +172,7 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/users/:user_id',
-          summary: 'Get user detail by id',
+          summary: 'Lấy chi tiết người dùng theo id',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -187,7 +187,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/users',
-          summary: 'Create a user as admin',
+          summary: 'Tạo người dùng bằng quyền admin',
           auth: true,
           requestExample: {
             username: 'newuser',
@@ -216,7 +216,7 @@ const apiDocs = {
         {
           method: 'PUT',
           path: '/api/users/:user_id',
-          summary: 'Update a user as admin',
+          summary: 'Cập nhật người dùng bằng quyền admin',
           auth: true,
           requestExample: {
             username: 'updateduser',
@@ -245,7 +245,7 @@ const apiDocs = {
         {
           method: 'DELETE',
           path: '/api/users/:user_id',
-          summary: 'Delete a user as admin',
+          summary: 'Xóa người dùng bằng quyền admin',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -256,7 +256,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/users/change-password',
-          summary: 'Change password for current user',
+          summary: 'Đổi mật khẩu cho người dùng hiện tại',
           auth: true,
           requestExample: {
             currentPassword: 'Password@123',
@@ -271,12 +271,12 @@ const apiDocs = {
       ]
     },
     {
-      name: 'Products',
+      name: 'Sản phẩm',
       endpoints: [
         {
           method: 'GET',
           path: '/api/products/types',
-          summary: 'List all product types',
+          summary: 'Lấy danh sách loại sản phẩm',
           auth: false,
           requestExample: null,
           successStatus: 200,
@@ -301,7 +301,7 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/products',
-          summary: 'List products with nested variants and images',
+          summary: 'Lấy danh sách sản phẩm kèm biến thể và ảnh',
           auth: false,
           requestExample: {
             page: 1,
@@ -353,7 +353,7 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/products/:product_id',
-          summary: 'Get product detail',
+          summary: 'Lấy chi tiết sản phẩm',
           auth: false,
           requestExample: null,
           successStatus: 200,
@@ -393,8 +393,6 @@ const apiDocs = {
         },
         {
           method: 'POST',
-          path: '/api/products',
-          summary: 'Create a product with variants and imgBB images',
           auth: true,
           requestExample: {
             type_id: 1,
@@ -436,7 +434,7 @@ const apiDocs = {
         {
           method: 'PUT',
           path: '/api/products/:product_id',
-          summary: 'Update a product and optionally its variants',
+          summary: 'Cập nhật sản phẩm và tùy chọn biến thể',
           auth: true,
           requestExample: {
             product_name: 'Cuộn len Cotton Milk 50g - mới',
@@ -472,7 +470,7 @@ const apiDocs = {
         {
           method: 'DELETE',
           path: '/api/products/:product_id',
-          summary: 'Delete a product',
+          summary: 'Xóa sản phẩm',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -484,12 +482,12 @@ const apiDocs = {
       ]
     },
     {
-      name: 'Categories',
+      name: 'Danh mục',
       endpoints: [
         {
           method: 'GET',
           path: '/api/categories',
-          summary: 'List categories as a nested tree',
+          summary: 'Lấy danh sách danh mục theo cây',
           auth: false,
           requestExample: null,
           successStatus: 200,
@@ -527,7 +525,7 @@ const apiDocs = {
         {
           method: 'GET',
           path: '/api/categories/:category_id',
-          summary: 'Get category detail by id as nested subtree',
+          summary: 'Lấy chi tiết danh mục theo id dưới dạng cây con',
           auth: false,
           requestExample: null,
           successStatus: 200,
@@ -553,7 +551,7 @@ const apiDocs = {
         {
           method: 'POST',
           path: '/api/categories',
-          summary: 'Create a category or bulk-create a tree of categories',
+          summary: 'Tạo danh mục hoặc tạo hàng loạt theo cây',
           auth: true,
           requestExample: {
             category_name: 'Sợi Len',
@@ -592,11 +590,11 @@ const apiDocs = {
         {
           method: 'PUT',
           path: '/api/categories/:category_id',
-          summary: 'Update a category',
+          summary: 'Cập nhật danh mục',
           auth: true,
           requestExample: {
-            category_name: 'Updated Electronics',
-            description: 'Updated description',
+            category_name: 'Điện tử đã cập nhật',
+            description: 'Mô tả đã cập nhật',
             parent_category_id: null
           },
           successStatus: 200,
@@ -604,17 +602,17 @@ const apiDocs = {
             message: 'Cập nhật danh mục thành công',
             category: {
               category_id: 1,
-              category_name: 'Updated Electronics',
-              description: 'Updated description',
+              category_name: 'Điện tử đã cập nhật',
+              description: 'Mô tả đã cập nhật',
               parent_category_id: null,
-              slug: 'updated-electronics'
+              slug: 'dien-tu-da-cap-nhat'
             }
           }
         },
         {
           method: 'DELETE',
           path: '/api/categories/:category_id',
-          summary: 'Delete a category',
+          summary: 'Xóa danh mục',
           auth: true,
           requestExample: null,
           successStatus: 200,
@@ -641,16 +639,16 @@ const renderDocsPage = () => {
           </div>
           <p class="summary">${escapeHtml(endpoint.summary)}</p>
           <div class="meta">
-            <span>${endpoint.auth ? 'Requires auth' : 'Public'}</span>
-            <span>Success: ${endpoint.successStatus}</span>
+            <span>${endpoint.auth ? 'Cần xác thực' : 'Công khai'}</span>
+            <span>Mã thành công: ${endpoint.successStatus}</span>
           </div>
           <div class="grid">
             <div>
-              <h3>Request example</h3>
-              ${endpoint.requestExample === null ? '<p class="muted">No body required.</p>' : renderCodeBlock(endpoint.requestExample)}
+              <h3>Ví dụ request</h3>
+              ${endpoint.requestExample === null ? '<p class="muted">Không cần body.</p>' : renderCodeBlock(endpoint.requestExample)}
             </div>
             <div>
-              <h3>Success response</h3>
+              <h3>Ví dụ response thành công</h3>
               ${renderCodeBlock(endpoint.successExample)}
             </div>
           </div>
@@ -660,7 +658,7 @@ const renderDocsPage = () => {
   `).join('');
 
   return `<!doctype html>
-<html lang="en">
+  <html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -792,9 +790,9 @@ const renderDocsPage = () => {
       <h1>${escapeHtml(apiDocs.title)}</h1>
       <p>${escapeHtml(apiDocs.description)}</p>
       <div class="chips">
-        <span class="chip"><strong>Version</strong> ${escapeHtml(apiDocs.version)}</span>
+        <span class="chip"><strong>Phiên bản</strong> ${escapeHtml(apiDocs.version)}</span>
         <span class="chip"><strong>Base URL</strong> ${escapeHtml(apiDocs.baseUrl)}</span>
-        <span class="chip"><strong>Raw spec</strong> <a href="/api/docs.json">/api/docs.json</a></span>
+        <span class="chip"><strong>Spec JSON</strong> <a href="/api/docs.json">/api/docs.json</a></span>
       </div>
     </section>
     ${sections}
