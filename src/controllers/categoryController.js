@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const categoryRepository = require('../repositories/categoryRepository');
 
 const normalizeText = (value) => (value || '').trim();
 
@@ -10,20 +11,9 @@ const slugifyText = (value) => normalizeText(value)
   .replace(/^-+|-+$/g, '');
 
 // Low-level insert helper that accepts either a `client` from `pool.connect()` or the `pool` itself
-const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug }) => {
-  const result = await client.query(
-    `INSERT INTO danh_muc (ten_danh_muc, mo_ta, danh_muc_cha_id, slug)
-     VALUES ($1, $2, $3, $4)
-     RETURNING danh_muc_id AS category_id,
-               ten_danh_muc AS category_name,
-               mo_ta AS description,
-               danh_muc_cha_id AS parent_category_id,
-               slug`,
-    [categoryName, description, parentCategoryId, slug]
-  );
-
-  return result.rows[0];
-};
+const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug }) => (
+  categoryRepository.insertCategoryClient(client, { categoryName, description, parentCategoryId, slug })
+);
 
 // Allocate a slug using an in-memory set of used slugs (used by bulk/tree operations)
 const allocateSlugFromUsed = (categoryName, usedSlugs) => {
@@ -55,55 +45,15 @@ const parseParentCategoryId = (value) => {
   return parsed;
 };
 
-const getCategoryById = async (categoryId) => pool.query(
-  `SELECT c.danh_muc_id AS category_id,
-          c.ten_danh_muc AS category_name,
-          c.mo_ta AS description,
-          c.danh_muc_cha_id AS parent_category_id,
-          c.slug,
-          p.ten_danh_muc AS parent_category_name
-   FROM danh_muc c
-   LEFT JOIN danh_muc p ON p.danh_muc_id = c.danh_muc_cha_id
-   WHERE c.danh_muc_id = $1`,
-  [categoryId]
-);
+const getCategoryById = async (categoryId) => categoryRepository.getCategoryById(categoryId);
 
-const hasChildCategories = async (categoryId) => pool.query(
-  'SELECT 1 FROM danh_muc WHERE danh_muc_cha_id = $1 LIMIT 1',
-  [categoryId]
-);
+const hasChildCategories = async (categoryId) => categoryRepository.hasChildCategories(categoryId);
 
-const hasProductsUsingCategory = async (categoryId) => pool.query(
-  'SELECT 1 FROM san_pham WHERE danh_muc_id = $1 LIMIT 1',
-  [categoryId]
-);
+const hasProductsUsingCategory = async (categoryId) => categoryRepository.hasProductsUsingCategory(categoryId);
 
-const isCategoryNameTaken = async (categoryName, ignoreCategoryId = null) => {
-  const query = ignoreCategoryId
-     ? `SELECT danh_muc_id
-       FROM danh_muc
-       WHERE LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM($1))
-        AND danh_muc_id <> $2
-       LIMIT 1`
-     : `SELECT danh_muc_id
-       FROM danh_muc
-       WHERE LOWER(TRIM(ten_danh_muc)) = LOWER(TRIM($1))
-       LIMIT 1`;
-  const params = ignoreCategoryId ? [categoryName, ignoreCategoryId] : [categoryName];
+const isCategoryNameTaken = async (categoryName, ignoreCategoryId = null) => categoryRepository.isCategoryNameTaken(categoryName, ignoreCategoryId);
 
-  const result = await pool.query(query, params);
-  return result.rows.length > 0;
-};
-
-const isSlugTaken = async (slug, ignoreCategoryId = null) => {
-  const query = ignoreCategoryId
-    ? 'SELECT danh_muc_id FROM danh_muc WHERE slug = $1 AND danh_muc_id <> $2 LIMIT 1'
-    : 'SELECT danh_muc_id FROM danh_muc WHERE slug = $1 LIMIT 1';
-  const params = ignoreCategoryId ? [slug, ignoreCategoryId] : [slug];
-
-  const result = await pool.query(query, params);
-  return result.rows.length > 0;
-};
+const isSlugTaken = async (slug, ignoreCategoryId = null) => categoryRepository.isSlugTaken(slug, ignoreCategoryId);
 
 const generateUniqueSlug = async (categoryName, ignoreCategoryId = null) => {
   const baseSlug = slugifyText(categoryName);
@@ -200,8 +150,8 @@ const createCategoriesBulk = async (req, res) => {
     });
 
     const [existingNamesResult, existingSlugsResult] = await Promise.all([
-      client.query('SELECT LOWER(TRIM(ten_danh_muc)) AS normalized_name FROM danh_muc'),
-      client.query('SELECT slug FROM danh_muc'),
+      categoryRepository.getAllCategoryNormalizedNames(),
+      categoryRepository.getAllCategorySlugs(),
     ]);
 
     const existingNames = new Set(existingNamesResult.rows.map((row) => row.normalized_name));
@@ -254,7 +204,7 @@ const createCategoriesBulk = async (req, res) => {
         const parentItem = await createItem(parentTempKey);
         parentCategoryId = parentItem.category_id;
       } else if (item.parentCategoryId !== null) {
-        const parentResult = await client.query('SELECT danh_muc_id FROM danh_muc WHERE danh_muc_id = $1', [item.parentCategoryId]);
+        const parentResult = await categoryRepository.getCategoryById(item.parentCategoryId);
 
         if (parentResult.rows.length === 0) {
           throw new Error(`Danh mục cha không tồn tại ở mục ${item.rawIndex + 1}`);
@@ -339,15 +289,7 @@ const formatCategoryTreeNode = (node) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT danh_muc_id AS category_id,
-            ten_danh_muc AS category_name,
-            mo_ta AS description,
-            danh_muc_cha_id AS parent_category_id,
-            slug
-       FROM danh_muc
-       ORDER BY ten_danh_muc ASC`
-    );
+    const result = await categoryRepository.getAllCategories();
 
     const rows = result.rows;
 
@@ -389,27 +331,7 @@ const getCategoryDetail = async (req, res) => {
     }
 
 
-    const result = await pool.query(
-      `WITH RECURSIVE subtree AS (
-         SELECT danh_muc_id AS category_id,
-                ten_danh_muc AS category_name,
-                mo_ta AS description,
-                danh_muc_cha_id AS parent_category_id,
-                slug
-         FROM danh_muc
-         WHERE danh_muc_id = $1
-       UNION ALL
-         SELECT c.danh_muc_id AS category_id,
-                c.ten_danh_muc AS category_name,
-                c.mo_ta AS description,
-                c.danh_muc_cha_id AS parent_category_id,
-                c.slug
-         FROM danh_muc c
-         INNER JOIN subtree s ON c.danh_muc_cha_id = s.category_id
-       )
-       SELECT * FROM subtree`,
-      [parsedCategoryId]
-    );
+    const result = await categoryRepository.getCategorySubtree(parsedCategoryId);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ message: 'Danh mục không tồn tại' });
@@ -645,8 +567,8 @@ const createCategoriesTree = async (req, res) => {
     }
 
     const [existingNamesResult, existingSlugsResult] = await Promise.all([
-      client.query('SELECT LOWER(TRIM(ten_danh_muc)) AS normalized_name FROM danh_muc'),
-      client.query('SELECT slug FROM danh_muc'),
+      categoryRepository.getAllCategoryNormalizedNames(),
+      categoryRepository.getAllCategorySlugs(),
     ]);
 
     const existingNames = new Set(existingNamesResult.rows.map((r) => r.normalized_name));

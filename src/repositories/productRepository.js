@@ -17,7 +17,9 @@ const parseInteger = (value, fieldName) => {
     const parsed = Number(value);
 
     if (!Number.isInteger(parsed) || parsed < 0) {
-        throw new Error(`${fieldName} không hợp lệ`);
+        const error = new Error(`${fieldName} không hợp lệ`);
+        error.statusCode = 400;
+        throw error;
     }
 
     return parsed;
@@ -27,7 +29,9 @@ const parsePositiveInteger = (value, fieldName) => {
     const parsed = parseInteger(value, fieldName);
 
     if (parsed <= 0) {
-        throw new Error(`${fieldName} không hợp lệ`);
+        const error = new Error(`${fieldName} không hợp lệ`);
+        error.statusCode = 400;
+        throw error;
     }
 
     return parsed;
@@ -37,7 +41,9 @@ const parsePrice = (value) => {
     const parsed = Number(value);
 
     if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error('price không hợp lệ');
+        const error = new Error('price không hợp lệ');
+        error.statusCode = 400;
+        throw error;
     }
 
     return parsed;
@@ -51,14 +57,18 @@ const sourceToBase64 = async (source) => {
     const normalizedSource = normalizeText(source);
 
     if (!normalizedSource) {
-        throw new Error('image_url không được để trống');
+        const error = new Error('image_url không được để trống');
+        error.statusCode = 400;
+        throw error;
     }
 
     if (normalizedSource.startsWith('data:')) {
         const match = normalizedSource.match(/^data:[^;]+;base64,(.+)$/i);
 
         if (!match) {
-            throw new Error('image_url dạng data URL không hợp lệ');
+            const error = new Error('image_url dạng data URL không hợp lệ');
+            error.statusCode = 400;
+            throw error;
         }
 
         return match[1];
@@ -68,7 +78,9 @@ const sourceToBase64 = async (source) => {
         const response = await fetch(normalizedSource);
 
         if (!response.ok) {
-            throw new Error(`Không thể tải ảnh từ ${normalizedSource}`);
+            const error = new Error(`Không thể tải ảnh từ ${normalizedSource}`);
+            error.statusCode = 400;
+            throw error;
         }
 
         const buffer = Buffer.from(await response.arrayBuffer());
@@ -82,7 +94,9 @@ const uploadImageToImgBB = async (source, name) => {
     const normalizedSource = normalizeText(source);
 
     if (!normalizedSource) {
-        throw new Error('image_url không được để trống');
+        const error = new Error('image_url không được để trống');
+        error.statusCode = 400;
+        throw error;
     }
 
     if (isImgBBUrl(normalizedSource)) {
@@ -106,13 +120,17 @@ const uploadImageToImgBB = async (source, name) => {
 
     if (!response.ok) {
         const rawError = await response.text().catch(() => '');
-        throw new Error(rawError ? `Không thể tải ảnh lên imgBB: ${rawError}` : 'Không thể tải ảnh lên imgBB');
+        const error = new Error(rawError ? `Không thể tải ảnh lên imgBB: ${rawError}` : 'Không thể tải ảnh lên imgBB');
+        error.statusCode = 400;
+        throw error;
     }
 
     const result = await response.json();
 
     if (!result?.success || !result?.data?.url) {
-        throw new Error(result?.error?.message || 'Không thể tải ảnh lên imgBB');
+        const error = new Error(result?.error?.message || 'Không thể tải ảnh lên imgBB');
+        error.statusCode = 400;
+        throw error;
     }
 
     return result.data.display_url || result.data.url;
@@ -122,7 +140,9 @@ const normalizeCategoryOrTypeId = (value, fieldName) => {
     const parsed = Number(value);
 
     if (!Number.isInteger(parsed) || parsed <= 0) {
-        throw new Error(`${fieldName} không hợp lệ`);
+        const error = new Error(`${fieldName} không hợp lệ`);
+        error.statusCode = 400;
+        throw error;
     }
 
     return parsed;
@@ -144,7 +164,9 @@ const buildVariantBaseSlug = (productName, variant) => {
     const slug = slugifyText(slugSource);
 
     if (!slug) {
-        throw new Error('Không thể tạo slug cho biến thể');
+        const error = new Error('Không thể tạo slug cho biến thể');
+        error.statusCode = 400;
+        throw error;
     }
 
     return slug;
@@ -152,7 +174,9 @@ const buildVariantBaseSlug = (productName, variant) => {
 
 const generateUniqueVariantSlug = async (baseSlug, ignoreVariantId = null) => {
     if (!baseSlug) {
-        throw new Error('slug không hợp lệ');
+        const error = new Error('slug không hợp lệ');
+        error.statusCode = 400;
+        throw error;
     }
 
     const params = ignoreVariantId
@@ -160,11 +184,11 @@ const generateUniqueVariantSlug = async (baseSlug, ignoreVariantId = null) => {
         : [baseSlug, `${baseSlug}-%`];
 
     const query = ignoreVariantId
-           ? `SELECT slug
+        ? `SELECT slug
                FROM bien_the_san_pham
                WHERE (slug = $1 OR slug LIKE $2)
                   AND bien_the_id <> $3`
-           : `SELECT slug
+        : `SELECT slug
                FROM bien_the_san_pham
                WHERE slug = $1 OR slug LIKE $2`;
 
@@ -192,18 +216,24 @@ const normalizeImageItems = (images, variantIndex) => {
     }
 
     if (!Array.isArray(images)) {
-        throw new Error(`images ở biến thể ${variantIndex + 1} phải là mảng`);
+        const error = new Error(`images ở biến thể ${variantIndex + 1} phải là mảng`);
+        error.statusCode = 400;
+        throw error;
     }
 
     return images.map((image, imageIndex) => {
         if (!isObject(image)) {
-            throw new Error(`Ảnh ở biến thể ${variantIndex + 1}, vị trí ${imageIndex + 1} không hợp lệ`);
+            const error = new Error(`Ảnh ở biến thể ${variantIndex + 1}, vị trí ${imageIndex + 1} không hợp lệ`);
+            error.statusCode = 400;
+            throw error;
         }
 
         const imageUrl = normalizeText(image.image_url);
 
         if (!imageUrl) {
-            throw new Error(`image_url ở biến thể ${variantIndex + 1}, vị trí ${imageIndex + 1} không được để trống`);
+            const error = new Error(`image_url ở biến thể ${variantIndex + 1}, vị trí ${imageIndex + 1} không được để trống`);
+            error.statusCode = 400;
+            throw error;
         }
 
         const sortOrder = image.sort_order === undefined || image.sort_order === null || image.sort_order === ''
@@ -219,7 +249,9 @@ const normalizeImageItems = (images, variantIndex) => {
 
 const normalizeVariantPayload = (variant, index) => {
     if (!isObject(variant)) {
-        throw new Error(`Biến thể ở vị trí ${index + 1} không hợp lệ`);
+        const error = new Error(`Biến thể ở vị trí ${index + 1} không hợp lệ`);
+        error.statusCode = 400;
+        throw error;
     }
 
     const variantId = variant.variant_id === undefined || variant.variant_id === null || variant.variant_id === ''
@@ -236,7 +268,9 @@ const normalizeVariantPayload = (variant, index) => {
     const images = normalizeImageItems(variant.images, index);
 
     if (!sku) {
-        throw new Error(`sku ở biến thể ${index + 1} không được để trống`);
+        const error = new Error(`sku ở biến thể ${index + 1} không được để trống`);
+        error.statusCode = 400;
+        throw error;
     }
 
     return {
@@ -251,14 +285,14 @@ const normalizeVariantPayload = (variant, index) => {
     };
 };
 
-const getCategoryById = (categoryId) => pool.query(
-    'SELECT danh_muc_id AS category_id FROM danh_muc WHERE danh_muc_id = $1 LIMIT 1',
-    [categoryId]
-);
-
 const getProductTypeById = (typeId) => pool.query(
     'SELECT loai_san_pham_id AS type_id FROM loai_san_pham WHERE loai_san_pham_id = $1 LIMIT 1',
     [typeId]
+);
+
+const getCategoryById = (categoryId) => pool.query(
+    'SELECT danh_muc_id AS category_id FROM danh_muc WHERE danh_muc_id = $1 LIMIT 1',
+    [categoryId]
 );
 
 const buildProductsList = async ({ page, limit }) => {
@@ -474,86 +508,6 @@ const ensureProductDependenciesAreClear = async (client, productId) => {
         || workshopVariants.rows.length > 0;
 };
 
-const getAllProductTypes = async (req, res) => {
-    try {
-        const result = await pool.query('SELECT loai_san_pham_id AS type_id, ten_loai AS type_name, mo_ta AS description FROM loai_san_pham ORDER BY loai_san_pham_id ASC');
-        res.json(result.rows);
-    } catch (error) {
-        res.status(500).json({ error: 'Lỗi máy chủ' });
-    }
-};
-
-const getAllProducts = async (req, res) => {
-    try {
-        const rawPage = req.query.page !== undefined
-            ? req.query.page
-            : (isObject(req.body) && req.body.page !== undefined ? req.body.page : 1);
-
-        const rawLimit = req.query.limit !== undefined
-            ? req.query.limit
-            : (isObject(req.body) && req.body.limit !== undefined ? req.body.limit : 10);
-
-        const page = parsePositiveInteger(rawPage, 'page');
-        const limit = parsePositiveInteger(rawLimit, 'limit');
-        const { products, pagination } = await buildProductsList({ page, limit });
-
-        return res.json({
-            success: true,
-            message: 'Lấy danh sách sản phẩm thành công',
-            data: {
-                products,
-                pagination,
-            },
-        });
-    } catch (error) {
-        if (error.message && (error.message === 'page không hợp lệ' || error.message === 'limit không hợp lệ')) {
-            return res.status(400).json({
-                success: false,
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            message: 'Lỗi máy chủ',
-        });
-    }
-};
-
-const getProductDetail = async (req, res) => {
-    try {
-        const productId = parseInteger(req.params.product_id, 'product_id');
-        const product = await buildProductDetail(productId);
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: 'Sản phẩm không tồn tại',
-            });
-        }
-
-        return res.json({
-            success: true,
-            message: 'Lấy chi tiết sản phẩm thành công',
-            data: {
-                product,
-            },
-        });
-    } catch (error) {
-        if (error.message && error.message.endsWith('không hợp lệ')) {
-            return res.status(400).json({
-                success: false,
-                message: error.message,
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            message: error.message || 'Lỗi máy chủ',
-        });
-    }
-};
-
 const uploadVariantImages = async (images, slugPrefix, variantIndex) => {
     if (images === null) {
         return [];
@@ -607,28 +561,34 @@ const replaceVariantImages = async (client, variantId, images) => {
     }
 };
 
-const createProduct = async (req, res) => {
+const getAllProductTypes = async () => pool.query(
+    'SELECT loai_san_pham_id AS type_id, ten_loai AS type_name, mo_ta AS description FROM loai_san_pham ORDER BY loai_san_pham_id ASC'
+);
+
+const getAllProducts = async ({ page, limit }) => buildProductsList({ page, limit });
+
+const getProductDetail = async (productId) => buildProductDetail(productId);
+
+const createProduct = async (payload) => {
     const client = await pool.connect();
 
     try {
-        const typeId = normalizeCategoryOrTypeId(req.body.type_id, 'type_id');
-        const categoryId = normalizeCategoryOrTypeId(req.body.category_id, 'category_id');
-        const productName = normalizeText(req.body.product_name);
-        const description = normalizeText(req.body.description) || null;
-        const productStatus = validateProductStatus(req.body.product_status);
+        const typeId = normalizeCategoryOrTypeId(payload.type_id, 'type_id');
+        const categoryId = normalizeCategoryOrTypeId(payload.category_id, 'category_id');
+        const productName = normalizeText(payload.product_name);
+        const description = normalizeText(payload.description) || null;
+        const productStatus = validateProductStatus(payload.product_status);
 
         if (!productName) {
-            return res.status(400).json({
-                success: false,
-                message: 'product_name không được để trống',
-            });
+            const error = new Error('product_name không được để trống');
+            error.statusCode = 400;
+            throw error;
         }
 
-        if (!Array.isArray(req.body.variants) || req.body.variants.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'variants phải là một mảng không rỗng',
-            });
+        if (!Array.isArray(payload.variants) || payload.variants.length === 0) {
+            const error = new Error('variants phải là một mảng không rỗng');
+            error.statusCode = 400;
+            throw error;
         }
 
         const [typeExists, categoryExists] = await Promise.all([
@@ -637,26 +597,26 @@ const createProduct = async (req, res) => {
         ]);
 
         if (typeExists.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'type_id không tồn tại',
-            });
+            const error = new Error('type_id không tồn tại');
+            error.statusCode = 400;
+            throw error;
         }
 
         if (categoryExists.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'category_id không tồn tại',
-            });
+            const error = new Error('category_id không tồn tại');
+            error.statusCode = 400;
+            throw error;
         }
 
         const seenSkus = new Set();
-        const normalizedVariants = req.body.variants.map((variant, index) => {
+        const normalizedVariants = payload.variants.map((variant, index) => {
             const normalized = normalizeVariantPayload(variant, index);
             const skuKey = normalized.sku.toLowerCase();
 
             if (seenSkus.has(skuKey)) {
-                throw new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
+                const error = new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
+                error.statusCode = 400;
+                throw error;
             }
 
             seenSkus.add(skuKey);
@@ -709,33 +669,28 @@ const createProduct = async (req, res) => {
         await client.query('COMMIT');
 
         const product = await buildProductDetail(createdProduct.product_id);
-
-        return res.status(201).json({
-            success: true,
-            message: 'Tạo sản phẩm thành công',
-            data: {
-                product,
-            },
-        });
+        return product;
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
 
-        return res.status(400).json({
-            success: false,
-            message: error.code === '23505'
-                ? 'SKU hoặc slug đã tồn tại'
-                : error.message || 'Không thể tạo sản phẩm',
-        });
+        if (!error.statusCode) {
+            error.statusCode = error.code === '23505' ? 400 : 400;
+        }
+
+        if (error.code === '23505') {
+            error.message = 'SKU hoặc slug đã tồn tại';
+        }
+
+        throw error;
     } finally {
         client.release();
     }
 };
 
-const updateProduct = async (req, res) => {
+const updateProduct = async (productId, payload) => {
     const client = await pool.connect();
 
     try {
-        const productId = parseInteger(req.params.product_id, 'product_id');
         const currentProductResult = await client.query(
             `SELECT san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status
              FROM san_pham
@@ -744,34 +699,32 @@ const updateProduct = async (req, res) => {
         );
 
         if (currentProductResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Sản phẩm không tồn tại',
-            });
+            const error = new Error('Sản phẩm không tồn tại');
+            error.statusCode = 404;
+            throw error;
         }
 
         const currentProduct = currentProductResult.rows[0];
-        const typeId = req.body.type_id === undefined
+        const typeId = payload.type_id === undefined
             ? currentProduct.type_id
-            : normalizeCategoryOrTypeId(req.body.type_id, 'type_id');
-        const categoryId = req.body.category_id === undefined
+            : normalizeCategoryOrTypeId(payload.type_id, 'type_id');
+        const categoryId = payload.category_id === undefined
             ? currentProduct.category_id
-            : normalizeCategoryOrTypeId(req.body.category_id, 'category_id');
-        const productName = req.body.product_name === undefined
+            : normalizeCategoryOrTypeId(payload.category_id, 'category_id');
+        const productName = payload.product_name === undefined
             ? currentProduct.product_name
-            : normalizeText(req.body.product_name);
-        const description = req.body.description === undefined
+            : normalizeText(payload.product_name);
+        const description = payload.description === undefined
             ? currentProduct.description
-            : (normalizeText(req.body.description) || null);
-        const productStatus = req.body.product_status === undefined
+            : (normalizeText(payload.description) || null);
+        const productStatus = payload.product_status === undefined
             ? currentProduct.product_status
-            : validateProductStatus(req.body.product_status);
+            : validateProductStatus(payload.product_status);
 
         if (!productName) {
-            return res.status(400).json({
-                success: false,
-                message: 'product_name không được để trống',
-            });
+            const error = new Error('product_name không được để trống');
+            error.statusCode = 400;
+            throw error;
         }
 
         const [typeExists, categoryExists] = await Promise.all([
@@ -780,37 +733,36 @@ const updateProduct = async (req, res) => {
         ]);
 
         if (typeExists.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'type_id không tồn tại',
-            });
+            const error = new Error('type_id không tồn tại');
+            error.statusCode = 400;
+            throw error;
         }
 
         if (categoryExists.rows.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'category_id không tồn tại',
-            });
+            const error = new Error('category_id không tồn tại');
+            error.statusCode = 400;
+            throw error;
         }
 
-        const hasVariantsPayload = Array.isArray(req.body.variants);
+        const hasVariantsPayload = Array.isArray(payload.variants);
         let normalizedVariants = [];
 
         if (hasVariantsPayload) {
-            if (req.body.variants.length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'variants không được để trống khi gửi cập nhật',
-                });
+            if (payload.variants.length === 0) {
+                const error = new Error('variants không được để trống khi gửi cập nhật');
+                error.statusCode = 400;
+                throw error;
             }
 
             const seenSkus = new Set();
-            normalizedVariants = req.body.variants.map((variant, index) => {
+            normalizedVariants = payload.variants.map((variant, index) => {
                 const normalized = normalizeVariantPayload(variant, index);
                 const skuKey = normalized.sku.toLowerCase();
 
                 if (seenSkus.has(skuKey)) {
-                    throw new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
+                    const error = new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
+                    error.statusCode = 400;
+                    throw error;
                 }
 
                 seenSkus.add(skuKey);
@@ -818,16 +770,10 @@ const updateProduct = async (req, res) => {
             });
         }
 
-        const preparedVariants = [];
-
-        for (let index = 0; index < normalizedVariants.length; index += 1) {
-            const variant = normalizedVariants[index];
-
-            preparedVariants.push({
-                ...variant,
-                _uploadIndex: index,
-            });
-        }
+        const preparedVariants = normalizedVariants.map((variant, index) => ({
+            ...variant,
+            _uploadIndex: index,
+        }));
 
         await client.query('BEGIN');
 
@@ -854,15 +800,17 @@ const updateProduct = async (req, res) => {
                     );
 
                     if (currentVariantResult.rows.length === 0) {
-                        throw new Error(`variant_id ${variant.variant_id} không tồn tại trong sản phẩm này`);
+                        const error = new Error(`variant_id ${variant.variant_id} không tồn tại trong sản phẩm này`);
+                        error.statusCode = 400;
+                        throw error;
                     }
 
-                const nextSlug = variant.slug
-                    ? await generateUniqueVariantSlug(variant.slug, variant.variant_id)
-                    : currentVariantResult.rows[0].slug;
-                const uploadedImages = variant.images !== null
-                    ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
-                    : null;
+                    const nextSlug = variant.slug
+                        ? await generateUniqueVariantSlug(variant.slug, variant.variant_id)
+                        : currentVariantResult.rows[0].slug;
+                    const uploadedImages = variant.images !== null
+                        ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
+                        : null;
 
                     await client.query(
                         `UPDATE bien_the_san_pham
@@ -886,15 +834,15 @@ const updateProduct = async (req, res) => {
 
                     await upsertVariantInventory(client, variant.variant_id, nextStockQuantity);
 
-                if (uploadedImages !== null) {
-                    await replaceVariantImages(client, variant.variant_id, uploadedImages);
+                    if (uploadedImages !== null) {
+                        await replaceVariantImages(client, variant.variant_id, uploadedImages);
                     }
                 } else {
                     const baseSlug = variant.slug || buildVariantBaseSlug(productName, variant);
                     const nextSlug = await generateUniqueVariantSlug(baseSlug);
-                const uploadedImages = variant.images !== null
-                    ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
-                    : null;
+                    const uploadedImages = variant.images !== null
+                        ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
+                        : null;
 
                     const insertedVariantResult = await client.query(
                         `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
@@ -906,8 +854,8 @@ const updateProduct = async (req, res) => {
                     const newVariantId = insertedVariantResult.rows[0].variant_id;
                     await upsertVariantInventory(client, newVariantId, variant.stock_quantity === null ? 0 : variant.stock_quantity);
 
-                if (uploadedImages !== null && uploadedImages.length > 0) {
-                    await replaceVariantImages(client, newVariantId, uploadedImages);
+                    if (uploadedImages !== null && uploadedImages.length > 0) {
+                        await replaceVariantImages(client, newVariantId, uploadedImages);
                     }
                 }
             }
@@ -915,54 +863,45 @@ const updateProduct = async (req, res) => {
 
         await client.query('COMMIT');
 
-        const product = await buildProductDetail(updatedProductResult.rows[0].product_id);
-
-        return res.json({
-            success: true,
-            message: 'Cập nhật sản phẩm thành công',
-            data: {
-                product,
-            },
-        });
+        return buildProductDetail(updatedProductResult.rows[0].product_id);
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
 
-        return res.status(400).json({
-            success: false,
-            message: error.code === '23505'
-                ? 'SKU hoặc slug đã tồn tại'
-                : error.message || 'Không thể cập nhật sản phẩm',
-        });
+        if (!error.statusCode) {
+            error.statusCode = error.code === '23505' ? 400 : 400;
+        }
+
+        if (error.code === '23505') {
+            error.message = 'SKU hoặc slug đã tồn tại';
+        }
+
+        throw error;
     } finally {
         client.release();
     }
 };
 
-const deleteProduct = async (req, res) => {
+const deleteProduct = async (productId) => {
     const client = await pool.connect();
 
     try {
-        const productId = parseInteger(req.params.product_id, 'product_id');
-
         const currentProductResult = await client.query(
             'SELECT san_pham_id AS product_id FROM san_pham WHERE san_pham_id = $1',
             [productId]
         );
 
         if (currentProductResult.rows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Sản phẩm không tồn tại',
-            });
+            const error = new Error('Sản phẩm không tồn tại');
+            error.statusCode = 404;
+            throw error;
         }
 
         const blocked = await ensureProductDependenciesAreClear(client, productId);
 
         if (blocked) {
-            return res.status(400).json({
-                success: false,
-                message: 'Không thể xóa sản phẩm đang được sử dụng',
-            });
+            const error = new Error('Không thể xóa sản phẩm đang được sử dụng');
+            error.statusCode = 400;
+            throw error;
         }
 
         await client.query('BEGIN');
@@ -988,18 +927,14 @@ const deleteProduct = async (req, res) => {
         await client.query('DELETE FROM san_pham WHERE san_pham_id = $1', [productId]);
 
         await client.query('COMMIT');
-
-        return res.json({
-            success: true,
-            message: 'Xóa sản phẩm thành công',
-        });
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
 
-        return res.status(400).json({
-            success: false,
-            message: error.message || 'Không thể xóa sản phẩm',
-        });
+        if (!error.statusCode) {
+            error.statusCode = 400;
+        }
+
+        throw error;
     } finally {
         client.release();
     }
@@ -1012,4 +947,5 @@ module.exports = {
     createProduct,
     updateProduct,
     deleteProduct,
+    parsePositiveInteger,
 };

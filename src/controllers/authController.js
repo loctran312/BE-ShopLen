@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { randomInt } = require('crypto');
 const { sendOtpNotification } = require('../services/otpService');
+const authRepository = require('../repositories/authRepository');
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 const OTP_EXPIRY_MINUTES = Number(process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES || 10);
@@ -31,91 +32,6 @@ const extractAndVerifyToken = (authHeader) => {
   } catch (error) {
     throw new Error('Token không hợp lệ hoặc hết hạn');
   }
-};
-
-const getUserByEmail = async (client, email) => client.query(
-  `SELECT nguoi_dung_id AS user_id,
-          ten_dang_nhap AS username,
-          thu_dien_tu AS email,
-          so_dien_thoai AS phone_number,
-          vai_tro AS role,
-          ho AS first_name,
-          ten AS last_name
-   FROM nguoi_dung
-   WHERE thu_dien_tu = $1`,
-  [email]
-);
-
-const createPasswordResetToken = async (client, userId, channel, destination, otpHash) => {
-  const result = await client.query(
-    `INSERT INTO ma_dat_lai_mat_khau (nguoi_dung_id, kenh, dia_chi_nhan, ma_otp_hash, het_han_luc)
-     VALUES ($1, $2, $3, $4, NOW() + ($5 || ' minutes')::interval)
-     RETURNING ma_id AS id, het_han_luc AS expires_at, ngay_tao AS created_at`,
-    [userId, channel, destination, otpHash, OTP_EXPIRY_MINUTES]
-  );
-
-  return result.rows[0];
-};
-
-const getLatestResetToken = async (client, userId, channel, destination) => client.query(
-  `SELECT ma_id AS id,
-          ma_otp_hash AS otp_hash,
-          het_han_luc AS expires_at,
-          da_su_dung_luc AS used_at,
-          so_lan_thu AS attempt_count,
-          (het_han_luc > NOW()) AS not_expired
-   FROM ma_dat_lai_mat_khau
-   WHERE nguoi_dung_id = $1 AND kenh = $2 AND dia_chi_nhan = $3
-   ORDER BY ma_id DESC
-   LIMIT 1`,
-  [userId, channel, destination]
-);
-
-const getUserById = async (client, userId) => client.query(
-  `SELECT nguoi_dung_id AS user_id,
-          ten_dang_nhap AS username,
-          thu_dien_tu AS email,
-          so_dien_thoai AS phone_number,
-          vai_tro AS role,
-          ho AS first_name,
-          ten AS last_name
-   FROM nguoi_dung
-   WHERE nguoi_dung_id = $1`,
-  [userId]
-);
-
-const getUserByGoogleProviderId = async (client, providerId) => client.query(
-  `SELECT u.nguoi_dung_id AS user_id,
-          u.ten_dang_nhap AS username,
-          u.thu_dien_tu AS email,
-          u.so_dien_thoai AS phone_number,
-          u.vai_tro AS role,
-          u.ho AS first_name,
-          u.ten AS last_name
-   FROM nguoi_dung_xac_thuc ap
-   INNER JOIN nguoi_dung u ON u.nguoi_dung_id = ap.nguoi_dung_id
-   WHERE ap.nha_cung_cap = 'google' AND ap.nha_cung_cap_id = $1
-   LIMIT 1`,
-  [providerId]
-);
-
-const getGoogleProviderByUserId = async (client, userId) => client.query(
-  `SELECT xac_thuc_id AS id,
-          nguoi_dung_id AS user_id,
-          nha_cung_cap AS provider,
-          nha_cung_cap_id AS provider_id
-   FROM nguoi_dung_xac_thuc
-   WHERE nguoi_dung_id = $1 AND nha_cung_cap = 'google'
-   LIMIT 1`,
-  [userId]
-);
-
-const getNextUserId = async (client) => {
-  const nextIdResult = await client.query(`
-    SELECT COALESCE(MAX(nguoi_dung_id), 0) + 1 as next_id FROM nguoi_dung
-  `);
-
-  return nextIdResult.rows[0].next_id;
 };
 
 const buildGoogleFrontendRedirectUrl = (params) => {
@@ -248,50 +164,40 @@ const issueAuthToken = (user) => jwt.sign(
 );
 
 const createOrLinkGoogleUser = async (client, googleProfile) => {
-  const existingGoogleUserResult = await getUserByGoogleProviderId(client, googleProfile.sub);
+  const existingGoogleUserResult = await authRepository.getUserByGoogleProviderId(client, googleProfile.sub);
 
   if (existingGoogleUserResult.rows.length > 0) {
     return existingGoogleUserResult.rows[0];
   }
 
-  const existingUserResult = await getUserByEmail(client, googleProfile.email);
+  const existingUserResult = await authRepository.getUserByEmail(client, googleProfile.email);
 
   if (existingUserResult.rows.length > 0) {
     const existingUser = existingUserResult.rows[0];
-    const existingProviderResult = await getGoogleProviderByUserId(client, existingUser.user_id);
+    const existingProviderResult = await authRepository.getGoogleProviderByUserId(client, existingUser.user_id);
 
     if (existingProviderResult.rows.length === 0) {
-      await client.query(
-        'INSERT INTO nguoi_dung_xac_thuc (nguoi_dung_id, nha_cung_cap, nha_cung_cap_id) VALUES ($1, $2, $3)',
-        [existingUser.user_id, 'google', googleProfile.sub]
-      );
+      await authRepository.createGoogleProvider(client, existingUser.user_id, googleProfile.sub);
     }
 
     return existingUser;
   }
 
-  const nextId = await getNextUserId(client);
+  const nextId = await authRepository.getNextUserId(client);
   const usernameCandidate = await ensureUniqueUsername(client, generateGoogleUsername(googleProfile.email, googleProfile.sub));
 
-  const newUserResult = await client.query(
-    `INSERT INTO nguoi_dung (nguoi_dung_id, ten_dang_nhap, thu_dien_tu, mat_khau, so_dien_thoai, vai_tro)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING nguoi_dung_id AS user_id,
-               ten_dang_nhap AS username,
-               thu_dien_tu AS email,
-               so_dien_thoai AS phone_number,
-               vai_tro AS role,
-               ho AS first_name,
-               ten AS last_name`,
-    [nextId, usernameCandidate, googleProfile.email, null, null, 'customer']
-  );
+  const newUserResult = await authRepository.createUser(client, {
+    userId: nextId,
+    username: usernameCandidate,
+    email: googleProfile.email,
+    password: null,
+    phoneNumber: null,
+    role: 'customer',
+  });
 
   const newUser = newUserResult.rows[0];
 
-  await client.query(
-    'INSERT INTO nguoi_dung_xac_thuc (nguoi_dung_id, nha_cung_cap, nha_cung_cap_id) VALUES ($1, $2, $3)',
-    [newUser.user_id, 'google', googleProfile.sub]
-  );
+  await authRepository.createGoogleProvider(client, newUser.user_id, googleProfile.sub);
 
   return newUser;
 };
@@ -302,9 +208,7 @@ const register = async (req, res) => {
     const { username, email, password, phone_number, role } = req.body;
 
     // Kiểm tra username hoặc email đã tồn tại chưa
-    const existingUser = await pool.query(
-      'SELECT * FROM nguoi_dung WHERE ten_dang_nhap = $1 OR thu_dien_tu = $2', [username, email]
-    );
+    const existingUser = await authRepository.getUserByUsernameOrEmail(username, email);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'Username hoặc email đã tồn tại' });
     }
@@ -335,17 +239,15 @@ const register = async (req, res) => {
     // Mã hóa mật khẩu
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Lấy ID tiếp theo (MAX + 1), nếu không có user thì bắt đầu từ 1
-    const nextIdResult = await pool.query(`
-      SELECT COALESCE(MAX(nguoi_dung_id), 0) + 1 as next_id FROM nguoi_dung
-    `);
-    const nextId = nextIdResult.rows[0].next_id;
-
     // Thêm người dùng mới vào cơ sở dữ liệu
-    const newUser = await pool.query(
-      'INSERT INTO nguoi_dung (nguoi_dung_id, ten_dang_nhap, thu_dien_tu, mat_khau, so_dien_thoai, vai_tro) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [nextId, username, email, hashedPassword, phone_number, role]
-    );
+    await authRepository.createUser(pool, {
+      userId: await authRepository.getNextUserId(pool),
+      username,
+      email,
+      password: hashedPassword,
+      phoneNumber: phone_number,
+      role,
+    });
 
     res.status(201).json({ message: 'Đăng ký thành công'});
   } catch (error) {
@@ -405,7 +307,7 @@ const handleGoogleCallback = async (req, res) => {
     await client.query('BEGIN');
 
     const user = await createOrLinkGoogleUser(client, googleProfile);
-    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['active', user.user_id]);
+    await authRepository.updateUserStatus(user.user_id, 'active');
     const token = issueAuthToken(user);
 
     await client.query('COMMIT');
@@ -435,17 +337,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Kiểm tra email có tồn tại không (select and alias password and id)
-    const userResult = await pool.query(
-      `SELECT nguoi_dung_id AS user_id,
-              ten_dang_nhap AS username,
-              thu_dien_tu AS email,
-              mat_khau AS password,
-              vai_tro AS role
-       FROM nguoi_dung
-       WHERE thu_dien_tu = $1
-       LIMIT 1`,
-      [email]
-    );
+    const userResult = await authRepository.getUserWithPassword(email);
 
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
@@ -459,7 +351,7 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
     }
 
-    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['active', user.user_id]);
+    await authRepository.updateUserStatus(user.user_id, 'active');
 
     // Tạo token JWT
     const token = jwt.sign(
@@ -496,7 +388,7 @@ const logout = async (req, res) => {
       return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
     }
 
-    await pool.query('UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2', ['inactive', decoded.user_id]);
+    await authRepository.updateUserStatus(decoded.user_id, 'inactive');
 
     res.json({ message: 'Đăng xuất thành công' });
   } catch (error) {
@@ -519,18 +411,7 @@ const getCurrentUser = async (req, res) => {
             return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
         }
 
-        const userResult = await pool.query(
-          `SELECT nguoi_dung_id AS user_id,
-                  ten_dang_nhap AS username,
-                  thu_dien_tu AS email,
-                  so_dien_thoai AS phone_number,
-                  vai_tro AS role,
-                  ho AS first_name,
-                  ten AS last_name
-           FROM nguoi_dung
-           WHERE nguoi_dung_id = $1`,
-          [decoded.user_id]
-        );
+        const userResult = await authRepository.getUserById(pool, decoded.user_id);
         if (userResult.rows.length === 0) {
             return res.status(404).json({ message: 'Người dùng không tồn tại' });
         }
@@ -551,7 +432,7 @@ const forgotPassword = async (req, res) => {
       return res.status(400).json({ message: 'Vui lòng nhập email' });
     }
 
-    const userResult = await getUserByEmail(client, identifier);
+    const userResult = await authRepository.getUserByEmail(client, identifier);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
@@ -567,12 +448,9 @@ const forgotPassword = async (req, res) => {
     const otpHash = await bcrypt.hash(otp, 10);
 
     await client.query('BEGIN');
-    await client.query(
-      'UPDATE ma_dat_lai_mat_khau SET da_su_dung_luc = NOW() WHERE nguoi_dung_id = $1 AND kenh = $2 AND da_su_dung_luc IS NULL',
-      [user.user_id, RESET_CHANNEL]
-    );
+    await authRepository.markActiveResetTokensUsed(client, user.user_id, RESET_CHANNEL);
 
-    const resetToken = await createPasswordResetToken(client, user.user_id, RESET_CHANNEL, destination, otpHash);
+    const resetToken = await authRepository.createPasswordResetToken(client, user.user_id, RESET_CHANNEL, destination, otpHash);
 
     await sendOtpNotification({
       channel: 'email',
@@ -609,7 +487,7 @@ const verifyResetOtp = async (req, res) => {
       return res.status(400).json({ message: 'Thiếu email hoặc OTP' });
     }
 
-    const userResult = await getUserByEmail(client, identifier);
+    const userResult = await authRepository.getUserByEmail(client, identifier);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
@@ -619,7 +497,7 @@ const verifyResetOtp = async (req, res) => {
 
     await client.query('BEGIN');
 
-    const tokenResult = await getLatestResetToken(client, user.user_id, RESET_CHANNEL, destination);
+    const tokenResult = await authRepository.getLatestResetToken(client, user.user_id, RESET_CHANNEL, destination);
 
     if (tokenResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -634,14 +512,14 @@ const verifyResetOtp = async (req, res) => {
     }
 
     if (!token.not_expired) {
-      await client.query('UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1', [token.id]);
+      await authRepository.incrementResetTokenAttempts(client, token.id);
       await client.query('COMMIT');
       return res.status(400).json({ message: 'OTP đã hết hạn' });
     }
 
     const isOtpValid = await bcrypt.compare(otp, token.otp_hash);
     if (!isOtpValid) {
-      await client.query('UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1', [token.id]);
+      await authRepository.incrementResetTokenAttempts(client, token.id);
       await client.query('COMMIT');
       return res.status(400).json({ message: 'OTP không đúng' });
     }
@@ -689,7 +567,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt' });
     }
 
-    const userResult = await getUserByEmail(client, identifier);
+    const userResult = await authRepository.getUserByEmail(client, identifier);
     if (userResult.rows.length === 0) {
       return res.status(404).json({ message: 'Người dùng không tồn tại' });
     }
@@ -715,15 +593,7 @@ const resetPassword = async (req, res) => {
 
     await client.query('BEGIN');
 
-    const tokenResult = await client.query(
-      `SELECT ma_id AS id,
-              da_su_dung_luc AS used_at,
-              (het_han_luc > NOW()) AS not_expired
-       FROM ma_dat_lai_mat_khau
-       WHERE ma_id = $1 AND nguoi_dung_id = $2 AND kenh = $3 AND dia_chi_nhan = $4
-       LIMIT 1`,
-      [decodedResetToken.reset_token_id, user.user_id, RESET_CHANNEL, destination]
-    );
+    const tokenResult = await authRepository.getPasswordResetToken(client, decodedResetToken.reset_token_id, user.user_id, RESET_CHANNEL, destination);
 
     if (tokenResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -744,8 +614,8 @@ const resetPassword = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await client.query('UPDATE nguoi_dung SET mat_khau = $1 WHERE nguoi_dung_id = $2', [hashedPassword, user.user_id]);
-    await client.query('UPDATE ma_dat_lai_mat_khau SET da_su_dung_luc = NOW() WHERE ma_id = $1', [token.id]);
+    await authRepository.updateUserPassword(client, user.user_id, hashedPassword);
+    await authRepository.markPasswordResetTokenUsed(client, token.id);
 
     await client.query('COMMIT');
 

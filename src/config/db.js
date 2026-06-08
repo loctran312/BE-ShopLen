@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
 
+require('./env');
+
 const useConnectionString = Boolean(process.env.DATABASE_URL);
 
 const isSslHost = (value = '') => /render\.com$/i.test(value) || /render\.com/i.test(value);
@@ -31,7 +33,7 @@ const pool = new Pool(
     useConnectionString
         ? {
             connectionString: process.env.DATABASE_URL,
-            ssl: sslConfig
+            ssl: sslConfig,
         }
         : {
             user: process.env.DB_USER || 'shoplen_user',
@@ -39,7 +41,7 @@ const pool = new Pool(
             host: process.env.DB_HOST || 'localhost',
             port: Number(process.env.DB_PORT) || 5432,
             database: process.env.DB_NAME || 'shoplen',
-            ssl: sslConfig
+            ssl: sslConfig,
         }
 );
 
