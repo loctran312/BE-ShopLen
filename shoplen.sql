@@ -13,6 +13,7 @@ CREATE TABLE nguoi_dung (
   trang_thai VARCHAR(20) DEFAULT 'active',
   so_lan_dang_nhap_sai INT DEFAULT 0 CHECK (so_lan_dang_nhap_sai >= 0),
   lan_dang_nhap_cuoi TIMESTAMP,
+  refresh_token VARCHAR(255),
   ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -638,18 +639,19 @@ FROM lich_su_quay;
 -- Admin
 INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro) 
 VALUES (1, 'haunghia1512@gmail.com', 'admin', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '0', '0900000000', 'admin'), 
-(2, 'lommlay@gmail.com', 'admin1', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '1', '0900000001', 'admin');
+(2, 'lommlay@gmail.com', 'admin1', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '1', '0900000001', 'admin'),
+(3, 'admin@gmail.com', 'admin2', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '2', '0900000002', 'admin');
 
 -- 1. NGUOI DUNG
 INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai) 
-VALUES (3, 'khachhang3@gmail.com', 'user03', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Tran', 'Van C', '0909876543');
+VALUES (4, 'khachhang3@gmail.com', 'user03', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Tran', 'Van C', '0909876543');
 
 -- 2. DANH MUC
 INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, slug) VALUES (1, 'Len đan', 'len-dan');
 INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, danh_muc_cha_id, slug) VALUES (2, 'Len Cotton', 1, 'len-cotton');
 
 -- 3. SAN PHAM
-INSERT INTO loai_san_pham (loai_san_pham_id, ten_loai) VALUES (1, 'Len cuộn');
+INSERT INTO loai_san_pham (loai_san_pham_id, ten_loai) VALUES (1, 'Len cuộn'), (2, 'Công cụ'), (3, 'Workshop');
 INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham) VALUES (1, 1, 2, 'Len Cotton Milk');
 
 -- 4. BIEN THE & TON KHO
@@ -672,11 +674,49 @@ VALUES (1, 'Sale hè', 5000, '2026-06-01', '2026-06-30');
 
 -- 7. TINH THANH & PHUONG XA
 INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HCM', 'Hồ Chí Minh');
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HN', 'Hà Nội');
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('DN', 'Đà Nẵng');
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HP', 'Hải Phòng');
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('CT', 'Cần Thơ');
+
+-- Các phường thuộc Hồ Chí Minh (HCM)
 INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (1, 'Phường Bến Nghé', 'HCM');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (2, 'Phường Bến Thành', 'HCM');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (3, 'Phường Đa Kao', 'HCM');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (4, 'Phường Phạm Ngũ Lão', 'HCM');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (5, 'Phường Tân Định', 'HCM');
+
+-- Các phường thuộc Hà Nội (HN)
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (6, 'Phường Tràng Tiền', 'HN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (7, 'Phường Hàng Bài', 'HN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (8, 'Phường Hàng Bạc', 'HN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (9, 'Phường Hàng Bông', 'HN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (10, 'Phường Cửa Đông', 'HN');
+
+-- Các phường thuộc Đà Nẵng (DN)
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (11, 'Phường Hải Châu I', 'DN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (12, 'Phường Hải Châu II', 'DN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (13, 'Phường Thạch Thang', 'DN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (14, 'Phường Thanh Bình', 'DN');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (15, 'Phường Thuận Phước', 'DN');
+
+-- Các phường thuộc Hải Phòng (HP)
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (16, 'Phường Minh Khai', 'HP');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (17, 'Phường Hoàng Văn Thụ', 'HP');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (18, 'Phường Quang Trung', 'HP');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (19, 'Phường Phan Bội Châu', 'HP');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (20, 'Phường Phạm Hồng Thái', 'HP');
+
+-- Các phường thuộc Cần Thơ (CT)
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (21, 'Phường Tân An', 'CT');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (22, 'Phường An Lạc', 'CT');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (23, 'Phường An Cư', 'CT');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (24, 'Phường An Nghiệp', 'CT');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (25, 'Phường An Hòa', 'CT');
 
 -- 8. DON HANG
 INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) 
-VALUES ('DH000003', 3, 25000, 1, '456 Đường Nguyễn Trãi', 'Tran Van C', '0909876543');
+VALUES ('DH000003', 4, 25000, 1, '456 Đường Nguyễn Trãi', 'Tran Van C', '0909876543');
 
 INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) 
 VALUES ('DH000003', 1, 'Len Cotton Milk', 25000, 1);
@@ -685,8 +725,8 @@ VALUES ('DH000003', 1, 'Len Cotton Milk', 25000, 1);
 INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ('DH000003', 'COD', 'pending');
 
 -- 10. LOYALTY, YEU THICH & SPIN
-INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES (3, 50);
-INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES (3, 1);
-INSERT INTO luot_quay (nguoi_dung_id, so_luot) VALUES (3, 3);
+INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES (4, 50);
+INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES (4, 1);
+INSERT INTO luot_quay (nguoi_dung_id, so_luot) VALUES (4, 3);
 INSERT INTO cau_hinh_qua_quay (cau_hinh_qua_quay_id, loai_qua, gia_tri, ty_le_thang, so_luong_con_lai) 
 VALUES (1, 'point', 10, 20.00, 100);

@@ -1,639 +1,776 @@
-const escapeHtml = (value) => String(value)
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#39;');
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 const apiDocs = {
-  title: 'Tài liệu API ShopLen',
-  version: '1.0.0',
-  description: 'Tài liệu API hiển thị ví dụ request và response cho các endpoint hiện tại. Tên bảng/cột nội bộ đã được Việt hóa, nhưng field API vẫn giữ nguyên để tương thích frontend.',
-  baseUrl: '/api',
+  title: "Tài liệu API ShopLen",
+  version: "1.0.0",
+  description:
+    "Tài liệu API hiển thị ví dụ request và response cho các endpoint hiện tại. Tên bảng/cột nội bộ đã được Việt hóa, nhưng field API vẫn giữ nguyên để tương thích frontend.",
+  baseUrl: "/api",
   groups: [
     {
-      name: 'Xác thực',
+      name: "Xác thực",
       endpoints: [
         {
-          method: 'POST',
-          path: '/api/auth/register',
-          summary: 'Đăng ký tài khoản mới',
+          method: "POST",
+          path: "/api/auth/register",
+          summary: "Đăng ký tài khoản mới",
           auth: false,
           requestExample: {
-            username: 'user123',
-            email: 'user@example.com',
-            password: 'Password@123',
-            phone_number: '0901234567',
-            role: 'customer'
+            username: "user123",
+            email: "user@example.com",
+            password: "Password@123",
+            phone_number: "0901234567",
+            role: "customer",
           },
           successStatus: 201,
           successExample: {
-            message: 'Đăng ký thành công'
-          }
+            message: "Đăng ký thành công",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/auth/login',
-          summary: 'Đăng nhập bằng email và mật khẩu',
+          method: "POST",
+          path: "/api/auth/login",
+          summary: "Đăng nhập bằng email và mật khẩu",
           auth: false,
           requestExample: {
-            email: 'user@example.com',
-            password: 'Password@123'
+            email: "user@example.com",
+            password: "Password@123",
           },
           successStatus: 200,
           successExample: {
-            token: 'jwt-token',
+            access_token: "jwt-access-token",
+            refresh_token: "jwt-refresh-token",
             user: {
               user_id: 1,
-              role: 'customer'
-            }
-          }
+              role: "customer",
+            },
+          },
         },
         {
-          method: 'GET',
-          path: '/api/auth/google',
-          summary: 'Bắt đầu đăng nhập bằng Google',
+          method: "POST",
+          path: "/api/auth/refresh-token",
+          summary: "Lấy access token mới bằng refresh token",
+          auth: false,
+          requestExample: {
+            refresh_token: "jwt-refresh-token",
+          },
+          successStatus: 200,
+          successExample: {
+            access_token: "jwt-access-token",
+            refresh_token: "jwt-refresh-token",
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/auth/google",
+          summary: "Bắt đầu đăng nhập bằng Google",
           auth: false,
           requestExample: null,
           successStatus: 302,
           successExample: {
-            redirect: 'https://accounts.google.com/o/oauth2/v2/auth'
-          }
+            redirect: "https://accounts.google.com/o/oauth2/v2/auth",
+          },
         },
         {
-          method: 'GET',
-          path: '/api/auth/google/callback',
-          summary: 'Xử lý callback từ Google OAuth',
+          method: "GET",
+          path: "/api/auth/google/callback",
+          summary: "Xử lý callback từ Google OAuth",
           auth: false,
           requestExample: {
-            code: 'google-auth-code',
-            state: 'google-state-token'
+            code: "google-auth-code",
+            state: "google-state-token",
           },
           successStatus: 302,
           successExample: {
-            redirect: 'FRONTEND_URL/login?token=...&role=...&user_id=...'
-          }
+            redirect: "FRONTEND_URL/login?token=...&role=...&user_id=...",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/auth/logout',
-          summary: 'Đăng xuất phiên hiện tại',
+          method: "POST",
+          path: "/api/auth/logout",
+          summary: "Đăng xuất phiên hiện tại",
           auth: false,
           requestExample: {},
           successStatus: 200,
           successExample: {
-            message: 'Đăng xuất thành công'
-          }
+            message: "Đăng xuất thành công",
+          },
         },
         {
-          method: 'GET',
-          path: '/api/auth/me',
-          summary: 'Lấy thông tin người dùng hiện tại',
+          method: "GET",
+          path: "/api/auth/me",
+          summary: "Lấy thông tin người dùng hiện tại",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
             user_id: 1,
-            username: 'user123',
-            email: 'user@example.com',
-            phone_number: '0901234567',
-            role: 'customer',
-            first_name: 'John',
-            last_name: 'Doe'
-          }
+            username: "user123",
+            email: "user@example.com",
+            phone_number: "0901234567",
+            role: "customer",
+            first_name: "John",
+            last_name: "Doe",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/auth/forgot-password',
-          summary: 'Gửi OTP đặt lại mật khẩu',
+          method: "POST",
+          path: "/api/auth/forgot-password",
+          summary: "Gửi OTP đặt lại mật khẩu",
           auth: false,
           requestExample: {
-            email: 'user@example.com'
+            email: "user@example.com",
           },
           successStatus: 200,
           successExample: {
-            message: 'Mã OTP đã được gửi',
+            message: "Mã OTP đã được gửi",
             reset_token_id: 12,
-            expires_at: '2026-04-28T10:30:00.000Z'
-          }
+            expires_at: "2026-04-28T10:30:00.000Z",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/auth/verify-reset-otp',
-          summary: 'Xác thực OTP và lấy token phiên đặt lại',
+          method: "POST",
+          path: "/api/auth/verify-reset-otp",
+          summary: "Xác thực OTP và lấy token phiên đặt lại",
           auth: false,
           requestExample: {
-            email: 'user@example.com',
-            otp: '123456'
+            email: "user@example.com",
+            otp: "123456",
           },
           successStatus: 200,
           successExample: {
-            message: 'OTP hợp lệ',
-            reset_session_token: 'jwt-reset-session-token'
-          }
+            message: "OTP hợp lệ",
+            reset_session_token: "jwt-reset-session-token",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/auth/reset-password',
-          summary: 'Đặt lại mật khẩu bằng token phiên',
+          method: "POST",
+          path: "/api/auth/reset-password",
+          summary: "Đặt lại mật khẩu bằng token phiên",
           auth: false,
           requestExample: {
-            email: 'user@example.com',
-            new_password: 'NewPassword@123',
-            reset_session_token: 'jwt-reset-session-token'
+            email: "user@example.com",
+            new_password: "NewPassword@123",
+            reset_session_token: "jwt-reset-session-token",
           },
           successStatus: 200,
           successExample: {
-            message: 'Đặt lại mật khẩu thành công'
-          }
-        }
-      ]
+            message: "Đặt lại mật khẩu thành công",
+          },
+        },
+      ],
     },
     {
-      name: 'Người dùng',
+      name: "Người dùng",
       endpoints: [
         {
-          method: 'GET',
-          path: '/api/users',
-          summary: 'Lấy danh sách người dùng',
+          method: "GET",
+          path: "/api/users",
+          summary: "Lấy danh sách người dùng",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: [
             {
               user_id: 1,
-              username: 'user123',
-              email: 'user@example.com',
-              phone_number: '0901234567',
-              role: 'customer'
-            }
-          ]
+              username: "user123",
+              email: "user@example.com",
+              phone_number: "0901234567",
+              role: "customer",
+            },
+          ],
         },
         {
-          method: 'GET',
-          path: '/api/users/:user_id',
-          summary: 'Lấy chi tiết người dùng theo id',
+          method: "GET",
+          path: "/api/users/:user_id",
+          summary: "Lấy chi tiết người dùng theo id",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
             user_id: 1,
-            username: 'user123',
-            email: 'user@example.com',
-            phone_number: '0901234567',
-            role: 'customer'
-          }
+            username: "user123",
+            email: "user@example.com",
+            phone_number: "0901234567",
+            role: "customer",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/users',
-          summary: 'Tạo người dùng bằng quyền admin',
+          method: "POST",
+          path: "/api/users",
+          summary: "Tạo người dùng bằng quyền admin",
           auth: true,
           requestExample: {
-            username: 'newuser',
-            email: 'newuser@example.com',
-            password: 'Password@123',
-            phone_number: '0901234567',
-            first_name: 'New',
-            last_name: 'User',
-            role: 'customer'
+            username: "newuser",
+            email: "newuser@example.com",
+            password: "Password@123",
+            phone_number: "0901234567",
+            first_name: "New",
+            last_name: "User",
+            role: "customer",
           },
           successStatus: 201,
           successExample: {
-            message: 'Tạo người dùng thành công',
+            message: "Tạo người dùng thành công",
             user: {
               user_id: 2,
-              username: 'newuser',
-              first_name: 'New',
-              last_name: 'User',
-              email: 'newuser@example.com',
-              phone_number: '0901234567',
-              status: 'active',
-              role: 'customer'
-            }
-          }
+              username: "newuser",
+              first_name: "New",
+              last_name: "User",
+              email: "newuser@example.com",
+              phone_number: "0901234567",
+              status: "active",
+              role: "customer",
+            },
+          },
         },
         {
-          method: 'PUT',
-          path: '/api/users/:user_id',
-          summary: 'Cập nhật người dùng bằng quyền admin',
+          method: "PUT",
+          path: "/api/users/:user_id",
+          summary: "Cập nhật người dùng bằng quyền admin",
           auth: true,
           requestExample: {
-            username: 'updateduser',
-            email: 'updated@example.com',
-            phone_number: '0901234567',
-            first_name: 'Updated',
-            last_name: 'User',
-            status: 'active',
-            role: 'customer'
+            username: "updateduser",
+            email: "updated@example.com",
+            phone_number: "0901234567",
+            first_name: "Updated",
+            last_name: "User",
+            status: "active",
+            role: "customer",
           },
           successStatus: 200,
           successExample: {
-            message: 'Cập nhật người dùng thành công',
+            message: "Cập nhật người dùng thành công",
             user: {
               user_id: 2,
-              username: 'updateduser',
-              first_name: 'Updated',
-              last_name: 'User',
-              email: 'updated@example.com',
-              phone_number: '0901234567',
-              status: 'active',
-              role: 'customer'
-            }
-          }
+              username: "updateduser",
+              first_name: "Updated",
+              last_name: "User",
+              email: "updated@example.com",
+              phone_number: "0901234567",
+              status: "active",
+              role: "customer",
+            },
+          },
         },
         {
-          method: 'DELETE',
-          path: '/api/users/:user_id',
-          summary: 'Xóa người dùng bằng quyền admin',
+          method: "DELETE",
+          path: "/api/users/:user_id",
+          summary: "Xóa người dùng bằng quyền admin",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
-            message: 'Xóa người dùng thành công'
-          }
+            message: "Xóa người dùng thành công",
+          },
         },
         {
-          method: 'POST',
-          path: '/api/users/change-password',
-          summary: 'Đổi mật khẩu cho người dùng hiện tại',
+          method: "POST",
+          path: "/api/users/change-password",
+          summary: "Đổi mật khẩu cho người dùng hiện tại",
           auth: true,
           requestExample: {
-            currentPassword: 'Password@123',
-            newPassword: 'NewPassword@123',
-            confirmPassword: 'NewPassword@123'
+            currentPassword: "Password@123",
+            newPassword: "NewPassword@123",
+            confirmPassword: "NewPassword@123",
           },
           successStatus: 200,
           successExample: {
-            message: 'Đổi mật khẩu thành công'
-          }
-        }
-      ]
+            message: "Đổi mật khẩu thành công",
+          },
+        },
+      ],
     },
     {
-      name: 'Sản phẩm',
+      name: "Sản phẩm",
       endpoints: [
         {
-          method: 'GET',
-          path: '/api/products/types',
-          summary: 'Lấy danh sách loại sản phẩm',
+          method: "GET",
+          path: "/api/products/types",
+          summary: "Lấy danh sách loại sản phẩm",
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: [
             {
               type_id: 1,
-              type_name: 'Sợi len',
-              description: 'Các loại sợi len dùng để đan móc',
+              type_name: "Sợi len",
+              description: "Các loại sợi len dùng để đan móc",
             },
             {
               type_id: 2,
-              type_name: 'Phụ kiện đan móc',
-              description: 'Các loại phụ kiện đi kèm như kim đan, kim móc, thước dây...',
+              type_name: "Phụ kiện đan móc",
+              description:
+                "Các loại phụ kiện đi kèm như kim đan, kim móc, thước dây...",
             },
             {
               type_id: 3,
-              type_name: 'Workshop',
-              description: 'Các lớp học đan móc trực tiếp tại cửa hàng',
-            }
-          ]
+              type_name: "Workshop",
+              description: "Các lớp học đan móc trực tiếp tại cửa hàng",
+            },
+          ],
         },
         {
-          method: 'GET',
-          path: '/api/products',
-          summary: 'Lấy danh sách sản phẩm kèm biến thể và ảnh',
+          method: "GET",
+          path: "/api/products",
+          summary: "Lấy danh sách sản phẩm kèm biến thể và ảnh",
           auth: false,
           requestExample: {
             page: 1,
-            limit: 10
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
             success: true,
-            message: 'Lấy danh sách sản phẩm thành công',
+            message: "Lấy danh sách sản phẩm thành công",
             data: {
               products: [
                 {
                   product_id: 1,
-                  product_name: 'Cuộn len Cotton Milk 50g',
-                  category_name: 'Len sợi',
-                  type_name: 'Sợi len',
-                  product_status: 'active',
+                  product_name: "Cuộn len Cotton Milk 50g",
+                  category_name: "Len sợi",
+                  type_name: "Sợi len",
+                  product_status: "active",
                   variants: [
                     {
                       variant_id: 1,
-                      sku: 'LEN-CM-RED-50G',
-                      slug: 'cuon-len-cotton-milk-50g-mau-do',
-                      price: '15000.00',
-                      color: 'Đỏ',
-                      size: '50g',
+                      sku: "LEN-CM-RED-50G",
+                      slug: "cuon-len-cotton-milk-50g-mau-do",
+                      price: "15000.00",
+                      color: "Đỏ",
+                      size: "50g",
                       images: [
                         {
-                          image_url: 'https://example.com/images/len-red-1.jpg',
-                          sort_order: 1
+                          image_url: "https://example.com/images/len-red-1.jpg",
+                          sort_order: 1,
                         },
                         {
-                          image_url: 'https://example.com/images/len-red-2.jpg',
-                          sort_order: 2
-                        }
-                      ]
-                    }
-                  ]
-                }
+                          image_url: "https://example.com/images/len-red-2.jpg",
+                          sort_order: 2,
+                        },
+                      ],
+                    },
+                  ],
+                },
               ],
               pagination: {
                 total_items: 125,
                 total_pages: 13,
                 current_page: 1,
-                limit: 10
-              }
-            }
-          }
+                limit: 10,
+              },
+            },
+          },
         },
         {
-          method: 'GET',
-          path: '/api/products/:product_id',
-          summary: 'Lấy chi tiết sản phẩm',
+          method: "GET",
+          path: "/api/products/:product_id",
+          summary: "Lấy chi tiết sản phẩm",
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: {
             success: true,
-            message: 'Lấy chi tiết sản phẩm thành công',
+            message: "Lấy chi tiết sản phẩm thành công",
             data: {
               product: {
                 product_id: 1,
                 type_id: 1,
                 category_id: 2,
-                product_name: 'Cuộn len Cotton Milk 50g',
-                description: 'Len sợi mềm mại...',
-                product_status: 'active',
-                category_name: 'Len sợi',
-                type_name: 'Sợi len',
+                product_name: "Cuộn len Cotton Milk 50g",
+                description: "Len sợi mềm mại...",
+                product_status: "active",
+                category_name: "Len sợi",
+                type_name: "Sợi len",
                 variants: [
                   {
                     variant_id: 1,
-                    sku: 'LEN-CM-RED-50G',
-                    slug: 'cuon-len-cotton-milk-50g-mau-do',
-                    price: '15000.00',
-                    color: 'Đỏ',
-                    size: '50g',
+                    sku: "LEN-CM-RED-50G",
+                    slug: "cuon-len-cotton-milk-50g-mau-do",
+                    price: "15000.00",
+                    color: "Đỏ",
+                    size: "50g",
                     stock_quantity: 150,
                     images: [
                       {
-                        image_url: 'https://i.ibb.co/example.jpg',
-                        sort_order: 1
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
+                        image_url: "https://i.ibb.co/example.jpg",
+                        sort_order: 1,
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
         },
         {
-          method: 'POST',
+          method: "POST",
           auth: true,
-          path: '/api/products',
-          summary: 'Tạo sản phẩm mới kèm biến thể và ảnh',
+          path: "/api/products",
+          summary: "Tạo sản phẩm mới kèm biến thể và ảnh",
           requestExample: {
             type_id: 1,
             category_id: 2,
-            product_name: 'Cuộn len Cotton Milk 50g',
-            description: 'Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...',
-            product_status: 'active',
+            product_name: "Cuộn len Cotton Milk 50g",
+            description:
+              "Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...",
+            product_status: "active",
             variants: [
               {
-                sku: 'LEN-CM-RED-50G',
+                sku: "LEN-CM-RED-50G",
                 price: 15000,
-                color: 'Đỏ',
-                size: '50g',
+                color: "Đỏ",
+                size: "50g",
                 stock_quantity: 150,
                 images: [
                   {
-                    image_url: 'https://example.com/images/len-red-1.jpg',
-                    sort_order: 1
+                    image_url: "https://example.com/images/len-red-1.jpg",
+                    sort_order: 1,
                   },
                   {
-                    image_url: 'https://example.com/images/len-red-2.jpg',
-                    sort_order: 2
-                  }
-                ]
-              }
-            ]
+                    image_url: "https://example.com/images/len-red-2.jpg",
+                    sort_order: 2,
+                  },
+                ],
+              },
+            ],
           },
           successStatus: 201,
           successExample: {
             success: true,
-            message: 'Tạo sản phẩm thành công',
+            message: "Tạo sản phẩm thành công",
             data: {
               product: {
-                product_id: 1
-              }
-            }
-          }
+                product_id: 1,
+              },
+            },
+          },
         },
         {
-          method: 'PUT',
-          path: '/api/products/:product_id',
-          summary: 'Cập nhật sản phẩm và tùy chọn biến thể',
+          method: "PUT",
+          path: "/api/products/:product_id",
+          summary: "Cập nhật sản phẩm và tùy chọn biến thể",
           auth: true,
           requestExample: {
-            product_name: 'Cuộn len Cotton Milk 50g - mới',
-            product_status: 'active',
+            product_name: "Cuộn len Cotton Milk 50g - mới",
+            product_status: "active",
             variants: [
               {
                 variant_id: 1,
-                sku: 'LEN-CM-RED-50G',
+                sku: "LEN-CM-RED-50G",
                 price: 16000,
-                color: 'Đỏ',
-                size: '50g',
+                color: "Đỏ",
+                size: "50g",
                 stock_quantity: 120,
                 images: [
                   {
-                    image_url: 'https://example.com/images/len-red-1.jpg',
-                    sort_order: 1
-                  }
-                ]
-              }
-            ]
+                    image_url: "https://example.com/images/len-red-1.jpg",
+                    sort_order: 1,
+                  },
+                ],
+              },
+            ],
           },
           successStatus: 200,
           successExample: {
             success: true,
-            message: 'Cập nhật sản phẩm thành công',
+            message: "Cập nhật sản phẩm thành công",
             data: {
               product: {
-                product_id: 1
-              }
-            }
-          }
+                product_id: 1,
+              },
+            },
+          },
         },
         {
-          method: 'DELETE',
-          path: '/api/products/:product_id',
-          summary: 'Xóa sản phẩm',
+          method: "DELETE",
+          path: "/api/products/:product_id",
+          summary: "Xóa sản phẩm",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
             success: true,
-            message: 'Xóa sản phẩm thành công'
-          }
-        }
-      ]
+            message: "Xóa sản phẩm thành công",
+          },
+        },
+      ],
     },
     {
-      name: 'Danh mục',
+      name: "Danh mục",
       endpoints: [
         {
-          method: 'GET',
-          path: '/api/categories',
-          summary: 'Lấy danh sách danh mục theo cây',
+          method: "GET",
+          path: "/api/categories",
+          summary: "Lấy danh sách danh mục theo cây",
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: [
             {
               id: 1,
-              category_name: 'Sợi Len',
-              description: 'Danh mục chính cho sợi len',
-              slug: 'soi-len',
+              category_name: "Sợi Len",
+              description: "Danh mục chính cho sợi len",
+              slug: "soi-len",
               children: [
                 {
                   id: 2,
-                  category_name: 'Sợi len bông',
-                  description: 'Sợi len làm từ cotton',
-                  slug: 'soi-len-bong',
+                  category_name: "Sợi len bông",
+                  description: "Sợi len làm từ cotton",
+                  slug: "soi-len-bong",
                   children: [
-                    { id: 3, category_name: 'Sợi len bông - mịn',description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min', children: [] },
-                    { id: 4, category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho', children: [] }
-                  ]
+                    {
+                      id: 3,
+                      category_name: "Sợi len bông - mịn",
+                      description: "Sợi len làm từ cotton mịn",
+                      slug: "soi-len-bong-min",
+                      children: [],
+                    },
+                    {
+                      id: 4,
+                      category_name: "Sợi len bông - thô",
+                      description: "Sợi len làm từ cotton thô",
+                      slug: "soi-len-bong-tho",
+                      children: [],
+                    },
+                  ],
                 },
                 {
                   id: 5,
-                  category_name: 'Sợi len acrylic',
-                  description: 'Sợi len acrylic phổ biến',
-                  slug: 'soi-len-acrylic',
+                  category_name: "Sợi len acrylic",
+                  description: "Sợi len acrylic phổ biến",
+                  slug: "soi-len-acrylic",
                   children: [
-                    { id: 6, category_name: 'Sợi len acrylic - 4 ply', description: 'Sợi len acrylic - 4 ply', slug: 'soi-len-acrylic-4-ply', children: [] },
-                    { id: 7, category_name: 'Sợi len acrylic - 8 ply', description: 'Sợi len acrylic - 8 ply', slug: 'soi-len-acrylic-8-ply', children: [] }
-                  ]
-                }
-              ]
-            }
-          ]
+                    {
+                      id: 6,
+                      category_name: "Sợi len acrylic - 4 ply",
+                      description: "Sợi len acrylic - 4 ply",
+                      slug: "soi-len-acrylic-4-ply",
+                      children: [],
+                    },
+                    {
+                      id: 7,
+                      category_name: "Sợi len acrylic - 8 ply",
+                      description: "Sợi len acrylic - 8 ply",
+                      slug: "soi-len-acrylic-8-ply",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
         },
         {
-          method: 'GET',
-          path: '/api/categories/:category_id',
-          summary: 'Lấy chi tiết danh mục theo id dưới dạng cây con',
+          method: "GET",
+          path: "/api/categories/:category_id",
+          summary: "Lấy chi tiết danh mục theo id dưới dạng cây con",
           auth: false,
           requestExample: null,
           successStatus: 200,
           successExample: {
             id: 1,
-            category_name: 'Sợi Len',
-            description: 'Danh mục chính cho sợi len',
-            slug: 'soi-len',
+            category_name: "Sợi Len",
+            description: "Danh mục chính cho sợi len",
+            slug: "soi-len",
             children: [
               {
                 id: 2,
-                category_name: 'Sợi len bông',
-                description: 'Sợi len làm từ cotton',
-                slug: 'soi-len-bong',
+                category_name: "Sợi len bông",
+                description: "Sợi len làm từ cotton",
+                slug: "soi-len-bong",
                 children: [
-                  { id: 3, category_name: 'Sợi len bông - mịn', description: 'Sợi len làm từ cotton mịn', slug: 'soi-len-bong-min', children: [] },
-                  { id: 4, category_name: 'Sợi len bông - thô', description: 'Sợi len làm từ cotton thô', slug: 'soi-len-bong-tho', children: [] }
-                ]
-              }
-            ]
-          }
+                  {
+                    id: 3,
+                    category_name: "Sợi len bông - mịn",
+                    description: "Sợi len làm từ cotton mịn",
+                    slug: "soi-len-bong-min",
+                    children: [],
+                  },
+                  {
+                    id: 4,
+                    category_name: "Sợi len bông - thô",
+                    description: "Sợi len làm từ cotton thô",
+                    slug: "soi-len-bong-tho",
+                    children: [],
+                  },
+                ],
+              },
+            ],
+          },
         },
         {
-          method: 'POST',
-          path: '/api/categories',
-          summary: 'Tạo danh mục hoặc tạo hàng loạt theo cây',
+          method: "POST",
+          path: "/api/categories",
+          summary: "Tạo danh mục hoặc tạo hàng loạt theo cây",
           auth: true,
           requestExample: {
-            category_name: 'Sợi Len',
-            description: 'Danh mục chính cho sợi len',
+            category_name: "Sợi Len",
+            description: "Danh mục chính cho sợi len",
             children: [
               {
-                category_name: 'Sợi len bông',
-                description: 'Sợi len làm từ cotton',
+                category_name: "Sợi len bông",
+                description: "Sợi len làm từ cotton",
                 children: [
-                  { category_name: 'Sợi len bông - mịn' },
-                  { category_name: 'Sợi len bông - thô' }
-                ]
+                  { category_name: "Sợi len bông - mịn" },
+                  { category_name: "Sợi len bông - thô" },
+                ],
               },
               {
-                category_name: 'Sợi len acrylic',
-                description: 'Sợi len acrylic phổ biến',
+                category_name: "Sợi len acrylic",
+                description: "Sợi len acrylic phổ biến",
                 children: [
-                  { category_name: 'Sợi len acrylic - 4 ply' },
-                  { category_name: 'Sợi len acrylic - 8 ply' }
-                ]
-              }
-            ]
+                  { category_name: "Sợi len acrylic - 4 ply" },
+                  { category_name: "Sợi len acrylic - 8 ply" },
+                ],
+              },
+            ],
           },
           successStatus: 201,
           successExample: {
-            message: 'Tạo danh mục thành công',
+            message: "Tạo danh mục thành công",
             category: {
               category_id: 1,
-              category_name: 'Sợi Len',
-              description: 'Danh mục chính cho sợi len',
+              category_name: "Sợi Len",
+              description: "Danh mục chính cho sợi len",
               parent_category_id: null,
-              slug: 'soi-len'
-            }
-          }
+              slug: "soi-len",
+            },
+          },
         },
         {
-          method: 'PUT',
-          path: '/api/categories/:category_id',
-          summary: 'Cập nhật danh mục',
+          method: "PUT",
+          path: "/api/categories/:category_id",
+          summary: "Cập nhật danh mục",
           auth: true,
           requestExample: {
-            category_name: 'Điện tử đã cập nhật',
-            description: 'Mô tả đã cập nhật',
-            parent_category_id: null
+            category_name: "Điện tử đã cập nhật",
+            description: "Mô tả đã cập nhật",
+            parent_category_id: null,
           },
           successStatus: 200,
           successExample: {
-            message: 'Cập nhật danh mục thành công',
+            message: "Cập nhật danh mục thành công",
             category: {
               category_id: 1,
-              category_name: 'Điện tử đã cập nhật',
-              description: 'Mô tả đã cập nhật',
+              category_name: "Điện tử đã cập nhật",
+              description: "Mô tả đã cập nhật",
               parent_category_id: null,
-              slug: 'dien-tu-da-cap-nhat'
-            }
-          }
+              slug: "dien-tu-da-cap-nhat",
+            },
+          },
         },
         {
-          method: 'DELETE',
-          path: '/api/categories/:category_id',
-          summary: 'Xóa danh mục',
+          method: "DELETE",
+          path: "/api/categories/:category_id",
+          summary: "Xóa danh mục",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
-            message: 'Xóa danh mục thành công'
-          }
-        }
-      ]
-    }
-  ]
+            message: "Xóa danh mục thành công",
+          },
+        },
+      ],
+    },
+    {
+      name: "Địa điểm",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/location/cities",
+          summary: "Lấy danh sách tỉnh/thành",
+          auth: false,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy danh sách tỉnh/thành thành công",
+            data: {
+              cities: [
+                {
+                  city_code: "HCM",
+                  city_name: "Hồ Chí Minh",
+                },
+                {
+                  city_code: "HN",
+                  city_name: "Hà Nội",
+                },
+                {
+                  city_code: "DN",
+                  city_name: "Đà Nẵng",
+                },
+                {
+                  city_code: "HP",
+                  city_name: "Hải Phòng",
+                },
+                {
+                  city_code: "CT",
+                  city_name: "Cần Thơ",
+                },
+              ],
+            },
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/location/cities/:city_code/wards",
+          summary: "Lấy danh sách phường/xã theo mã tỉnh/thành",
+          auth: false,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy danh sách phường/xã thành công",
+            data: {
+              wards: [
+                {
+                  ward_code: 1,
+                  ward_name: "Phường Bến Nghé",
+                },
+                {
+                  ward_code: 2,
+                  ward_name: "Phường Bến Thành",
+                },
+                {
+                  ward_code: 3,
+                  ward_name: "Phường Đa Kao",
+                },
+                {
+                  ward_code: 4,
+                  ward_name: "Phường Phạm Ngũ Lão",
+                },
+                {
+                  ward_code: 5,
+                  ward_name: "Phường Tân Định",
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  ],
 };
 
-const renderCodeBlock = (value) => `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+const renderCodeBlock = (value) =>
+  `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
 
 const renderDocsPage = () => {
-  const sections = apiDocs.groups.map((group) => `
+  const sections = apiDocs.groups
+    .map(
+      (group) => `
     <section class="group">
       <h2>${escapeHtml(group.name)}</h2>
-      ${group.endpoints.map((endpoint) => `
+      ${group.endpoints
+        .map(
+          (endpoint) => `
         <article class="endpoint">
           <div class="endpoint-head">
             <span class="method method-${endpoint.method.toLowerCase()}">${escapeHtml(endpoint.method)}</span>
@@ -641,7 +778,7 @@ const renderDocsPage = () => {
           </div>
           <p class="summary">${escapeHtml(endpoint.summary)}</p>
           <div class="meta">
-            <span>${endpoint.auth ? 'Cần xác thực' : 'Công khai'}</span>
+            <span>${endpoint.auth ? "Cần xác thực" : "Công khai"}</span>
             <span>Mã thành công: ${endpoint.successStatus}</span>
           </div>
           <div class="grid">
@@ -655,9 +792,13 @@ const renderDocsPage = () => {
             </div>
           </div>
         </article>
-      `).join('')}
+      `,
+        )
+        .join("")}
     </section>
-  `).join('');
+  `,
+    )
+    .join("");
 
   return `<!doctype html>
   <html lang="vi">

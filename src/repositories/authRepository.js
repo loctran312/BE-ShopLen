@@ -100,6 +100,30 @@ const updateUserStatus = async (userId, status) => pool.query(
   [status, userId]
 );
 
+const getUserByRefreshToken = async (refreshToken) => pool.query(
+  `SELECT nguoi_dung_id AS user_id,
+          ten_dang_nhap AS username,
+          thu_dien_tu AS email,
+          so_dien_thoai AS phone_number,
+          vai_tro AS role,
+          ho AS first_name,
+          ten AS last_name
+   FROM nguoi_dung
+   WHERE refresh_token = $1
+   LIMIT 1`,
+  [refreshToken]
+);
+
+const updateRefreshToken = async (userId, refreshToken) => pool.query(
+  'UPDATE nguoi_dung SET refresh_token = $1 WHERE nguoi_dung_id = $2',
+  [refreshToken, userId]
+);
+
+const clearRefreshToken = async (userId) => pool.query(
+  'UPDATE nguoi_dung SET refresh_token = NULL WHERE nguoi_dung_id = $1',
+  [userId]
+);
+
 const markActiveResetTokensUsed = async (client, userId, channel) => client.query(
   'UPDATE ma_dat_lai_mat_khau SET da_su_dung_luc = NOW() WHERE nguoi_dung_id = $1 AND kenh = $2 AND da_su_dung_luc IS NULL',
   [userId, channel]
@@ -165,7 +189,10 @@ module.exports = {
   createGoogleProvider,
   getUserByUsernameOrEmail,
   getUserWithPassword,
+  getUserByRefreshToken,
   updateUserStatus,
+  updateRefreshToken,
+  clearRefreshToken,
   markActiveResetTokensUsed,
   createPasswordResetToken,
   getLatestResetToken,

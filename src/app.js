@@ -8,6 +8,7 @@ const userRoutes = require('./routes/users');
 const authRoutes = require('./routes/auth');
 const categoryRoutes = require('./routes/categories');
 const productRoutes = require('./routes/products');
+const locationRoutes = require('./routes/location');
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 const errorMiddleware = require('./middlewares/errorMiddleware');
 
@@ -43,6 +44,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/location', locationRoutes);
 
 app.get('/api/docs', (req, res) => {
     res.type('html').send(renderDocsPage());

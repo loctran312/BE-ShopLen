@@ -354,14 +354,23 @@ const login = async (req, res) => {
     await authRepository.updateUserStatus(user.user_id, 'active');
 
     // Tạo token JWT
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
     );
 
+    const refreshToken = jwt.sign(
+      { user_id: user.user_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    );
+
+    await authRepository.updateRefreshToken(user.user_id, refreshToken);
+
     return res.json({
-      token,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       user: {
         user_id: user.user_id,
         role: user.role,
@@ -369,6 +378,57 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('[AUTH][LOGIN] Error:', error);
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
+  }
+}
+
+// Lấy access token mới bằng refresh token
+const refreshToken = async (req, res) => {
+  try {
+    const { refresh_token: refreshTokenValue } = req.body;
+
+    if (!refreshTokenValue) {
+      return res.status(400).json({ message: 'Thiếu refresh_token' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshTokenValue, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.status(401).json({ message: 'Refresh token không hợp lệ hoặc hết hạn' });
+    }
+
+    const userResult = await authRepository.getUserByRefreshToken(refreshTokenValue);
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ message: 'Refresh token không hợp lệ hoặc đã bị thu hồi' });
+    }
+
+    const user = userResult.rows[0];
+
+    if (user.user_id !== decoded.user_id) {
+      return res.status(401).json({ message: 'Refresh token không hợp lệ' });
+    }
+
+    const accessToken = jwt.sign(
+      { user_id: user.user_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+    );
+
+    const newRefreshToken = jwt.sign(
+      { user_id: user.user_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    );
+
+    await authRepository.updateRefreshToken(user.user_id, newRefreshToken);
+
+    return res.json({
+      access_token: accessToken,
+      refresh_token: newRefreshToken,
+    });
+  } catch (error) {
+    console.error('[AUTH][REFRESH_TOKEN] Error:', error);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
@@ -389,6 +449,7 @@ const logout = async (req, res) => {
     }
 
     await authRepository.updateUserStatus(decoded.user_id, 'inactive');
+    await authRepository.clearRefreshToken(decoded.user_id);
 
     res.json({ message: 'Đăng xuất thành công' });
   } catch (error) {
@@ -632,6 +693,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
     register,
     login,
+    refreshToken,
     logout,
     getCurrentUser,
     forgotPassword,
