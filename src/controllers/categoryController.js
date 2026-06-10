@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const categoryRepository = require('../repositories/categoryRepository');
+const { uploadImageToImgBB } = require('../utils/imgbb');
 
 const normalizeText = (value) => (value || '').trim();
 
@@ -11,8 +12,8 @@ const slugifyText = (value) => normalizeText(value)
   .replace(/^-+|-+$/g, '');
 
 // Low-level insert helper that accepts either a `client` from `pool.connect()` or the `pool` itself
-const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug }) => (
-  categoryRepository.insertCategoryClient(client, { categoryName, description, parentCategoryId, slug })
+const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug, imageUrl = null }) => (
+  categoryRepository.insertCategoryClient(client, { categoryName, description, parentCategoryId, slug, imageUrl })
 );
 
 // Allocate a slug using an in-memory set of used slugs (used by bulk/tree operations)
@@ -111,12 +112,15 @@ const normalizeBulkCategoryItem = (item, index) => {
     throw new Error(`parent_category_id không hợp lệ ở mục ${index + 1}`);
   }
 
+  const imageUrl = normalizeText(item.image_url) || null;
+
   return {
     tempKey,
     categoryName,
     description,
     parentTempKey,
     parentCategoryId,
+    imageUrl,
     rawIndex: index,
   };
 };
@@ -214,12 +218,14 @@ const createCategoriesBulk = async (req, res) => {
       }
 
       const slug = allocateSlugFromUsed(item.categoryName, usedSlugs);
+      const resolvedImageUrl = item.imageUrl ? await uploadImageToImgBB(item.imageUrl, item.categoryName) : null;
 
       const createdCategory = await insertCategoryClient(client, {
         categoryName: item.categoryName,
         description: item.description,
         parentCategoryId,
         slug,
+        imageUrl: resolvedImageUrl,
       });
       createdByTempKey.set(normalizedTempKey, createdCategory);
       visiting.delete(normalizedTempKey);
@@ -276,6 +282,7 @@ const formatCategoryTreeNode = (node) => {
     id: node.category_id,
     category_name: node.category_name,
     description: node.description || '',
+    image_url: node.image_url || null,
     slug: node.slug || '',
     children: [],
   };
@@ -299,6 +306,7 @@ const getAllCategories = async (req, res) => {
         category_id: row.category_id,
         category_name: row.category_name,
         description: row.description === null ? null : row.description,
+        image_url: row.image_url || null,
         slug: row.slug,
         parent_category_id: row.parent_category_id,
         children: [],
@@ -344,6 +352,7 @@ const getCategoryDetail = async (req, res) => {
         category_id: row.category_id,
         category_name: row.category_name,
         description: row.description === null ? null : row.description,
+        image_url: row.image_url || null,
         slug: row.slug,
         parent_category_id: row.parent_category_id,
         children: [],
@@ -384,6 +393,7 @@ const createCategory = async (req, res) => {
   try {
     const categoryName = normalizeText(req.body.category_name);
     const description = normalizeText(req.body.description) || null;
+    const imageUrl = normalizeText(req.body.image_url) || null;
     const parentCategoryId = parseParentCategoryId(req.body.parent_category_id);
 
     if (!categoryName) {
@@ -416,11 +426,14 @@ const createCategory = async (req, res) => {
       }
     }
 
+    const resolvedImageUrl = imageUrl ? await uploadImageToImgBB(imageUrl, categoryName) : null;
+
     const created = await insertCategoryClient(pool, {
       categoryName,
       description,
       parentCategoryId,
       slug,
+      imageUrl: resolvedImageUrl,
     });
 
     return res.status(201).json({ message: 'Tạo danh mục thành công', category: created });
@@ -451,6 +464,12 @@ const updateCategory = async (req, res) => {
     const description = req.body.description !== undefined
       ? (normalizeText(req.body.description) || null)
       : currentCategory.description;
+    const imageUrl = req.body.image_url !== undefined
+      ? (normalizeText(req.body.image_url) || null)
+      : currentCategory.image_url || null;
+    const resolvedImageUrl = req.body.image_url !== undefined
+      ? (imageUrl ? await uploadImageToImgBB(imageUrl, categoryName) : null)
+      : currentCategory.image_url || null;
     const parentCategoryIdRaw = req.body.parent_category_id !== undefined
       ? req.body.parent_category_id
       : currentCategory.parent_category_id;
@@ -502,15 +521,17 @@ const updateCategory = async (req, res) => {
       `UPDATE danh_muc
        SET ten_danh_muc = $1,
            mo_ta = $2,
-           danh_muc_cha_id = $3,
-           slug = $4
-       WHERE danh_muc_id = $5
+           hinh_anh = $3,
+           danh_muc_cha_id = $4,
+           slug = $5
+       WHERE danh_muc_id = $6
        RETURNING danh_muc_id AS category_id,
                  ten_danh_muc AS category_name,
                  mo_ta AS description,
+                 hinh_anh AS image_url,
                  danh_muc_cha_id AS parent_category_id,
                  slug`,
-      [categoryName, description, parentCategoryId, slug, parsedCategoryId]
+      [categoryName, description, resolvedImageUrl, parentCategoryId, slug, parsedCategoryId]
     );
 
     return res.json({
@@ -580,6 +601,7 @@ const createCategoriesTree = async (req, res) => {
       if (!node || typeof node !== 'object') throw new Error('Node không hợp lệ');
       const categoryName = normalizeText(node.category_name);
       const description = normalizeText(node.description) || null;
+      const imageUrl = normalizeText(node.image_url) || null;
 
       if (!categoryName) throw new Error('category_name là bắt buộc');
 
@@ -591,12 +613,14 @@ const createCategoriesTree = async (req, res) => {
       existingNames.add(normalized);
 
       const slug = allocateSlugFromUsed(categoryName, usedSlugs);
+      const resolvedImageUrl = imageUrl ? await uploadImageToImgBB(imageUrl, categoryName) : null;
 
       const createdNode = await insertCategoryClient(client, {
         categoryName,
         description,
         parentCategoryId: parentId,
         slug,
+        imageUrl: resolvedImageUrl,
       });
 
       created.push(createdNode);

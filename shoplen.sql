@@ -58,6 +58,7 @@ CREATE TABLE danh_muc (
   ten_danh_muc VARCHAR(100) UNIQUE NOT NULL,
   mo_ta TEXT,
   danh_muc_cha_id INT,
+  hinh_anh VARCHAR(255),
   slug VARCHAR(100) UNIQUE NOT NULL,
   FOREIGN KEY (danh_muc_cha_id) REFERENCES danh_muc(danh_muc_id)
 );
@@ -391,6 +392,7 @@ SELECT nguoi_dung_id AS user_id,
        trang_thai AS status,
        so_lan_dang_nhap_sai AS failed_login_attempts,
        lan_dang_nhap_cuoi AS last_login,
+       refresh_token,
        ngay_tao AS created_at
 FROM nguoi_dung;
 
@@ -417,6 +419,7 @@ CREATE VIEW categories AS
 SELECT danh_muc_id AS category_id,
        ten_danh_muc AS category_name,
        mo_ta AS description,
+       hinh_anh AS image_url,
        danh_muc_cha_id AS parent_category_id,
        slug
 FROM danh_muc;

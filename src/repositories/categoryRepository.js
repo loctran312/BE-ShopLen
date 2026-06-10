@@ -1,15 +1,16 @@
 const pool = require('../config/db');
 
-const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug }) => {
+const insertCategoryClient = async (client, { categoryName, description = null, parentCategoryId = null, slug, imageUrl = null }) => {
   const result = await client.query(
-    `INSERT INTO danh_muc (ten_danh_muc, mo_ta, danh_muc_cha_id, slug)
-     VALUES ($1, $2, $3, $4)
+    `INSERT INTO danh_muc (ten_danh_muc, mo_ta, danh_muc_cha_id, slug, hinh_anh)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING danh_muc_id AS category_id,
                ten_danh_muc AS category_name,
                mo_ta AS description,
+               hinh_anh AS image_url,
                danh_muc_cha_id AS parent_category_id,
                slug`,
-    [categoryName, description, parentCategoryId, slug]
+    [categoryName, description, parentCategoryId, slug, imageUrl]
   );
 
   return result.rows[0];
@@ -19,6 +20,7 @@ const getCategoryById = async (categoryId) => pool.query(
   `SELECT c.danh_muc_id AS category_id,
           c.ten_danh_muc AS category_name,
           c.mo_ta AS description,
+          c.hinh_anh AS image_url,
           c.danh_muc_cha_id AS parent_category_id,
           c.slug,
           p.ten_danh_muc AS parent_category_name
@@ -96,6 +98,7 @@ const getAllCategories = async () => pool.query(
   `SELECT danh_muc_id AS category_id,
           ten_danh_muc AS category_name,
           mo_ta AS description,
+          hinh_anh AS image_url,
           danh_muc_cha_id AS parent_category_id,
           slug
    FROM danh_muc
@@ -107,6 +110,7 @@ const getCategorySubtree = async (categoryId) => pool.query(
      SELECT danh_muc_id AS category_id,
             ten_danh_muc AS category_name,
             mo_ta AS description,
+            hinh_anh AS image_url,
             danh_muc_cha_id AS parent_category_id,
             slug
      FROM danh_muc
@@ -115,6 +119,7 @@ const getCategorySubtree = async (categoryId) => pool.query(
      SELECT c.danh_muc_id AS category_id,
             c.ten_danh_muc AS category_name,
             c.mo_ta AS description,
+            c.hinh_anh AS image_url,
             c.danh_muc_cha_id AS parent_category_id,
             c.slug
      FROM danh_muc c

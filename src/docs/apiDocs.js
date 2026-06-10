@@ -517,18 +517,21 @@ const apiDocs = {
               id: 1,
               category_name: "Sợi Len",
               description: "Danh mục chính cho sợi len",
+              image_url: null,
               slug: "soi-len",
               children: [
                 {
                   id: 2,
                   category_name: "Sợi len bông",
                   description: "Sợi len làm từ cotton",
+                  image_url: null,
                   slug: "soi-len-bong",
                   children: [
                     {
                       id: 3,
                       category_name: "Sợi len bông - mịn",
                       description: "Sợi len làm từ cotton mịn",
+                      image_url: null,
                       slug: "soi-len-bong-min",
                       children: [],
                     },
@@ -536,6 +539,7 @@ const apiDocs = {
                       id: 4,
                       category_name: "Sợi len bông - thô",
                       description: "Sợi len làm từ cotton thô",
+                      image_url: null,
                       slug: "soi-len-bong-tho",
                       children: [],
                     },
@@ -545,12 +549,14 @@ const apiDocs = {
                   id: 5,
                   category_name: "Sợi len acrylic",
                   description: "Sợi len acrylic phổ biến",
+                  image_url: null,
                   slug: "soi-len-acrylic",
                   children: [
                     {
                       id: 6,
                       category_name: "Sợi len acrylic - 4 ply",
                       description: "Sợi len acrylic - 4 ply",
+                      image_url: null,
                       slug: "soi-len-acrylic-4-ply",
                       children: [],
                     },
@@ -558,6 +564,7 @@ const apiDocs = {
                       id: 7,
                       category_name: "Sợi len acrylic - 8 ply",
                       description: "Sợi len acrylic - 8 ply",
+                      image_url: null,
                       slug: "soi-len-acrylic-8-ply",
                       children: [],
                     },
@@ -578,18 +585,21 @@ const apiDocs = {
             id: 1,
             category_name: "Sợi Len",
             description: "Danh mục chính cho sợi len",
+            image_url: null,
             slug: "soi-len",
             children: [
               {
                 id: 2,
                 category_name: "Sợi len bông",
                 description: "Sợi len làm từ cotton",
+                image_url: null,
                 slug: "soi-len-bong",
                 children: [
                   {
                     id: 3,
                     category_name: "Sợi len bông - mịn",
                     description: "Sợi len làm từ cotton mịn",
+                    image_url: null,
                     slug: "soi-len-bong-min",
                     children: [],
                   },
@@ -597,6 +607,7 @@ const apiDocs = {
                     id: 4,
                     category_name: "Sợi len bông - thô",
                     description: "Sợi len làm từ cotton thô",
+                    image_url: null,
                     slug: "soi-len-bong-tho",
                     children: [],
                   },
@@ -613,6 +624,7 @@ const apiDocs = {
           requestExample: {
             category_name: "Sợi Len",
             description: "Danh mục chính cho sợi len",
+            image_url: "https://i.ibb.co/example.jpg",
             children: [
               {
                 category_name: "Sợi len bông",
@@ -639,6 +651,7 @@ const apiDocs = {
               category_id: 1,
               category_name: "Sợi Len",
               description: "Danh mục chính cho sợi len",
+              image_url: "https://i.ibb.co/example.jpg",
               parent_category_id: null,
               slug: "soi-len",
             },
@@ -652,6 +665,7 @@ const apiDocs = {
           requestExample: {
             category_name: "Điện tử đã cập nhật",
             description: "Mô tả đã cập nhật",
+            image_url: "https://i.ibb.co/example-updated.jpg",
             parent_category_id: null,
           },
           successStatus: 200,
@@ -661,6 +675,7 @@ const apiDocs = {
               category_id: 1,
               category_name: "Điện tử đã cập nhật",
               description: "Mô tả đã cập nhật",
+              image_url: "https://i.ibb.co/example-updated.jpg",
               parent_category_id: null,
               slug: "dien-tu-da-cap-nhat",
             },
