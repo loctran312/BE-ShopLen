@@ -21,6 +21,15 @@ const GOOGLE_FRONTEND_REDIRECT_URI = envTrim(process.env.GOOGLE_FRONTEND_REDIREC
 
 const normalizeIdentifier = (value) => (value || '').trim();
 
+const parseDuration = (value, fallback) => {
+  if (value == null || value === '') {
+    return fallback;
+  }
+
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : value;
+};
+
 // Shared utility to extract and verify Bearer token
 const extractAndVerifyToken = (authHeader) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -160,7 +169,7 @@ const ensureUniqueUsername = async (client, usernameCandidate) => {
 const issueAuthToken = (user) => jwt.sign(
   { user_id: user.user_id, role: user.role },
   process.env.JWT_SECRET,
-  { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  { expiresIn: parseDuration(process.env.JWT_EXPIRES_IN, '7d') }
 );
 
 const createOrLinkGoogleUser = async (client, googleProfile) => {
@@ -357,13 +366,13 @@ const login = async (req, res) => {
     const accessToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+      { expiresIn: parseDuration(process.env.JWT_EXPIRES_IN, '1d') }
     );
 
     const refreshToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+      { expiresIn: parseDuration(process.env.JWT_REFRESH_EXPIRES_IN, '7d') }
     );
 
     await authRepository.updateRefreshToken(user.user_id, refreshToken);
@@ -412,13 +421,13 @@ const refreshToken = async (req, res) => {
     const accessToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+      { expiresIn: parseDuration(process.env.JWT_EXPIRES_IN, '1d') }
     );
 
     const newRefreshToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+      { expiresIn: parseDuration(process.env.JWT_REFRESH_EXPIRES_IN, '7d') }
     );
 
     await authRepository.updateRefreshToken(user.user_id, newRefreshToken);
