@@ -116,6 +116,31 @@ const updateUserPassword = async (userId, hashedPassword) => pool.query(
   [hashedPassword, userId]
 );
 
+const updateCurrentUser = async (userId, {
+  username,
+  email,
+  firstName,
+  lastName,
+  phoneNumber,
+}) => pool.query(
+  `UPDATE nguoi_dung
+     SET ten_dang_nhap = $1,
+         thu_dien_tu = $2,
+          ho = $3,
+          ten = $4,
+          so_dien_thoai = $5
+   WHERE nguoi_dung_id = $6
+    RETURNING nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              ho AS first_name,
+              ten AS last_name,
+              thu_dien_tu AS email,
+              so_dien_thoai AS phone_number,
+              trang_thai AS status,
+              vai_tro AS role`,
+  [username, email, firstName, lastName, phoneNumber, userId]
+);
+
 module.exports = {
   getNextUserId,
   isUsernameTaken,
@@ -124,6 +149,7 @@ module.exports = {
   getUserById,
   createUser,
   updateUser,
+  updateCurrentUser,
   deleteUser,
   getPasswordByUserId,
   updateUserPassword,

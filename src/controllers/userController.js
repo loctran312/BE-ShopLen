@@ -207,6 +207,133 @@ const updateUser = async (req, res) => {
   }
 };
 
+const updateCurrentUser = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+      return res.status(401).json({
+        message: 'Token không hợp lệ hoặc hết hạn'
+      });
+    }
+
+    let decoded;
+
+    try {
+      decoded = extractAndVerifyToken(authHeader);
+    } catch {
+      return res.status(401).json({
+        message: 'Token không hợp lệ hoặc hết hạn'
+      });
+    }
+
+    const userId = decoded.user_id;
+
+    const currentResult = await userRepository.getUserById(userId);
+
+    if (currentResult.rows.length === 0) {
+      return res.status(404).json({
+        message: 'Người dùng không tồn tại'
+      });
+    }
+
+    const currentUser = currentResult.rows[0];
+
+    const username =
+      req.body.username !== undefined
+        ? normalizeText(req.body.username)
+        : currentUser.username;
+
+    const email =
+      req.body.email !== undefined
+        ? normalizeText(req.body.email).toLowerCase()
+        : currentUser.email;
+
+    const firstName =
+      req.body.first_name !== undefined
+        ? normalizeText(req.body.first_name) || null
+        : currentUser.first_name;
+
+    const lastName =
+      req.body.last_name !== undefined
+        ? normalizeText(req.body.last_name) || null
+        : currentUser.last_name;
+
+    const phoneNumber =
+      req.body.phone_number !== undefined
+        ? normalizeText(req.body.phone_number) || null
+        : currentUser.phone_number;
+
+    if (!username || !email) {
+      return res.status(400).json({
+        message: 'Username và email không được để trống'
+      });
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({
+        message:
+          'Username phải có ít nhất 3 ký tự, nhỏ hơn 20 ký tự'
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        message: 'Email không hợp lệ'
+      });
+    }
+
+    if (phoneNumber) {
+      const phoneRegex = /^0\d{9}$/;
+
+      if (!phoneRegex.test(phoneNumber)) {
+        return res.status(400).json({
+          message: 'Số điện thoại không hợp lệ'
+        });
+      }
+    }
+
+    if (await userRepository.isUsernameTaken(username, userId)) {
+      return res.status(400).json({
+        message: 'Username đã tồn tại'
+      });
+    }
+
+    if (await userRepository.isEmailTaken(email, userId)) {
+      return res.status(400).json({
+        message: 'Email đã tồn tại'
+      });
+    }
+
+    const result = await userRepository.updateCurrentUser(
+      userId,
+      {
+        username,
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+      }
+    );
+
+    return res.json({
+      message: 'Cập nhật thông tin thành công',
+      user: result.rows[0]
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: 'Lỗi máy chủ'
+    });
+  }
+};
+  
 const deleteUser = async (req, res) => {
   try {
     const { user_id: userId } = req.params;
@@ -300,6 +427,7 @@ module.exports = {
   getUserById,
   createUser,
   updateUser,
+  updateCurrentUser,
   deleteUser,
   changePassword
 }

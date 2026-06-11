@@ -260,6 +260,19 @@ const apiDocs = {
           },
         },
         {
+          method: "PUT",
+          path: "/api/users/user/me",
+          summary: "Cập nhật thông tin người dùng hiện tại",
+          auth: true,
+          requestExample: {
+            username: "username",
+            email: "user@gmail.com",
+            first_name: "user",
+            last_name: "name",
+            phone_number: "0912345678"
+          }
+        },
+        {
           method: "DELETE",
           path: "/api/users/:user_id",
           summary: "Xóa người dùng bằng quyền admin",
@@ -500,6 +513,55 @@ const apiDocs = {
             message: "Xóa sản phẩm thành công",
           },
         },
+        {
+          method: "DELETE",
+          path: "/api/variants/:variant_id",
+          summary: "Xóa biến thể",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Xóa biến thể thành công",
+          },
+        },
+        {
+          method: "PATCH",
+          path: "/api/variants/:variant_id/stock",
+          summary: "Cập nhật số lượng tồn kho của biến thể",
+          auth: true,
+          requestExample: {
+            newStock: 100,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Cập nhật tồn kho thành công",
+            data: {
+              variantId: 1,
+              stock_quantity: 100,
+            },
+          }
+
+        },
+        {
+          method: "PATCH",
+          path: "/api/variants/:variant_id/stock-change",
+          summary: "Điều chỉnh số lượng tồn kho của biến thể (tăng/giảm)",
+          auth: true,
+          requestExample: {
+            stock_quantity: +100,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Cập nhật thay đổi tồn kho thành công",
+            data: {
+              variantId: 1,
+              stock_quantity: 200
+            },
+          }
+        }
       ],
     },
     {
