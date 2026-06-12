@@ -270,7 +270,21 @@ const apiDocs = {
             email: "user@gmail.com",
             first_name: "user",
             last_name: "name",
-            phone_number: "0912345678",
+            phone_number: "0912345678"
+          },
+          successStatus: 200,
+          successExample: {
+            "message": "Cập nhật thông tin thành công",
+            "user": {
+              "user_id": 4,
+              "username": "username",
+              "first_name": "user",
+              "last_name": "name",
+              "email": "user@gmail.com",
+              "phone_number": "0912345678",
+              "status": "active",
+              "role": "customer"
+            }
           },
         },
         {
@@ -858,6 +872,137 @@ const apiDocs = {
         },
       ],
     },
+    {
+      name: "Giỏ hàng",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/cart",
+          summary: "Lấy thông tin giỏ hàng của người dùng hiện tại",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách giỏ hàng thành công",
+            "data": {
+              "cart": [
+                {
+                  "cart_id": 1,
+                  "variant_id": 1,
+                  "quantity": 7,
+                  "sku": "L-COTTON-001",
+                  "slug": "len-cotton-milk-trang",
+                  "price": "25000.00",
+                  "color": "Trắng",
+                  "size": null,
+                  "product_id": 1,
+                  "product_name": "Len Cotton Milk",
+                  "stock_quantity": 100,
+                  "image_url": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          method: "POST",
+          path: "/api/cart",
+          summary: "Thêm sản phẩm vào giỏ hàng",
+          auth: true,
+          requestExample: {
+            variant_id: 1,
+            quantity: 2,
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Thêm sản phẩm vào giỏ hàng thành công",
+            "data": {
+              "item": {
+                "gio_hang_id": 1,
+                "bien_the_id": 1,
+                "quantity": 9
+              }
+            }
+          }
+        },
+        {
+          method: "PUT",
+          path: "/api/cart/:variant_id",
+          summary: "Cập nhật số lượng sản phẩm trong giỏ hàng",
+          auth: true,
+          requestExample: {
+            quantity: 2,
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật số lượng thành công",
+            "data": {
+              "item": {
+                "gio_hang_id": 1,
+                "bien_the_id": 1,
+                "quantity": 2
+              }
+            }
+          }
+        },
+        {
+          method: "POST",
+          path: "/api/cart/sync",
+          summary: "Đồng bộ giỏ hàng khi người dùng đăng nhập từ trạng thái guest",
+          auth: true,
+          requestExample: {
+            "local_cart": [
+              {
+                "variant_id": 1,
+                "quantity": 2
+              },
+              {
+                "variant_id": 3,
+                "quantity": 1
+              }
+            ]
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Đồng bộ giỏ hàng thành công",
+            "data": {
+              "cart": [
+                {
+                  "cart_id": 1,
+                  "variant_id": 1,
+                  "quantity": 4,
+                  "sku": "L-COTTON-001",
+                  "slug": "len-cotton-milk-trang",
+                  "price": "25000.00",
+                  "color": "Trắng",
+                  "size": null,
+                  "product_id": 1,
+                  "product_name": "Len Cotton Milk",
+                  "stock_quantity": 100,
+                  "image_url": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          method: "DELETE",
+          path: "/api/cart/:variant_id",
+          summary: "Xóa sản phẩm khỏi giỏ hàng",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Xóa sản phẩm khỏi giỏ hàng thành công",
+          }
+        }
+      ]
+    }
   ],
 };
 
