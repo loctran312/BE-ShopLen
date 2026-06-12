@@ -88,7 +88,7 @@ const apiDocs = {
           },
           successStatus: 302,
           successExample: {
-            redirect: "FRONTEND_URL/login?token=...&role=...&user_id=...",
+            redirect: "FRONTEND_URL/login?access_token=...&refresh_token=...&role=...&user_id=...",
           },
         },
         {

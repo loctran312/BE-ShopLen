@@ -313,16 +313,30 @@ const handleGoogleCallback = async (req, res) => {
 
     const googleProfile = await fetchGoogleTokenPayload(code);
 
-    await client.query('BEGIN');
+await client.query('BEGIN');
 
     const user = await createOrLinkGoogleUser(client, googleProfile);
     await authRepository.updateUserStatus(user.user_id, 'active');
-    const token = issueAuthToken(user);
+
+    const accessToken = jwt.sign(
+      { user_id: user.user_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: parseDuration(process.env.JWT_EXPIRES_IN, '1d') }
+    );
+
+    const refreshToken = jwt.sign(
+      { user_id: user.user_id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: parseDuration(process.env.JWT_REFRESH_EXPIRES_IN, '7d') }
+    );
+
+    await authRepository.updateRefreshToken(user.user_id, refreshToken);
 
     await client.query('COMMIT');
 
     return res.redirect(buildGoogleFrontendRedirectUrl({
-      token,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       role: user.role,
       user_id: user.user_id,
       redirect_to: statePayload.redirect_to || GOOGLE_FRONTEND_REDIRECT_URI,
