@@ -17,7 +17,7 @@ const envTrim = (value) => (value || '').trim();
 const GOOGLE_CLIENT_ID = envTrim(process.env.GOOGLE_CLIENT_ID);
 const GOOGLE_CLIENT_SECRET = envTrim(process.env.GOOGLE_CLIENT_SECRET);
 const GOOGLE_REDIRECT_URI = envTrim(process.env.GOOGLE_REDIRECT_URI) || `http://localhost:${process.env.PORT || 3000}/api/auth/google/callback`;
-const GOOGLE_FRONTEND_REDIRECT_URI = envTrim(process.env.GOOGLE_FRONTEND_REDIRECT_URI) || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`;
+const GOOGLE_FRONTEND_REDIRECT_URI = envTrim(process.env.GOOGLE_FRONTEND_REDIRECT_URI) || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/login`;
 
 const normalizeIdentifier = (value) => (value || '').trim();
 
