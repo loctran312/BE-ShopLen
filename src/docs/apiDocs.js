@@ -88,7 +88,8 @@ const apiDocs = {
           },
           successStatus: 302,
           successExample: {
-            redirect: "FRONTEND_URL/login?access_token=...&refresh_token=...&role=...&user_id=...",
+            redirect:
+              "FRONTEND_URL/login?access_token=...&refresh_token=...&role=...&user_id=...",
           },
         },
         {
@@ -269,8 +270,8 @@ const apiDocs = {
             email: "user@gmail.com",
             first_name: "user",
             last_name: "name",
-            phone_number: "0912345678"
-          }
+            phone_number: "0912345678",
+          },
         },
         {
           method: "DELETE",
@@ -541,8 +542,7 @@ const apiDocs = {
               variantId: 1,
               stock_quantity: 100,
             },
-          }
-
+          },
         },
         {
           method: "PATCH",
@@ -558,10 +558,10 @@ const apiDocs = {
             message: "Cập nhật thay đổi tồn kho thành công",
             data: {
               variantId: 1,
-              stock_quantity: 200
+              stock_quantity: 200,
             },
-          }
-        }
+          },
+        },
       ],
     },
     {
@@ -719,6 +719,31 @@ const apiDocs = {
             },
           },
         },
+        {
+          method: "POST",
+          path: "/api/categories",
+          summary: "Tạo danh mục con dưới một danh mục cha đã tồn tại",
+          auth: true,
+          requestExample: {
+            category_name: "Sợi len dệt tay",
+            description: "Các loại sợi chuyên dùng để dệt tay thủ công",
+            image_url: null,
+            parent_category_id: 1,
+          },
+          successStatus: 201,
+          successExample: {
+            message: "Tạo danh mục thành công",
+            category: {
+              category_id: 15,
+              category_name: "Sợi len dệt tay",
+              description: "Các loại sợi chuyên dùng để dệt tay thủ công",
+              image_url: "https://i.ibb.co/xxxxx/image.jpg",
+              parent_category_id: 1,
+              slug: "soi-len-det-tay",
+            },
+          },
+        },
+
         {
           method: "PUT",
           path: "/api/categories/:category_id",
