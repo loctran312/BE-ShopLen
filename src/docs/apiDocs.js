@@ -766,13 +766,33 @@ const apiDocs = {
         {
           method: "PUT",
           path: "/api/categories/:category_id",
-          summary: "Cập nhật danh mục",
+          summary: "Cập nhật danh mục và cây danh mục con",
           auth: true,
           requestExample: {
-            category_name: "Điện tử đã cập nhật",
+            id: 1,
+            category_name: "Danh mục cha",
             description: "Mô tả đã cập nhật",
             image_url: "https://i.ibb.co/example-updated.jpg",
             parent_category_id: null,
+            children: [
+              {
+                id: 2,
+                category_name: "Danh mục con 1",
+                description: "Danh mục con thứ 1",
+                children: [
+                  {
+                    category_name: "Danh mục con mới 1",
+                    description: "Danh mục con vừa tạo",
+                    children: [],
+                  },
+                ],
+              },
+              {
+                category_name: "Danh mục con mới 2",
+                description: "Danh mục con vừa tạo",
+                children: [],
+              },
+            ],
           },
           successStatus: 200,
           successExample: {
@@ -786,6 +806,7 @@ const apiDocs = {
               slug: "dien-tu-da-cap-nhat",
             },
           },
+          notes: "Payload children hỗ trợ: id tồn tại sẽ cập nhật, không có id sẽ tạo mới; những con cũ trong DB không xuất hiện trong payload sẽ bị xóa.",
         },
         {
           method: "DELETE",

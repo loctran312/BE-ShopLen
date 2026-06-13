@@ -16,6 +16,32 @@ const insertCategoryClient = async (client, { categoryName, description = null, 
   return result.rows[0];
 };
 
+const updateCategoryClient = async (client, { categoryId, categoryName, description = null, parentCategoryId = null, slug, imageUrl = null }) => {
+  const result = await client.query(
+    `UPDATE danh_muc
+     SET ten_danh_muc = $1,
+         mo_ta = $2,
+         danh_muc_cha_id = $3,
+         slug = $4,
+         hinh_anh = $5
+     WHERE danh_muc_id = $6
+     RETURNING danh_muc_id AS category_id,
+               ten_danh_muc AS category_name,
+               mo_ta AS description,
+               hinh_anh AS image_url,
+               danh_muc_cha_id AS parent_category_id,
+               slug`,
+    [categoryName, description, parentCategoryId, slug, imageUrl, categoryId]
+  );
+
+  return result.rows[0];
+};
+
+const deleteCategoriesByIdsClient = async (client, categoryIds) => client.query(
+  'DELETE FROM danh_muc WHERE danh_muc_id = ANY($1)',
+  [categoryIds]
+);
+
 const getCategoryById = async (categoryId) => pool.query(
   `SELECT c.danh_muc_id AS category_id,
           c.ten_danh_muc AS category_name,
@@ -67,11 +93,47 @@ const isSlugTaken = async (slug, ignoreCategoryId = null) => {
   return result.rows.length > 0;
 };
 
+const getCategoryChildrenByParentId = async (parentCategoryId) => pool.query(
+  `SELECT danh_muc_id AS category_id,
+          ten_danh_muc AS category_name,
+          mo_ta AS description,
+          hinh_anh AS image_url,
+          danh_muc_cha_id AS parent_category_id,
+          slug
+   FROM danh_muc
+   WHERE danh_muc_cha_id = $1
+   ORDER BY danh_muc_id ASC`,
+  [parentCategoryId]
+);
+
+const getProductsUsingCategories = async (categoryIds) => pool.query(
+  'SELECT DISTINCT danh_muc_id FROM san_pham WHERE danh_muc_id = ANY($1)',
+  [categoryIds]
+);
+
 const getAllCategoryNormalizedNames = async () => pool.query(
   'SELECT LOWER(TRIM(ten_danh_muc)) AS normalized_name FROM danh_muc'
 );
 
 const getAllCategorySlugs = async () => pool.query('SELECT slug FROM danh_muc');
+
+const getCategoryChildrenByParentId = async (parentCategoryId) => pool.query(
+  `SELECT danh_muc_id AS category_id,
+          ten_danh_muc AS category_name,
+          mo_ta AS description,
+          hinh_anh AS image_url,
+          danh_muc_cha_id AS parent_category_id,
+          slug
+   FROM danh_muc
+   WHERE danh_muc_cha_id = $1
+   ORDER BY danh_muc_id ASC`,
+  [parentCategoryId]
+);
+
+const getProductsUsingCategories = async (categoryIds) => pool.query(
+  'SELECT DISTINCT danh_muc_id FROM san_pham WHERE danh_muc_id = ANY($1)',
+  [categoryIds]
+);
 
 const isDescendantCategory = async (ancestorCategoryId, targetCategoryId) => {
   const result = await pool.query(
@@ -246,7 +308,11 @@ const getCategorySubtree = async (categoryId) => pool.query(
 
 module.exports = {
   insertCategoryClient,
+  updateCategoryClient,
+  deleteCategoriesByIdsClient,
   getCategoryById,
+  getCategoryChildrenByParentId,
+  getProductsUsingCategories,
   hasChildCategories,
   hasProductsUsingCategory,
   isCategoryNameTaken,
