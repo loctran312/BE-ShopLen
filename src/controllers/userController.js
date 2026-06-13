@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
+const { parsePositiveInteger } = require('../utils/pagination');
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 const ALLOWED_ROLES = new Set(['customer', 'admin']);
@@ -34,12 +35,35 @@ const normalizeRole = (value) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const result = await userRepository.getAllUsers();
-    res.json(result.rows);
+    const rawPage = req.query.page !== undefined
+      ? req.query.page
+      : (req.body && req.body.page !== undefined ? req.body.page : 1);
+
+    const rawLimit = req.query.limit !== undefined
+      ? req.query.limit
+      : (req.body && req.body.limit !== undefined ? req.body.limit : 10);
+
+    const page = parsePositiveInteger(rawPage, 'page');
+    const limit = parsePositiveInteger(rawLimit, 'limit');
+
+    const { users, pagination } = await userRepository.getAllUsers({ page, limit });
+
+    return res.json({
+      success: true,
+      message: 'Lấy danh sách người dùng thành công',
+      data: {
+        users,
+        pagination,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Lỗi máy chủ' });
+    if (error.message && (error.message === 'page không hợp lệ' || error.message === 'limit không hợp lệ')) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
-}
+};
 
 // Lấy thông tin người dùng theo ID
 const getUserById = async (req, res) => {

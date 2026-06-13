@@ -25,17 +25,39 @@ const isEmailTaken = async (email, ignoreUserId = null) => {
   return result.rows.length > 0;
 };
 
-const getAllUsers = async () => pool.query(
-  `SELECT nguoi_dung_id AS user_id,
-          ten_dang_nhap AS username,
-          ho AS first_name,
-          ten AS last_name,
-          thu_dien_tu AS email,
-          so_dien_thoai AS phone_number,
-          trang_thai AS status,
-          vai_tro AS role
-   FROM nguoi_dung`
-);
+const getAllUsers = async ({ page, limit }) => {
+  const offset = (page - 1) * limit;
+
+  const [countResult, usersResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS total_items FROM nguoi_dung'),
+    pool.query(
+      `SELECT nguoi_dung_id AS user_id,
+              ten_dang_nhap AS username,
+              ho AS first_name,
+              ten AS last_name,
+              thu_dien_tu AS email,
+              so_dien_thoai AS phone_number,
+              trang_thai AS status,
+              vai_tro AS role
+       FROM nguoi_dung
+       ORDER BY nguoi_dung_id DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+  ]);
+
+  const totalItems = countResult.rows[0].total_items;
+
+  return {
+    users: usersResult.rows,
+    pagination: {
+      total_items: totalItems,
+      total_pages: Math.max(1, Math.ceil(totalItems / limit)),
+      current_page: page,
+      limit,
+    },
+  };
+};
 
 const getUserById = async (userId) => pool.query(
   `SELECT nguoi_dung_id AS user_id,

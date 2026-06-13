@@ -1,4 +1,5 @@
 const productRepository = require('../repositories/productRepository');
+const { parsePositiveInteger } = require('../utils/pagination');
 
 const getAllProductTypes = async (req, res) => {
 	try {
@@ -19,8 +20,8 @@ const getAllProducts = async (req, res) => {
 			? req.query.limit
 			: (req.body && req.body.limit !== undefined ? req.body.limit : 10);
 
-		const page = productRepository.parsePositiveInteger(rawPage, 'page');
-		const limit = productRepository.parsePositiveInteger(rawLimit, 'limit');
+		const page = parsePositiveInteger(rawPage, 'page');
+		const limit = parsePositiveInteger(rawLimit, 'limit');
 		const { products, pagination } = await productRepository.getAllProducts({ page, limit });
 
 		return res.json({

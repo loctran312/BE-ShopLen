@@ -179,12 +179,38 @@ const apiDocs = {
           successStatus: 200,
           successExample: [
             {
-              user_id: 1,
-              username: "user123",
-              email: "user@example.com",
-              phone_number: "0901234567",
-              role: "customer",
-            },
+  "success": true,
+  "message": "Lấy danh sách người dùng thành công",
+  "data": {
+    "users": [
+      {
+        "user_id": 4,
+        "username": "username",
+        "first_name": "user",
+        "last_name": "name",
+        "email": "user@gmail.com",
+        "phone_number": "0912345678",
+        "status": "active",
+        "role": "customer"
+      },
+      {
+        "user_id": 3,
+        "username": "admin2",
+        "first_name": "Admin",
+        "last_name": "2",
+        "email": "admin@gmail.com",
+        "phone_number": "0900000002",
+        "status": "active",
+        "role": "admin"
+      },
+      ],
+    "pagination": {
+      "total_items": 4,
+      "total_pages": 1,
+      "current_page": 1,
+      "limit": 10
+    }
+  }}
           ],
         },
         {
@@ -590,64 +616,36 @@ const apiDocs = {
           successStatus: 200,
           successExample: [
             {
-              id: 1,
-              category_name: "Sợi Len",
-              description: "Danh mục chính cho sợi len",
-              image_url: null,
-              slug: "soi-len",
-              children: [
-                {
-                  id: 2,
-                  category_name: "Sợi len bông",
-                  description: "Sợi len làm từ cotton",
-                  image_url: null,
-                  slug: "soi-len-bong",
-                  children: [
-                    {
-                      id: 3,
-                      category_name: "Sợi len bông - mịn",
-                      description: "Sợi len làm từ cotton mịn",
-                      image_url: null,
-                      slug: "soi-len-bong-min",
-                      children: [],
-                    },
-                    {
-                      id: 4,
-                      category_name: "Sợi len bông - thô",
-                      description: "Sợi len làm từ cotton thô",
-                      image_url: null,
-                      slug: "soi-len-bong-tho",
-                      children: [],
-                    },
-                  ],
-                },
-                {
-                  id: 5,
-                  category_name: "Sợi len acrylic",
-                  description: "Sợi len acrylic phổ biến",
-                  image_url: null,
-                  slug: "soi-len-acrylic",
-                  children: [
-                    {
-                      id: 6,
-                      category_name: "Sợi len acrylic - 4 ply",
-                      description: "Sợi len acrylic - 4 ply",
-                      image_url: null,
-                      slug: "soi-len-acrylic-4-ply",
-                      children: [],
-                    },
-                    {
-                      id: 7,
-                      category_name: "Sợi len acrylic - 8 ply",
-                      description: "Sợi len acrylic - 8 ply",
-                      image_url: null,
-                      slug: "soi-len-acrylic-8-ply",
-                      children: [],
-                    },
-                  ],
-                },
-              ],
-            },
+              "success": true,
+              "message": "Lấy danh sách danh mục thành công",
+              "data": {
+                "categories": [
+                  {
+                    "id": 1,
+                    "category_name": "Len đan",
+                    "description": "",
+                    "image_url": null,
+                    "slug": "len-dan",
+                    "children": [
+                      {
+                        "id": 2,
+                        "category_name": "Len Cotton",
+                        "description": "",
+                        "image_url": null,
+                        "slug": "len-cotton",
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "pagination": {
+                  "total_items": 1,
+                  "total_pages": 1,
+                  "current_page": 1,
+                  "limit": 10
+                }
+              }
+            }
           ],
         },
         {

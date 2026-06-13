@@ -105,6 +105,121 @@ const getAllCategories = async () => pool.query(
    ORDER BY ten_danh_muc ASC`
 );
 
+const getCategoriesList = async ({ page, limit }) => {
+  const offset = (page - 1) * limit;
+
+  const [countResult, categoriesResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS total_items FROM danh_muc'),
+    pool.query(
+      `SELECT danh_muc_id AS category_id,
+              ten_danh_muc AS category_name,
+              mo_ta AS description,
+              hinh_anh AS image_url,
+              danh_muc_cha_id AS parent_category_id,
+              slug
+       FROM danh_muc
+       ORDER BY ten_danh_muc ASC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+  ]);
+
+  const totalItems = countResult.rows[0].total_items;
+
+  return {
+    categories: categoriesResult.rows,
+    pagination: {
+      total_items: totalItems,
+      total_pages: Math.max(1, Math.ceil(totalItems / limit)),
+      current_page: page,
+      limit,
+    },
+  };
+};
+
+const getCategoriesTreePage = async ({ page, limit }) => {
+  const offset = (page - 1) * limit;
+
+  const [countResult, rootsResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS total_items FROM danh_muc WHERE danh_muc_cha_id IS NULL'),
+    pool.query(
+      `SELECT danh_muc_id AS category_id,
+              ten_danh_muc AS category_name,
+              mo_ta AS description,
+              hinh_anh AS image_url,
+              slug
+       FROM danh_muc
+       WHERE danh_muc_cha_id IS NULL
+       ORDER BY ten_danh_muc ASC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    ),
+  ]);
+
+  const totalItems = countResult.rows[0].total_items;
+
+  const trees = [];
+
+  for (const rootRow of rootsResult.rows) {
+    const subtreeResult = await getCategorySubtree(rootRow.category_id);
+
+    const nodesById = Object.create(null);
+
+    for (const row of subtreeResult.rows) {
+      nodesById[row.category_id] = {
+        category_id: row.category_id,
+        category_name: row.category_name,
+        description: row.description === null ? null : row.description,
+        image_url: row.image_url || null,
+        slug: row.slug,
+        parent_category_id: row.parent_category_id,
+        children: [],
+      };
+    }
+
+    // ensure root exists
+    if (!nodesById[rootRow.category_id]) {
+      nodesById[rootRow.category_id] = {
+        category_id: rootRow.category_id,
+        category_name: rootRow.category_name,
+        description: rootRow.description === null ? null : rootRow.description,
+        image_url: rootRow.image_url || null,
+        slug: rootRow.slug,
+        parent_category_id: null,
+        children: [],
+      };
+    }
+
+    for (const id in nodesById) {
+      const node = nodesById[id];
+      if (node.parent_category_id && nodesById[node.parent_category_id]) {
+        nodesById[node.parent_category_id].children.push(node);
+      }
+    }
+
+    const buildOutputNode = (n) => ({
+      id: n.category_id,
+      category_name: n.category_name,
+      description: n.description === null ? '' : n.description,
+      image_url: n.image_url || null,
+      slug: n.slug || '',
+      children: n.children.map(buildOutputNode),
+    });
+
+    trees.push(buildOutputNode(nodesById[rootRow.category_id]));
+  }
+
+  return {
+    categories: trees,
+    pagination: {
+      total_items: totalItems,
+      total_pages: Math.max(1, Math.ceil(totalItems / limit)),
+      current_page: page,
+      limit,
+    },
+  };
+};
+
 const getCategorySubtree = async (categoryId) => pool.query(
   `WITH RECURSIVE subtree AS (
      SELECT danh_muc_id AS category_id,
@@ -139,6 +254,8 @@ module.exports = {
   getAllCategoryNormalizedNames,
   getAllCategorySlugs,
   isDescendantCategory,
+  getCategoriesTreePage,
   getAllCategories,
+  getCategoriesList,
   getCategorySubtree,
 };

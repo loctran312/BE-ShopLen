@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const categoryRepository = require('../repositories/categoryRepository');
+const { parsePositiveInteger } = require('../utils/pagination');
 const { uploadImageToImgBB } = require('../utils/imgbb');
 
 const normalizeText = (value) => (value || '').trim();
@@ -296,36 +297,33 @@ const formatCategoryTreeNode = (node) => {
 
 const getAllCategories = async (req, res) => {
   try {
-    const result = await categoryRepository.getAllCategories();
+    const rawPage = req.query.page !== undefined
+      ? req.query.page
+      : (req.body && req.body.page !== undefined ? req.body.page : 1);
 
-    const rows = result.rows;
+    const rawLimit = req.query.limit !== undefined
+      ? req.query.limit
+      : (req.body && req.body.limit !== undefined ? req.body.limit : 10);
 
-    const nodesById = Object.create(null);
-    for (const row of rows) {
-      nodesById[row.category_id] = {
-        category_id: row.category_id,
-        category_name: row.category_name,
-        description: row.description === null ? null : row.description,
-        image_url: row.image_url || null,
-        slug: row.slug,
-        parent_category_id: row.parent_category_id,
-        children: [],
-      };
-    }
+    const page = parsePositiveInteger(rawPage, 'page');
+    const limit = parsePositiveInteger(rawLimit, 'limit');
 
-    const roots = [];
-    for (const id in nodesById) {
-      const node = nodesById[id];
-      if (node.parent_category_id && nodesById[node.parent_category_id]) {
-        nodesById[node.parent_category_id].children.push(node);
-      } else {
-        roots.push(node);
-      }
-    }
+    const { categories, pagination } = await categoryRepository.getCategoriesTreePage({ page, limit });
 
-    return res.json(roots.map(formatCategoryTreeNode));
+    return res.json({
+      success: true,
+      message: 'Lấy danh sách danh mục thành công',
+      data: {
+        categories,
+        pagination,
+      },
+    });
   } catch (error) {
-    return res.status(500).json({ message: 'Lỗi máy chủ' });
+    if (error.message && (error.message === 'page không hợp lệ' || error.message === 'limit không hợp lệ')) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+
+    return res.status(500).json({ message: error.message || 'Lỗi máy chủ' });
   }
 };
 
