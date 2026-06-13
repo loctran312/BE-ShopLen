@@ -175,42 +175,46 @@ const apiDocs = {
           path: "/api/users",
           summary: "Lấy danh sách người dùng",
           auth: true,
-          requestExample: null,
+          requestExample: {
+            "page": 1,
+            "limit": 10
+          },
           successStatus: 200,
           successExample: [
             {
-  "success": true,
-  "message": "Lấy danh sách người dùng thành công",
-  "data": {
-    "users": [
-      {
-        "user_id": 4,
-        "username": "username",
-        "first_name": "user",
-        "last_name": "name",
-        "email": "user@gmail.com",
-        "phone_number": "0912345678",
-        "status": "active",
-        "role": "customer"
-      },
-      {
-        "user_id": 3,
-        "username": "admin2",
-        "first_name": "Admin",
-        "last_name": "2",
-        "email": "admin@gmail.com",
-        "phone_number": "0900000002",
-        "status": "active",
-        "role": "admin"
-      },
-      ],
-    "pagination": {
-      "total_items": 4,
-      "total_pages": 1,
-      "current_page": 1,
-      "limit": 10
-    }
-  }}
+              success: true,
+              message: "Lấy danh sách người dùng thành công",
+              data: {
+                users: [
+                  {
+                    user_id: 4,
+                    username: "username",
+                    first_name: "user",
+                    last_name: "name",
+                    email: "user@gmail.com",
+                    phone_number: "0912345678",
+                    status: "active",
+                    role: "customer",
+                  },
+                  {
+                    user_id: 3,
+                    username: "admin2",
+                    first_name: "Admin",
+                    last_name: "2",
+                    email: "admin@gmail.com",
+                    phone_number: "0900000002",
+                    status: "active",
+                    role: "admin",
+                  },
+                ],
+                pagination: {
+                  total_items: 4,
+                  total_pages: 1,
+                  current_page: 1,
+                  limit: 10,
+                },
+              },
+            },
           ],
         },
         {
@@ -296,21 +300,21 @@ const apiDocs = {
             email: "user@gmail.com",
             first_name: "user",
             last_name: "name",
-            phone_number: "0912345678"
+            phone_number: "0912345678",
           },
           successStatus: 200,
           successExample: {
-            "message": "Cập nhật thông tin thành công",
-            "user": {
-              "user_id": 4,
-              "username": "username",
-              "first_name": "user",
-              "last_name": "name",
-              "email": "user@gmail.com",
-              "phone_number": "0912345678",
-              "status": "active",
-              "role": "customer"
-            }
+            message: "Cập nhật thông tin thành công",
+            user: {
+              user_id: 4,
+              username: "username",
+              first_name: "user",
+              last_name: "name",
+              email: "user@gmail.com",
+              phone_number: "0912345678",
+              status: "active",
+              role: "customer",
+            },
           },
         },
         {
@@ -612,40 +616,43 @@ const apiDocs = {
           path: "/api/categories",
           summary: "Lấy danh sách danh mục theo cây",
           auth: false,
-          requestExample: null,
+          requestExample: {
+            "page": 1,
+            "limit": 10
+          },
           successStatus: 200,
           successExample: [
             {
-              "success": true,
-              "message": "Lấy danh sách danh mục thành công",
-              "data": {
-                "categories": [
+              success: true,
+              message: "Lấy danh sách danh mục thành công",
+              data: {
+                categories: [
                   {
-                    "id": 1,
-                    "category_name": "Len đan",
-                    "description": "",
-                    "image_url": null,
-                    "slug": "len-dan",
-                    "children": [
+                    id: 1,
+                    category_name: "Len đan",
+                    description: "",
+                    image_url: null,
+                    slug: "len-dan",
+                    children: [
                       {
-                        "id": 2,
-                        "category_name": "Len Cotton",
-                        "description": "",
-                        "image_url": null,
-                        "slug": "len-cotton",
-                        "children": []
-                      }
-                    ]
-                  }
+                        id: 2,
+                        category_name: "Len Cotton",
+                        description: "",
+                        image_url: null,
+                        slug: "len-cotton",
+                        children: [],
+                      },
+                    ],
+                  },
                 ],
-                "pagination": {
-                  "total_items": 1,
-                  "total_pages": 1,
-                  "current_page": 1,
-                  "limit": 10
-                }
-              }
-            }
+                pagination: {
+                  total_items: 1,
+                  total_pages: 1,
+                  current_page: 1,
+                  limit: 10,
+                },
+              },
+            },
           ],
         },
         {
@@ -881,27 +888,27 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách giỏ hàng thành công",
-            "data": {
-              "cart": [
+            success: true,
+            message: "Lấy danh sách giỏ hàng thành công",
+            data: {
+              cart: [
                 {
-                  "cart_id": 1,
-                  "variant_id": 1,
-                  "quantity": 7,
-                  "sku": "L-COTTON-001",
-                  "slug": "len-cotton-milk-trang",
-                  "price": "25000.00",
-                  "color": "Trắng",
-                  "size": null,
-                  "product_id": 1,
-                  "product_name": "Len Cotton Milk",
-                  "stock_quantity": 100,
-                  "image_url": null
-                }
-              ]
-            }
-          }
+                  cart_id: 1,
+                  variant_id: 1,
+                  quantity: 7,
+                  sku: "L-COTTON-001",
+                  slug: "len-cotton-milk-trang",
+                  price: "25000.00",
+                  color: "Trắng",
+                  size: null,
+                  product_id: 1,
+                  product_name: "Len Cotton Milk",
+                  stock_quantity: 100,
+                  image_url: null,
+                },
+              ],
+            },
+          },
         },
         {
           method: "POST",
@@ -914,16 +921,16 @@ const apiDocs = {
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Thêm sản phẩm vào giỏ hàng thành công",
-            "data": {
-              "item": {
-                "gio_hang_id": 1,
-                "bien_the_id": 1,
-                "quantity": 9
-              }
-            }
-          }
+            success: true,
+            message: "Thêm sản phẩm vào giỏ hàng thành công",
+            data: {
+              item: {
+                gio_hang_id: 1,
+                bien_the_id: 1,
+                quantity: 9,
+              },
+            },
+          },
         },
         {
           method: "PUT",
@@ -935,57 +942,58 @@ const apiDocs = {
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Cập nhật số lượng thành công",
-            "data": {
-              "item": {
-                "gio_hang_id": 1,
-                "bien_the_id": 1,
-                "quantity": 2
-              }
-            }
-          }
+            success: true,
+            message: "Cập nhật số lượng thành công",
+            data: {
+              item: {
+                gio_hang_id: 1,
+                bien_the_id: 1,
+                quantity: 2,
+              },
+            },
+          },
         },
         {
           method: "POST",
           path: "/api/cart/sync",
-          summary: "Đồng bộ giỏ hàng khi người dùng đăng nhập từ trạng thái guest",
+          summary:
+            "Đồng bộ giỏ hàng khi người dùng đăng nhập từ trạng thái guest",
           auth: true,
           requestExample: {
-            "local_cart": [
+            local_cart: [
               {
-                "variant_id": 1,
-                "quantity": 2
+                variant_id: 1,
+                quantity: 2,
               },
               {
-                "variant_id": 3,
-                "quantity": 1
-              }
-            ]
+                variant_id: 3,
+                quantity: 1,
+              },
+            ],
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Đồng bộ giỏ hàng thành công",
-            "data": {
-              "cart": [
+            success: true,
+            message: "Đồng bộ giỏ hàng thành công",
+            data: {
+              cart: [
                 {
-                  "cart_id": 1,
-                  "variant_id": 1,
-                  "quantity": 4,
-                  "sku": "L-COTTON-001",
-                  "slug": "len-cotton-milk-trang",
-                  "price": "25000.00",
-                  "color": "Trắng",
-                  "size": null,
-                  "product_id": 1,
-                  "product_name": "Len Cotton Milk",
-                  "stock_quantity": 100,
-                  "image_url": null
-                }
-              ]
-            }
-          }
+                  cart_id: 1,
+                  variant_id: 1,
+                  quantity: 4,
+                  sku: "L-COTTON-001",
+                  slug: "len-cotton-milk-trang",
+                  price: "25000.00",
+                  color: "Trắng",
+                  size: null,
+                  product_id: 1,
+                  product_name: "Len Cotton Milk",
+                  stock_quantity: 100,
+                  image_url: null,
+                },
+              ],
+            },
+          },
         },
         {
           method: "DELETE",
@@ -995,12 +1003,12 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Xóa sản phẩm khỏi giỏ hàng thành công",
-          }
-        }
-      ]
-    }
+            success: true,
+            message: "Xóa sản phẩm khỏi giỏ hàng thành công",
+          },
+        },
+      ],
+    },
   ],
 };
 
