@@ -461,30 +461,33 @@ const normalizeTreeItem = (item, path, existingMap) => {
 
   const categoryId = getPayloadNodeId(item);
 
+  // Kiểm tra ID hợp lệ
   if ((item.id !== undefined || item.category_id !== undefined) && Number.isNaN(categoryId)) {
     throw new Error(`${path}: id không hợp lệ`);
   }
 
   const hasCategoryName = Object.prototype.hasOwnProperty.call(item, 'category_name');
   const categoryName = hasCategoryName ? normalizeText(item.category_name) : undefined;
+
+  // Nếu là thêm mới thì bắt buộc phải có category_name
+  if (categoryId === null && (!categoryName || categoryName === '')) {
+    throw new Error(`${path}: category_name không được để trống đối với danh mục mới`);
+  }
+
   const hasDescription = Object.prototype.hasOwnProperty.call(item, 'description');
   const description = hasDescription ? (normalizeText(item.description) || null) : undefined;
+  
   const hasImageUrl = Object.prototype.hasOwnProperty.call(item, 'image_url');
   const imageUrl = hasImageUrl ? (normalizeText(item.image_url) || null) : undefined;
-  const children = Array.isArray(item.children) ? item.children : [];
-
-  if (categoryId === null && !categoryName) {
-    throw new Error(`${path}: category_name không được để trống`);
-  }
-
-  if (categoryId !== null && categoryName === undefined) {
-    const existing = existingMap.get(categoryId);
-    if (!existing) {
-      throw new Error(`${path}: id không tồn tại trong cây hiện tại`);
-    }
-  }
+  
+  // Đệ quy chuẩn hóa toàn bộ các mảng con
+  const rawChildren = Array.isArray(item.children) ? item.children : [];
+  const children = rawChildren.map((child, index) => 
+    normalizeTreeItem(child, `${path}.children[${index}]`, existingMap)
+  );
 
   return {
+    ...item,
     categoryId,
     categoryName,
     description,
@@ -553,6 +556,7 @@ const updateCategoryTree = async (req, res, parsedCategoryId, currentCategory) =
     const subtreeResult = await categoryRepository.getCategorySubtree(parsedCategoryId);
     const existingMap = new Map(subtreeResult.rows.map((row) => [row.category_id, row]));
 
+    // Chuẩn hóa toàn bộ cây (đã bao gồm các node con qua đệ quy)
     const rootNode = normalizeTreeItem(rawPayload, 'gốc', existingMap);
     rootNode.categoryId = parsedCategoryId;
     rootNode.categoryName = rootNode.categoryName !== undefined ? rootNode.categoryName : currentCategory.category_name;
@@ -567,6 +571,7 @@ const updateCategoryTree = async (req, res, parsedCategoryId, currentCategory) =
     const existingNames = new Set(existingNamesResult.rows.map((row) => row.normalized_name));
     const usedSlugs = new Set(existingSlugsResult.rows.map((row) => row.slug));
 
+    // Validate trên cây đã chuẩn hóa
     collectTreeNodeNames(rootNode, existingMap, new Set());
 
     const payloadIds = new Set();
@@ -578,21 +583,28 @@ const updateCategoryTree = async (req, res, parsedCategoryId, currentCategory) =
       throw new Error(`Danh mục con không tồn tại trong cây hiện tại: ${matchingIds.join(', ')}`);
     }
 
+    // Tiến hành insert/update vào DB
     const processNode = async (node, parentCategoryId) => {
       const existing = node.categoryId !== null ? existingMap.get(node.categoryId) : null;
+      
       const categoryName = node.categoryName !== undefined
         ? node.categoryName
-        : existing.category_name;
+        : (existing ? existing.category_name : undefined);
+        
       const description = node.description !== undefined
         ? node.description
-        : existing ? existing.description : null;
-      const imageUrl = node.imageUrl !== undefined ? node.imageUrl : (existing ? existing.image_url : null);
+        : (existing ? existing.description : null);
+        
+      const imageUrl = node.imageUrl !== undefined 
+        ? node.imageUrl 
+        : (existing ? existing.image_url : null);
 
       if (!categoryName) {
         throw new Error(`${node.path}: category_name không được để trống`);
       }
 
       if (node.categoryId !== null) {
+        // CẬP NHẬT DANH MỤC ĐÃ CÓ
         if (parentCategoryId === node.categoryId) {
           throw new Error(`${node.path}: Parent category không được trỏ về chính nó`);
         }
@@ -619,6 +631,7 @@ const updateCategoryTree = async (req, res, parsedCategoryId, currentCategory) =
           imageUrl: finalImageUrl,
         });
       } else {
+        // TẠO MỚI DANH MỤC
         const normalized = categoryName.toLowerCase().trim();
         if (existingNames.has(normalized)) {
           throw new Error(`${node.path}: category_name đã tồn tại`);
@@ -636,28 +649,20 @@ const updateCategoryTree = async (req, res, parsedCategoryId, currentCategory) =
           imageUrl: finalImageUrl,
         });
 
+        // Cập nhật lại ID cho node để các node con (nếu có) tham chiếu đúng ID cha
         node.categoryId = created.category_id;
       }
 
-      for (const [index, child] of node.children.entries()) {
-        const normalizedChild = normalizeTreeItem(child, `${node.path}.children[${index}]`, existingMap);
-        normalizedChild.categoryId = normalizedChild.categoryId;
-        normalizedChild.categoryName = normalizedChild.categoryName !== undefined
-          ? normalizedChild.categoryName
-          : (normalizedChild.categoryId ? existingMap.get(normalizedChild.categoryId).category_name : undefined);
-        normalizedChild.description = normalizedChild.description !== undefined
-          ? normalizedChild.description
-          : (normalizedChild.categoryId ? existingMap.get(normalizedChild.categoryId).description : null);
-        normalizedChild.imageUrl = normalizedChild.imageUrl !== undefined
-          ? normalizedChild.imageUrl
-          : (normalizedChild.categoryId ? existingMap.get(normalizedChild.categoryId).image_url : null);
-        await processNode(normalizedChild, node.categoryId);
+      // Xử lý đệ quy cho các nhánh con (các nhánh này đã được normalize từ trước)
+      for (const child of node.children) {
+        await processNode(child, node.categoryId);
       }
     };
 
     await client.query('BEGIN');
     await processNode(rootNode, rootNode.categoryId ? (currentCategory.parent_category_id || null) : null);
 
+    // Xóa các danh mục không còn nằm trong payload
     const existingIds = new Set(subtreeResult.rows.map((row) => row.category_id));
     const deleteIds = Array.from(existingIds).filter((id) => id !== parsedCategoryId && !payloadIds.has(id));
 
@@ -769,18 +774,13 @@ const updateCategory = async (req, res) => {
 
     const result = await pool.query(
       `UPDATE danh_muc
-       SET ten_danh_muc = $1,
-           mo_ta = $2,
-           hinh_anh = $3,
-           danh_muc_cha_id = $4,
-           slug = $5
-       WHERE danh_muc_id = $6
-       RETURNING danh_muc_id AS category_id,
-                 ten_danh_muc AS category_name,
-                 mo_ta AS description,
-                 hinh_anh AS image_url,
-                 danh_muc_cha_id AS parent_category_id,
-                 slug`,
+        SET ten_danh_muc = $1,
+          mo_ta = $2,
+          hinh_anh = $3,
+          danh_muc_cha_id = $4,
+          slug = $5
+          WHERE danh_muc_id = $6
+          RETURNING danh_muc_id, ten_danh_muc, mo_ta, hinh_anh, danh_muc_cha_id, slug`,
       [categoryName, description, resolvedImageUrl, parentCategoryId, slug, parsedCategoryId]
     );
 

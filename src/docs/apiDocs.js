@@ -805,7 +805,6 @@ const apiDocs = {
             category_name: "Danh mục cha",
             description: "Mô tả đã cập nhật",
             image_url: "https://i.ibb.co/example-updated.jpg",
-            parent_category_id: null,
             children: [
               {
                 id: 2,
@@ -834,12 +833,12 @@ const apiDocs = {
               category_name: "Điện tử đã cập nhật",
               description: "Mô tả đã cập nhật",
               image_url: "https://i.ibb.co/example-updated.jpg",
-              parent_category_id: null,
               slug: "dien-tu-da-cap-nhat",
             },
           },
           notes: "Payload children hỗ trợ: id tồn tại sẽ cập nhật, không có id sẽ tạo mới; những con cũ trong DB không xuất hiện trong payload sẽ bị xóa.",
         },
+        
         {
           method: "DELETE",
           path: "/api/categories/:category_id",
