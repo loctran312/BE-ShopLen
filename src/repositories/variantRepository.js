@@ -1,5 +1,40 @@
 const pool = require("../config/db");
 
+const getAllVariantsStock = async ({ page, limit }) => {
+  const offset = (page - 1) * limit;
+
+  const query = `
+    SELECT 
+        b.bien_the_id as variant_id, 
+        b.sku, 
+        b.mau_sac as color, 
+        b.kich_co as size, 
+        COALESCE(t.so_luong_ton, 0) AS stock
+    FROM bien_the_san_pham b
+    LEFT JOIN ton_kho t ON b.bien_the_id = t.bien_the_id
+    ORDER BY b.bien_the_id
+    LIMIT $1 OFFSET $2
+  `;
+  
+  const { rows } = await pool.query(query, [limit, offset]);
+
+  // Đếm tổng số biến thể để phân trang
+  const countQuery = "SELECT COUNT(*) AS total FROM bien_the_san_pham";
+  const { rows: countRows } = await pool.query(countQuery);
+  const total = Number(countRows[0].total);
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    variantsStock: rows,
+    pagination: {
+      total,
+      totalPages,
+      page,
+      limit
+    }
+  };
+};
+
 const updateVariantStock = async (variantId, newStock) => {
   const query = "UPDATE variants SET stock = ? WHERE id = ?";
   await pool.query(query, [newStock, variantId]);
@@ -39,7 +74,7 @@ const updateVariantStockChanges = async (variantId, payload) => {
       isInsert = true;
     }
 
-    // 3. Tính toán số lượng tồn kho mới
+    // Tính toán số lượng tồn kho mới
     let newStock;
     if (
       payload.stock_quantity !== undefined &&
@@ -104,7 +139,9 @@ const deleteVariant = async (variantId) => {
 };
 
 module.exports = {
+  getAllVariantsStock,
   updateVariantStock,
   updateVariantStockChanges,
   deleteVariant,
 };
+

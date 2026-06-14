@@ -571,6 +571,38 @@ const apiDocs = {
           },
         },
         {
+          method: "GET",
+          path: "/api/variants/stock",
+          summary: "Lấy danh sách tồn kho biến thể",
+          auth: true,
+          requestExample: {
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy tồn kho biến thể thành công",
+            "data": {
+              "variantsStock": [
+                {
+                  "variant_id": 1,
+                  "sku": "L-COTTON-001",
+                  "color": "Trắng",
+                  "size": null,
+                  "stock": 100
+                }
+              ],
+              "pagination": {
+                "total": 1,
+                "totalPages": 1,
+                "page": 1,
+                "limit": 10
+              }
+            }
+          }
+        },
+        {
           method: "PATCH",
           path: "/api/variants/:variant_id/stock",
           summary: "Cập nhật số lượng tồn kho của biến thể",
@@ -1163,6 +1195,7 @@ const renderDocsPage = () => {
     .method-get { background: var(--accent-2); }
     .method-post { background: var(--accent); }
     .method-put { background: #c2410c; }
+    .method-patch { background: #44ff00}
     .method-delete { background: var(--danger); }
     code { background: #f3f4f6; padding: 2px 6px; border-radius: 6px; }
     .summary { margin: 0 0 10px; color: var(--text); font-weight: 600; }
