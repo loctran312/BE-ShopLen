@@ -117,24 +117,6 @@ const getAllCategoryNormalizedNames = async () => pool.query(
 
 const getAllCategorySlugs = async () => pool.query('SELECT slug FROM danh_muc');
 
-const getCategoryChildrenByParentId = async (parentCategoryId) => pool.query(
-  `SELECT danh_muc_id AS category_id,
-          ten_danh_muc AS category_name,
-          mo_ta AS description,
-          hinh_anh AS image_url,
-          danh_muc_cha_id AS parent_category_id,
-          slug
-   FROM danh_muc
-   WHERE danh_muc_cha_id = $1
-   ORDER BY danh_muc_id ASC`,
-  [parentCategoryId]
-);
-
-const getProductsUsingCategories = async (categoryIds) => pool.query(
-  'SELECT DISTINCT danh_muc_id FROM san_pham WHERE danh_muc_id = ANY($1)',
-  [categoryIds]
-);
-
 const isDescendantCategory = async (ancestorCategoryId, targetCategoryId) => {
   const result = await pool.query(
     `WITH RECURSIVE descendants AS (
