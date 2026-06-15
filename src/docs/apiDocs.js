@@ -176,8 +176,8 @@ const apiDocs = {
           summary: "Lấy danh sách người dùng",
           auth: true,
           requestExample: {
-            "page": 1,
-            "limit": 10
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: [
@@ -577,31 +577,31 @@ const apiDocs = {
           summary: "Lấy danh sách tồn kho biến thể",
           auth: true,
           requestExample: {
-            "page": 1,
-            "limit": 10
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy tồn kho biến thể thành công",
-            "data": {
-              "variantsStock": [
+            success: true,
+            message: "Lấy tồn kho biến thể thành công",
+            data: {
+              variantsStock: [
                 {
-                  "variant_id": 1,
-                  "sku": "L-COTTON-001",
-                  "color": "Trắng",
-                  "size": null,
-                  "stock": 100
-                }
+                  variant_id: 1,
+                  sku: "L-COTTON-001",
+                  color: "Trắng",
+                  size: null,
+                  stock: 100,
+                },
               ],
-              "pagination": {
-                "total": 1,
-                "totalPages": 1,
-                "page": 1,
-                "limit": 10
-              }
-            }
-          }
+              pagination: {
+                total: 1,
+                totalPages: 1,
+                page: 1,
+                limit: 10,
+              },
+            },
+          },
         },
         {
           method: "PATCH",
@@ -650,8 +650,8 @@ const apiDocs = {
           summary: "Lấy danh sách danh mục theo cây",
           auth: false,
           requestExample: {
-            "page": 1,
-            "limit": 10
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: [
@@ -837,9 +837,10 @@ const apiDocs = {
               slug: "dien-tu-da-cap-nhat",
             },
           },
-          notes: "Payload children hỗ trợ: id tồn tại sẽ cập nhật, không có id sẽ tạo mới; những con cũ trong DB không xuất hiện trong payload sẽ bị xóa.",
+          notes:
+            "Payload children hỗ trợ: id tồn tại sẽ cập nhật, không có id sẽ tạo mới; những con cũ trong DB không xuất hiện trong payload sẽ bị xóa.",
         },
-        
+
         {
           method: "DELETE",
           path: "/api/categories/:category_id",
@@ -1063,7 +1064,7 @@ const apiDocs = {
       ],
     },
     {
-      name: "Khuyến mãi",
+      name: "Khuyến mãi đơn hàng",
       endpoints: [
         {
           method: "GET",
@@ -1071,36 +1072,36 @@ const apiDocs = {
           summary: "Lấy danh sách voucher đang hoạt động",
           auth: false,
           requestExample: {
-            "page": 1,
-            "limit": 10
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách mã giảm giá thành công",
-            "data": {
-              "vouchers": [
+            success: true,
+            message: "Lấy danh sách mã giảm giá thành công",
+            data: {
+              vouchers: [
                 {
-                  "voucher_id": 1,
-                  "code": "WELCOME10",
-                  "voucher_name": "Giảm 10%",
-                  "discount_type": "percent",
-                  "value": "10.00",
-                  "minimum_value": null,
-                  "max_discount": null,
-                  "quantity": null,
-                  "used_count": 0,
-                  "start_date": null,
-                  "end_date": null
-                }
+                  voucher_id: 1,
+                  code: "WELCOME10",
+                  voucher_name: "Giảm 10%",
+                  discount_type: "percent",
+                  value: "10.00",
+                  minimum_value: null,
+                  max_discount: null,
+                  quantity: null,
+                  used_count: 0,
+                  start_date: null,
+                  end_date: null,
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
         },
         {
@@ -1109,23 +1110,24 @@ const apiDocs = {
           summary: "Áp dụng voucher vào đơn hàng",
           auth: true,
           requestExample: {
-            "code": "WELCOME10",
-            "order_value": 250000
+            code: "WELCOME10",
+            order_value: 250000,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Áp dụng mã giảm giá thành công",
-            "data": {
-              "voucher_id": 1,
-              "code": "WELCOME10",
-              "discount_type": "percent",
-              "discount_amount": 25000,
-              "original_amount": 250000,
-              "final_amount": 225000
-            }
+            success: true,
+            message: "Áp dụng mã giảm giá thành công",
+            data: {
+              voucher_id: 1,
+              code: "WELCOME10",
+              discount_type: "percent",
+              discount_amount: 25000,
+              original_amount: 250000,
+              final_amount: 225000,
+            },
           },
-          notes: "API /apply này chỉ mang tính chất TÍNH TOÁN và HIỂN THỊ cho Frontend (để hiển thị con số 'Bạn được giảm 50.000đ'). Chưa lưu vào database là user đã dùng mã. Lượt dùng mã (da_dung + 1) và lịch sử của người dùng (nguoi_dung_phieu_giam_gia) CHỈ ĐƯỢC CẬP NHẬT khi khách hàng thực sự bấm 'ĐẶT HÀNG' (Ở API POST /orders)",
+          notes:
+            "API /apply này chỉ mang tính chất TÍNH TOÁN và HIỂN THỊ cho Frontend (để hiển thị con số 'Bạn được giảm 50.000đ'). Chưa lưu vào database là user đã dùng mã. Lượt dùng mã (da_dung + 1) và lịch sử của người dùng (nguoi_dung_phieu_giam_gia) CHỈ ĐƯỢC CẬP NHẬT khi khách hàng thực sự bấm 'ĐẶT HÀNG' (Ở API POST /orders)",
         },
         {
           method: "GET",
@@ -1133,36 +1135,36 @@ const apiDocs = {
           summary: "Lấy danh sách voucher - ADMIN",
           auth: true,
           requestExample: {
-            "page": 1,
-            "limit": 10
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách tất cả voucher thành công",
-            "data": {
-              "vouchers": [
+            success: true,
+            message: "Lấy danh sách tất cả voucher thành công",
+            data: {
+              vouchers: [
                 {
-                  "voucher_id": 1,
-                  "code": "WELCOME10",
-                  "voucher_name": "Giảm 10%",
-                  "discount_type": "percent",
-                  "value": "10.00",
-                  "minimum_value": null,
-                  "max_discount": null,
-                  "quantity": null,
-                  "used_count": 0,
-                  "start_date": null,
-                  "end_date": null
-                }
+                  voucher_id: 1,
+                  code: "WELCOME10",
+                  voucher_name: "Giảm 10%",
+                  discount_type: "percent",
+                  value: "10.00",
+                  minimum_value: null,
+                  max_discount: null,
+                  quantity: null,
+                  used_count: 0,
+                  start_date: null,
+                  end_date: null,
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
         },
         {
@@ -1173,22 +1175,22 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "data": {
-              "voucher": {
-                "voucher_id": 1,
-                "code": "WELCOME10",
-                "voucher_name": "Giảm 10%",
-                "discount_type": "percent",
-                "value": "10.00",
-                "minimum_value": null,
-                "max_discount": null,
-                "quantity": null,
-                "used_count": 0,
-                "start_date": null,
-                "end_date": null
-              }
-            }
+            success: true,
+            data: {
+              voucher: {
+                voucher_id: 1,
+                code: "WELCOME10",
+                voucher_name: "Giảm 10%",
+                discount_type: "percent",
+                value: "10.00",
+                minimum_value: null,
+                max_discount: null,
+                quantity: null,
+                used_count: 0,
+                start_date: null,
+                end_date: null,
+              },
+            },
           },
         },
         {
@@ -1197,29 +1199,29 @@ const apiDocs = {
           summary: "Tạo voucher mới - ADMIN",
           auth: true,
           requestExample: {
-            "code": "WINTER2026",
-            "voucher_name": "Sale Chào Đông 2026 - Giảm 50k",
-            "discount_type": "fixed",
-            "value": 50000,
-            "minimum_value": 300000,
-            "max_discount": null,
-            "quantity": 100,
-            "start_date": "2026-06-01T00:00:00Z",
-            "end_date": "2026-06-30T23:59:59Z"
+            code: "WINTER2026",
+            voucher_name: "Sale Chào Đông 2026 - Giảm 50k",
+            discount_type: "fixed",
+            value: 50000,
+            minimum_value: 300000,
+            max_discount: null,
+            quantity: 100,
+            start_date: "2026-06-01T00:00:00Z",
+            end_date: "2026-06-30T23:59:59Z",
           },
           successStatus: 201,
           successExample: {
-            "success": true,
-            "message": "Tạo voucher thành công",
-            "data": {
-              "voucher": {
-                "voucher_id": 2,
-                "code": "WINTER2026",
-                "voucher_name": "Sale Chào Đông",
-                "discount_type": "fixed",
-                "value": "50000.00"
-              }
-            }
+            success: true,
+            message: "Tạo voucher thành công",
+            data: {
+              voucher: {
+                voucher_id: 2,
+                code: "WINTER2026",
+                voucher_name: "Sale Chào Đông",
+                discount_type: "fixed",
+                value: "50000.00",
+              },
+            },
           },
         },
         {
@@ -1228,28 +1230,29 @@ const apiDocs = {
           summary: "Cập nhật thông tin voucher - ADMIN",
           auth: true,
           requestExample: {
-            "code": "SUMMER2026",
-            "voucher_name": "Sale Chào Hè",
-            "discount_type": "fixed",
-            "value": 50000,
-            "minimum_value": 300000,
-            "max_discount": null,
-            "quantity": 200, 
-            "start_date": "2026-06-01T00:00:00Z",
-            "end_date": "2026-07-15T23:59:59Z" 
+            code: "SUMMER2026",
+            voucher_name: "Sale Chào Hè",
+            discount_type: "fixed",
+            value: 50000,
+            minimum_value: 300000,
+            max_discount: null,
+            quantity: 200,
+            start_date: "2026-06-01T00:00:00Z",
+            end_date: "2026-07-15T23:59:59Z",
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Cập nhật voucher thành công",
-            "data": {
-              "voucher": {
-                "voucher_id": 2,
-                "code": "SUMMER2026"
-              }
-            }
+            success: true,
+            message: "Cập nhật voucher thành công",
+            data: {
+              voucher: {
+                voucher_id: 2,
+                code: "SUMMER2026",
+              },
+            },
           },
-          notes: "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật quantity thì payload có thể chỉ gồm { quantity: 200 }",
+          notes:
+            "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật quantity thì payload có thể chỉ gồm { quantity: 200 }",
         },
         {
           method: "DELETE",
@@ -1259,11 +1262,241 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Xóa voucher thành công"
+            success: true,
+            message: "Xóa voucher thành công",
           },
         },
-      ]
+      ],
+    },
+    {
+      name: "Khuyến mãi sản phẩm",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/promotions",
+          summary: "Lấy danh sách khuyến mãi đang hoạt động",
+          auth: false,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy danh sách khuyến mãi khả dụng thành công",
+            data: {
+              promotions: [
+                {
+                  promotion_id: 2,
+                  title: "Tuần lễ vàng Kim móc",
+                  discount_type: "percent",
+                  value: "10.00",
+                  min_order_value: "100000.00",
+                  start_date: "2026-06-09T17:00:00.000Z",
+                  end_date: "2026-06-17T16:59:59.000Z",
+                },
+                {
+                  promotion_id: 8,
+                  title: "Tri ân tương tác",
+                  discount_type: "fixed",
+                  value: "15000.00",
+                  min_order_value: "100000.00",
+                  start_date: "2026-05-31T17:00:00.000Z",
+                  end_date: "2026-06-20T16:59:59.000Z",
+                },
+              ],
+              pagination: {
+                total_items: 5,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/promotions/:promotion_id",
+          summary: "Lấy chi tiết khuyến mãi theo id",
+          auth: false,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            success: true,
+            data: {
+              promotion: {
+                promotion_id: 1,
+                title: "Sale hè rực rỡ",
+                discount_type: "fixed",
+                value: "5000.00",
+                min_order_value: "0.00",
+                start_date: "2026-05-31T17:00:00.000Z",
+                end_date: "2026-06-30T16:59:59.000Z",
+                status: "active",
+                applicable_products: [
+                  {
+                    product_id: 1,
+                    variant_id: 1,
+                  },
+                ],
+              },
+            },
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/promotions/promotions/all",
+          summary: "Lấy danh sách khuyến mãi - ADMIN",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy tất cả khuyến mãi thành công",
+            data: {
+              promotions: [
+                {
+                  promotion_id: 10,
+                  title: "Ưu đãi ngày mưa lớn",
+                  discount_type: "fixed",
+                  value: "8000.00",
+                  min_order_value: "120000.00",
+                  start_date: "2026-06-19T17:00:00.000Z",
+                  end_date: "2026-07-20T16:59:59.000Z",
+                  status: "active",
+                },
+                {
+                  promotion_id: 9,
+                  title: "Chào đón học viên mới",
+                  discount_type: "percent",
+                  value: "20.00",
+                  min_order_value: "400000.00",
+                  start_date: "2026-05-31T17:00:00.000Z",
+                  end_date: "2026-08-31T16:59:59.000Z",
+                  status: "active",
+                },
+              ],
+              pagination: {
+                total_items: 10,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/promotions/promotions",
+          summary: "Tạo khuyến mãi mới - ADMIN",
+          auth: true,
+          requestExample: {
+            title: "Flash Sale Len Đan Mùa Đông",
+            discount_type: "percent",
+            value: 20,
+            min_order_value: 0,
+            start_date: "2026-11-01T00:00:00Z",
+            end_date: "2026-11-30T23:59:59Z",
+            status: "active",
+            applicable_products: [
+              { product_id: 1 },
+              { product_id: 2, variant_id: 5 },
+            ],
+          },
+          successStatus: 201,
+          successExample: {
+            success: true,
+            message: "Tạo khuyến mãi thành công",
+            data: {
+              promotion: {
+                promotion_id: 11,
+                title: "Flash Sale Len Đan Mùa Đông",
+                discount_type: "percent",
+                value: "20.00",
+                min_order_value: "0.00",
+                start_date: "2026-10-31T17:00:00.000Z",
+                end_date: "2026-11-30T16:59:59.000Z",
+                status: "active",
+                applicable_products: [
+                  {
+                    product_id: 1,
+                    variant_id: null,
+                  },
+                  {
+                    product_id: 2,
+                    variant_id: 5,
+                  },
+                ],
+              },
+            },
+          },
+          notes:
+            "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
+        },
+        {
+          method: "PUT",
+          path: "/api/promotions/promotions/:id",
+          summary: "Cập nhật thông tin khuyến mãi - ADMIN",
+          auth: true,
+          requestExample: {
+            "title": "Flash Sale Len Đan Mùa Đông (Gia hạn)",
+            "discount_type": "percent",
+            "value": 25,
+            "min_order_value": 0,
+            "start_date": "2026-11-01T00:00:00Z",
+            "end_date": "2026-12-15T23:59:59Z",
+            "status": "active",
+            "applicable_products": [
+              { "product_id": 1 },
+              { "product_id": 3 }
+            ]
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật khuyến mãi thành công",
+            "data": {
+              "promotion": {
+                "promotion_id": 11,
+                "title": "Flash Sale Len Đan Mùa Đông (Gia hạn)",
+                "discount_type": "percent",
+                "value": "25.00",
+                "min_order_value": "0.00",
+                "start_date": "2026-10-31T17:00:00.000Z",
+                "end_date": "2026-12-15T16:59:59.000Z",
+                "status": "active",
+                "applicable_products": [
+                  {
+                    "product_id": 1,
+                    "variant_id": null
+                  },
+                  {
+                    "product_id": 3,
+                    "variant_id": null
+                  }
+                ]
+              }
+            }
+          },
+          notes:
+            "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
+        },
+        {
+          method: "DELETE",
+          path: "/api/promotions/promotions/:id",
+          summary: "Xóa khuyến mãi - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Xóa khuyến mãi thành công"
+          },
+        },
+      ],
     },
   ],
 };
@@ -1291,11 +1524,15 @@ const renderDocsPage = () => {
             <span>Mã thành công: ${endpoint.successStatus}</span>
           </div>
           
-          ${endpoint.notes ? `
+          ${
+            endpoint.notes
+              ? `
           <div style="margin-bottom: 14px; background: #fffbeb; border-left: 4px solid #d97706; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 14px; color: #b45309;">
             <strong>Lưu ý:</strong> ${escapeHtml(endpoint.notes)}
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           <div class="grid">
             <div>
