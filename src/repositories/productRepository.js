@@ -252,6 +252,7 @@ const buildProductsList = async ({ page, limit }) => {
                 pv.gia AS price,
                 pv.mau_sac AS color,
                 pv.kich_co AS size,
+                COALESCE(tk.so_luong_ton, 0) AS stock_quantity, /* THÊM DÒNG NÀY: Lấy tồn kho */
                 COALESCE(
                     json_agg(
                         json_build_object(
@@ -263,9 +264,10 @@ const buildProductsList = async ({ page, limit }) => {
                     '[]'
                 ) AS images
          FROM bien_the_san_pham pv
+         LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id /* THÊM DÒNG NÀY: Kết nối bảng ton_kho */
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
          WHERE pv.san_pham_id = ANY($1::int[])
-         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co
+         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co, tk.so_luong_ton /* THÊM tk.so_luong_ton VÀO GROUP BY */
          ORDER BY pv.san_pham_id DESC, pv.bien_the_id ASC`,
         [productIds]
     );
@@ -284,6 +286,7 @@ const buildProductsList = async ({ page, limit }) => {
             price: row.price,
             color: row.color,
             size: row.size,
+            stock_quantity: Number(row.stock_quantity),
             images: row.images || [],
         });
     }

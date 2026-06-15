@@ -11,6 +11,7 @@ const productRoutes = require('./routes/products');
 const variantRoutes = require('./routes/variants');
 const locationRoutes = require('./routes/location');
 const cartRoutes = require('./routes/cart');
+const voucherRoutes = require('./routes/vouchers');
 
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -50,6 +51,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/variants', variantRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/vouchers', voucherRoutes);
 
 app.get('/api/docs', (req, res) => {
     res.type('html').send(renderDocsPage());

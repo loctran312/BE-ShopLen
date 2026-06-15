@@ -403,6 +403,7 @@ const apiDocs = {
                       price: "15000.00",
                       color: "Đỏ",
                       size: "50g",
+                      stock_quantity: 100,
                       images: [
                         {
                           image_url: "https://example.com/images/len-red-1.jpg",
@@ -1061,6 +1062,208 @@ const apiDocs = {
         },
       ],
     },
+    {
+      name: "Khuyến mãi",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/vouchers",
+          summary: "Lấy danh sách voucher đang hoạt động",
+          auth: false,
+          requestExample: {
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách mã giảm giá thành công",
+            "data": {
+              "vouchers": [
+                {
+                  "voucher_id": 1,
+                  "code": "WELCOME10",
+                  "voucher_name": "Giảm 10%",
+                  "discount_type": "percent",
+                  "value": "10.00",
+                  "minimum_value": null,
+                  "max_discount": null,
+                  "quantity": null,
+                  "used_count": 0,
+                  "start_date": null,
+                  "end_date": null
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/vouchers/apply",
+          summary: "Áp dụng voucher vào đơn hàng",
+          auth: true,
+          requestExample: {
+            "code": "WELCOME10",
+            "order_value": 250000
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Áp dụng mã giảm giá thành công",
+            "data": {
+              "voucher_id": 1,
+              "code": "WELCOME10",
+              "discount_type": "percent",
+              "discount_amount": 25000,
+              "original_amount": 250000,
+              "final_amount": 225000
+            }
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/vouchers/vouchers",
+          summary: "Lấy danh sách voucher - ADMIN",
+          auth: true,
+          requestExample: {
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách tất cả voucher thành công",
+            "data": {
+              "vouchers": [
+                {
+                  "voucher_id": 1,
+                  "code": "WELCOME10",
+                  "voucher_name": "Giảm 10%",
+                  "discount_type": "percent",
+                  "value": "10.00",
+                  "minimum_value": null,
+                  "max_discount": null,
+                  "quantity": null,
+                  "used_count": 0,
+                  "start_date": null,
+                  "end_date": null
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/vouchers/:voucher_id",
+          summary: "Lấy chi tiết voucher theo id - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "data": {
+              "voucher": {
+                "voucher_id": 1,
+                "code": "WELCOME10",
+                "voucher_name": "Giảm 10%",
+                "discount_type": "percent",
+                "value": "10.00",
+                "minimum_value": null,
+                "max_discount": null,
+                "quantity": null,
+                "used_count": 0,
+                "start_date": null,
+                "end_date": null
+              }
+            }
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/vouchers/vouchers",
+          summary: "Tạo voucher mới - ADMIN",
+          auth: true,
+          requestExample: {
+            "code": "WINTER2026",
+            "voucher_name": "Sale Chào Đông 2026 - Giảm 50k",
+            "discount_type": "fixed",
+            "value": 50000,
+            "minimum_value": 300000,
+            "max_discount": null,
+            "quantity": 100,
+            "start_date": "2026-06-01T00:00:00Z",
+            "end_date": "2026-06-30T23:59:59Z"
+          },
+          successStatus: 201,
+          successExample: {
+            "success": true,
+            "message": "Tạo voucher thành công",
+            "data": {
+              "voucher": {
+                "voucher_id": 2,
+                "code": "WINTER2026",
+                "voucher_name": "Sale Chào Đông",
+                "discount_type": "fixed",
+                "value": "50000.00"
+              }
+            }
+          },
+        },
+        {
+          method: "PUT",
+          path: "/api/vouchers/vouchers/:id",
+          summary: "Cập nhật thông tin voucher - ADMIN",
+          auth: true,
+          requestExample: {
+            "code": "SUMMER2026",
+            "voucher_name": "Sale Chào Hè",
+            "discount_type": "fixed",
+            "value": 50000,
+            "minimum_value": 300000,
+            "max_discount": null,
+            "quantity": 200, 
+            "start_date": "2026-06-01T00:00:00Z",
+            "end_date": "2026-07-15T23:59:59Z" 
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật voucher thành công",
+            "data": {
+              "voucher": {
+                "voucher_id": 2,
+                "code": "SUMMER2026"
+              }
+            }
+          },
+          notes: "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật quantity thì payload có thể chỉ gồm { quantity: 200 }",
+        },
+        {
+          method: "DELETE",
+          path: "/api/vouchers/vouchers/:id",
+          summary: "Xóa voucher - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Xóa voucher thành công"
+          },
+        },
+      ]
+    },
   ],
 };
 
@@ -1086,6 +1289,13 @@ const renderDocsPage = () => {
             <span>${endpoint.auth ? "Cần xác thực" : "Công khai"}</span>
             <span>Mã thành công: ${endpoint.successStatus}</span>
           </div>
+          
+          ${endpoint.notes ? `
+          <div style="margin-bottom: 14px; background: #fffbeb; border-left: 4px solid #d97706; padding: 10px 14px; border-radius: 0 8px 8px 0; font-size: 14px; color: #b45309;">
+            <strong>Lưu ý:</strong> ${escapeHtml(endpoint.notes)}
+          </div>
+          ` : ''}
+
           <div class="grid">
             <div>
               <h3>Ví dụ request</h3>
