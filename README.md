@@ -50,6 +50,7 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 | **Hình ảnh sản phẩm** | Upload ảnh lên ImgBB, sắp xếp thứ tự hiển thị |
 | **Giỏ hàng** | Thêm, sửa, xóa, đồng bộ giỏ hàng |
 | **Địa điểm** | Danh sách tỉnh/thành và phường/xã |
+| **Voucher** | Áp dụng mã giảm giá (theo % hoặc số tiền cố định) |
 
 ### Đang phát triển
 
@@ -57,7 +58,6 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 |-----------|-------|
 | **Đơn hàng** | Tạo đơn, cập nhật trạng thái, lịch sử đơn hàng |
 | **Thanh toán** | Tích hợp COD và MoMo payment gateway |
-| **Voucher** | Áp dụng mã giảm giá (theo % hoặc số tiền cố định) |
 | **Khuyến mãi** | Chương trình khuyến mãi theo sản phẩm |
 | **Workshop** | Quản lý lớp học đan móc trực tiếp |
 | **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
@@ -225,58 +225,6 @@ Sau khi chạy server, truy cập:
 - **HTML Docs**: `http://localhost:3000/api/docs`
 - **JSON Spec**: `http://localhost:3000/api/docs.json`
 
-### Danh sách endpoints
-
-| Method | Endpoint | Mô tả | Auth |
-|--------|----------|-------|------|
-| **Authentication** |
-| POST | `/api/auth/register` | Đăng ký tài khoản mới | Public |
-| POST | `/api/auth/login` | Đăng nhập | Public |
-| POST | `/api/auth/refresh-token` | Làm mới access token | Public |
-| POST | `/api/auth/logout` | Đăng xuất | - |
-| GET | `/api/auth/me` | Thông tin user hiện tại | Required |
-| GET | `/api/auth/google` | Bắt đầu Google OAuth | Public |
-| GET | `/api/auth/google/callback` | Callback Google OAuth | Public |
-| POST | `/api/auth/forgot-password` | Gửi OTP đặt lại mật khẩu | Public |
-| POST | `/api/auth/verify-reset-otp` | Xác thực OTP | Public |
-| POST | `/api/auth/reset-password` | Đặt lại mật khẩu | Public |
-| **Users** |
-| GET | `/api/users` | Danh sách người dùng | Admin |
-| GET | `/api/users/:id` | Chi tiết người dùng | Admin |
-| POST | `/api/users` | Tạo người dùng | Admin |
-| PUT | `/api/users/:id` | Cập nhật người dùng | Admin |
-| PUT | `/api/users/user/me` | Cập nhật thông tin cá nhân | Required |
-| DELETE | `/api/users/:id` | Xóa người dùng | Admin |
-| POST | `/api/users/change-password` | Đổi mật khẩu | Required |
-| **Categories** |
-| GET | `/api/categories` | Danh sách danh mục (cây) | Public |
-| GET | `/api/categories/:id` | Chi tiết danh mục | Public |
-| POST | `/api/categories` | Tạo danh mục | Admin |
-| PUT | `/api/categories/:id` | Cập nhật danh mục | Admin |
-| DELETE | `/api/categories/:id` | Xóa danh mục | Admin |
-| **Products** |
-| GET | `/api/products` | Danh sách sản phẩm | Public |
-| GET | `/api/products/types` | Loại sản phẩm | Public |
-| GET | `/api/products/:id` | Chi tiết sản phẩm | Public |
-| POST | `/api/products` | Tạo sản phẩm | Admin |
-| PUT | `/api/products/:id` | Cập nhật sản phẩm | Admin |
-| DELETE | `/api/products/:id` | Xóa sản phẩm | Admin |
-| **Variants** |
-| PATCH | `/api/variants/:id/stock` | Cập nhật tồn kho (ghi đè) | Admin |
-| PATCH | `/api/variants/:id/stock-change` | Cập nhật tồn kho (tăng/giảm) | Admin |
-| DELETE | `/api/variants/:id` | Xóa biến thể | Admin |
-| **Cart** |
-| GET | `/api/cart` | Giỏ hàng hiện tại | Required |
-| POST | `/api/cart` | Thêm vào giỏ hàng | Required |
-| POST | `/api/cart/sync` | Đồng bộ giỏ hàng | Required |
-| PUT | `/api/cart/:variant_id` | Cập nhật số lượng | Required |
-| DELETE | `/api/cart/:variant_id` | Xóa khỏi giỏ hàng | Required |
-| **Location** |
-| GET | `/api/location/cities` | Danh sách tỉnh/thành | Public |
-| GET | `/api/location/cities/:code/wards` | Phường/xã theo tỉnh | Public |
-
----
-
 ## Cấu trúc dự án
 
 ```
@@ -287,30 +235,13 @@ BE-ShopLen/
 │   ├── config/
 │   │   ├── db.js                 # PostgreSQL connection pool
 │   │   └── env.js                # Environment variables loader
+|   |
 │   ├── routes/                   # API route definitions
-│   │   ├── auth.js               # Authentication routes
-│   │   ├── users.js              # User management routes
-│   │   ├── categories.js         # Category routes
-│   │   ├── products.js           # Product routes
-│   │   ├── variants.js           # Variant routes
-│   │   ├── cart.js               # Cart routes
-│   │   └── location.js           # Location routes
+|   |
 │   ├── controllers/              # Request handlers & business logic
-│   │   ├── authController.js
-│   │   ├── userController.js
-│   │   ├── categoryController.js
-│   │   ├── productController.js
-│   │   ├── variantController.js
-│   │   ├── cartController.js
-│   │   └── locationController.js
+│   │
 │   ├── repositories/             # Database query functions
-│   │   ├── authRepository.js
-│   │   ├── userRepository.js
-│   │   ├── categoryRepository.js
-│   │   ├── productRepository.js
-│   │   ├── variantRepository.js
-│   │   ├── cartRepository.js
-│   │   └── locationRepository.js
+│   │
 │   ├── middlewares/
 │   │   ├── authMiddleware.js     # JWT verification & role check
 │   │   └── errorMiddleware.js    # Global error handler

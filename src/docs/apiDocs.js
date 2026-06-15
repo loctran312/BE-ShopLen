@@ -1125,6 +1125,7 @@ const apiDocs = {
               "final_amount": 225000
             }
           },
+          notes: "API /apply này chỉ mang tính chất TÍNH TOÁN và HIỂN THỊ cho Frontend (để hiển thị con số 'Bạn được giảm 50.000đ'). Chưa lưu vào database là user đã dùng mã. Lượt dùng mã (da_dung + 1) và lịch sử của người dùng (nguoi_dung_phieu_giam_gia) CHỈ ĐƯỢC CẬP NHẬT khi khách hàng thực sự bấm 'ĐẶT HÀNG' (Ở API POST /orders)",
         },
         {
           method: "GET",

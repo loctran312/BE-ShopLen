@@ -639,97 +639,312 @@ FROM lich_su_quay;
 -- SAMPLE DATA
 -- =========================
 
--- Admin
-INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro) 
-VALUES (1, 'haunghia1512@gmail.com', 'admin', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '0', '0900000000', 'admin'), 
-(2, 'lommlay@gmail.com', 'admin1', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '1', '0900000001', 'admin'),
-(3, 'admin@gmail.com', 'admin2', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', '2', '0900000002', 'admin');
+-- ----------------------------------------
+-- 0. DỮ LIỆU ĐỊA CHÍNH (TINH_THANH & PHUONG_XA)
+-- ----------------------------------------
+INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES 
+('HCM', 'Hồ Chí Minh'), 
+('HN', 'Hà Nội'), 
+('DN', 'Đà Nẵng'), 
+('HP', 'Hải Phòng'), 
+('CT', 'Cần Thơ');
 
--- 1. NGUOI DUNG
-INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai) 
-VALUES (4, 'khachhang3@gmail.com', 'user03', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Tran', 'Van C', '0909876543');
+INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES 
+(1, 'Phường Bến Nghé', 'HCM'), (2, 'Phường Bến Thành', 'HCM'), (3, 'Phường Đa Kao', 'HCM'), (4, 'Phường Phạm Ngũ Lão', 'HCM'), (5, 'Phường Tân Định', 'HCM'),
+(6, 'Phường Tràng Tiền', 'HN'), (7, 'Phường Hàng Bài', 'HN'), (8, 'Phường Hàng Bạc', 'HN'), (9, 'Phường Hàng Bông', 'HN'), (10, 'Phường Cửa Đông', 'HN'),
+(11, 'Phường Hải Châu I', 'DN'), (12, 'Phường Hải Châu II', 'DN'), (13, 'Phường Thạch Thang', 'DN'), (14, 'Phường Thanh Bình', 'DN'), (15, 'Phường Thuận Phước', 'DN'),
+(16, 'Phường Minh Khai', 'HP'), (17, 'Phường Hoàng Văn Thụ', 'HP'), (18, 'Phường Quang Trung', 'HP'), (19, 'Phường Phan Bội Châu', 'HP'), (20, 'Phường Phạm Hồng Thái', 'HP'),
+(21, 'Phường Tân An', 'CT'), (22, 'Phường An Lạc', 'CT'), (23, 'Phường An Cư', 'CT'), (24, 'Phường An Nghiệp', 'CT'), (25, 'Phường An Hòa', 'CT');
 
--- 2. DANH MUC
-INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, slug) VALUES (1, 'Len đan', 'len-dan');
-INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, danh_muc_cha_id, slug) VALUES (2, 'Len Cotton', 1, 'len-cotton');
+-- ----------------------------------------
+-- 1. BẢNG: NGUOI_DUNG & PHỤ THUỘC (Tài khoản)
+-- ----------------------------------------
+-- Hệ thống Admin cũ
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro) VALUES 
+(1, 'haunghia1512@gmail.com', 'admin', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', 'Developer', '0900000000', 'admin'), 
+(2, 'lommlay@gmail.com', 'admin1', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', 'Developer', '0900000001', 'admin'),
+(3, 'admin@gmail.com', 'admin2', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Admin', 'Test', '0900000002', 'admin');
 
--- 3. SAN PHAM
-INSERT INTO loai_san_pham (loai_san_pham_id, ten_loai) VALUES (1, 'Len cuộn'), (2, 'Công cụ'), (3, 'Workshop');
-INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham) VALUES (1, 1, 2, 'Len Cotton Milk');
+-- Khách hàng cũ
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro) VALUES 
+(4, 'khachhang3@gmail.com', 'user03', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Nguyễn', 'Văn Huy', '0909876543', 'customer'),
+(5, 'khachhang4@gmail.com', 'user04', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Nguyễn', 'Văn Long', '0912345678', 'customer'),
+(6, 'khachhang5@gmail.com', 'user05', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Lê', 'Thị Mai', '0923456789', 'customer'),
+(7, 'khachhang6@gmail.com', 'user06', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Phạm', 'Minh Đức', '0934567890', 'customer'),
+(8, 'khachhang7@gmail.com', 'user07', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Hoàng', 'Thị Dung', '0945678901', 'customer');
 
--- 4. BIEN THE & TON KHO
-INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac) 
-VALUES (1, 1, 'L-COTTON-001', 'len-cotton-milk-trang', 25000, 'Trắng');
+-- Thêm các tài khoản bổ sung (ID: 9->12) giúp làm dày dữ liệu cho các bảng giao dịch (>10 records)
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai) VALUES
+(9, 'khachhang8@gmail.com', 'user08', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Đào', 'Linh Chi', '0956789012'),
+(10, 'khachhang9@gmail.com', 'user09', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Vũ', 'Anh Tuấn', '0967890123'),
+(11, 'khachhang10@gmail.com', 'user10', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Bùi', 'Thị Ngọc', '0978901234'),
+(12, 'khachhang11@gmail.com', 'user11', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Đỗ', 'Hoàng Việt', '0989012345');
 
+-- ----------------------------------------
+-- 2. BẢNG: DANH_MUC & LOAI_SAN_PHAM (Phân cấp danh mục)
+-- ----------------------------------------
+INSERT INTO loai_san_pham (loai_san_pham_id, ten_loai, mo_ta) VALUES 
+(1, 'Len cuộn', 'Các dòng len sợi cuộn tròn phục vụ thủ công đan móc'),
+(2, 'Công cụ', 'Dụng cụ và thiết bị hỗ trợ định hình sản phẩm len'),
+(3, 'Workshop', 'Vé tham gia trải nghiệm lớp học làm đồ len trực tiếp');
+
+-- Danh mục gốc
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, mo_ta, danh_muc_cha_id, hinh_anh, slug) VALUES 
+(1, 'Len đan', 'Sản phẩm và vật liệu liên quan đến len sợi handmade', NULL, NULL, 'len-dan'),
+(2, 'Len Cotton', 'Các dòng len thành phần cotton mềm, mịn, ít xù sợi', 1, NULL, 'len-cotton');
+
+-- Cây 1: Dụng cụ đan móc -> Kim đan len, Kim móc len
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, mo_ta, danh_muc_cha_id, hinh_anh, slug) VALUES 
+(3, 'Dụng cụ đan móc', 'Các thiết bị phụ trợ đan móc đan len thủ công chuyên nghiệp', NULL, NULL, 'dung-cu-dan-moc'),
+(4, 'Kim đan len', 'Kim đan thẳng, kim đan vòng các chất liệu gỗ, kim loại', 3, NULL, 'kim-dan-len'),
+(5, 'Kim móc len', 'Kim móc cán dẻo cao cấp bảo vệ khớp ngón tay', 3, NULL, 'kim-moc-len');
+
+-- Cây 2: Thành phẩm len -> Khăn len thời trang, Áo len đan tay, Thú bông len Amigurumi
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, mo_ta, danh_muc_cha_id, hinh_anh, slug) VALUES 
+(6, 'Thành phẩm len', 'Các sản phẩm thời trang, Decor làm hoàn toàn bằng tay', NULL, NULL, 'thanh-pham-len'),
+(7, 'Khăn len thời trang', 'Khăn len đan tay họa tiết đa dạng phong cách giữ ấm tốt', 6, NULL, 'khan-len-thoi-trang'),
+(8, 'Áo len đan tay', 'Áo khoác cardigan, áo len cổ lọ dệt thủ công tỉ mỉ', 6, NULL, 'ao-len-dan-tay'),
+(9, 'Thú bông len Amigurumi', 'Thú bông móc bằng len nhồi bông gòn sạch tinh khiết', 6, NULL, 'thu-bong-len-amigurumi');
+
+-- Cây 3: Danh mục cha đứng độc lập
+INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, mo_ta, danh_muc_cha_id, hinh_anh, slug) VALUES 
+(10, 'Nguyên liệu len phụ trợ', 'Phụ kiện bổ trợ như nút gỗ, bông nhồi, mắt thú giả, mác da gắn túi', NULL, NULL, 'nguyen-lieu-len-phu-tro');
+
+-- ----------------------------------------
+-- 3. BẢNG: SAN_PHAM, BIEN_THE_SAN_PHAM & TON_KHO
+-- ----------------------------------------
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES 
+(1, 1, 2, 'Len Cotton Milk', 'Dòng len sợi sữa mềm thích hợp cho cả da em bé');
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
+(1, 1, 'L-COTTON-001', 'len-cotton-milk-trang', 25000.00, 'Trắng', 'M');
 INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES (1, 1, 100);
 
--- 5. WORKSHOP
-INSERT INTO hoi_thao (hoi_thao_id, san_pham_id, tieu_de, dia_diem) VALUES (1, 1, 'Workshop đan khăn', 'TP.HCM');
-INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc) 
-VALUES (1, 1, '2026-06-10 09:00:00', '2026-06-10 12:00:00');
+-- Sản phẩm 2: Kim Móc Cán Dẻo Tulip (Biến thể 1: 150 tồn kho, Biến thể 2: 210 tồn kho)
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES 
+(2, 2, 5, 'Kim Móc Cán Dẻo Tulip', 'Thương hiệu kim móc cao cấp nhập khẩu Nhật Bản');
 
--- 6. PHIEU GIAM GIA & KHUYEN MAI
-INSERT INTO phieu_giam_gia (phieu_giam_gia_id, ma, ten_phieu, kieu_giam_gia, gia_tri) 
-VALUES (1, 'WELCOME10', 'Giảm 10%', 'percent', 10);
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
+(2, 2, 'KM-TULIP-20MM', 'kim-moc-tulip-20mm', 120000.00, 'Vàng Kim', '2.0mm'),
+(3, 2, 'KM-TULIP-30MM', 'kim-moc-tulip-30mm', 125000.00, 'Hồng Pastel', '3.0mm');
 
-INSERT INTO khuyen_mai (khuyen_mai_id, tieu_de, gia_tri, ngay_bat_dau, ngay_ket_thuc) 
-VALUES (1, 'Sale hè', 5000, '2026-06-01', '2026-06-30');
+INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES 
+(2, 2, 150),
+(3, 3, 210);
 
--- 7. TINH THANH & PHUONG XA
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HCM', 'Hồ Chí Minh');
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HN', 'Hà Nội');
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('DN', 'Đà Nẵng');
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('HP', 'Hải Phòng');
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES ('CT', 'Cần Thơ');
+-- Sản phẩm 3: Len Sợi Nhung Đũa (Biến thể 1: 120 tồn kho, Biến thể 2: 60 tồn kho)
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES 
+(3, 1, 10, 'Len Sợi Nhung Đũa', 'Sợi len kết cấu nhung siêu to chuyên dùng đan chăn, thảm');
 
--- Các phường thuộc Hồ Chí Minh (HCM)
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (1, 'Phường Bến Nghé', 'HCM');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (2, 'Phường Bến Thành', 'HCM');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (3, 'Phường Đa Kao', 'HCM');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (4, 'Phường Phạm Ngũ Lão', 'HCM');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (5, 'Phường Tân Định', 'HCM');
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
+(4, 3, 'L-NHUNG-DO', 'len-nhung-dua-do-do', 45000.00, 'Đỏ Đô', 'Cỡ Đại'),
+(5, 3, 'L-NHUNG-XANH', 'len-nhung-dua-xanh-reu', 45000.00, 'Xanh Rêu', 'Cỡ Đại');
 
--- Các phường thuộc Hà Nội (HN)
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (6, 'Phường Tràng Tiền', 'HN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (7, 'Phường Hàng Bài', 'HN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (8, 'Phường Hàng Bạc', 'HN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (9, 'Phường Hàng Bông', 'HN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (10, 'Phường Cửa Đông', 'HN');
+INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES 
+(4, 4, 120),
+(5, 5, 60);
 
--- Các phường thuộc Đà Nẵng (DN)
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (11, 'Phường Hải Châu I', 'DN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (12, 'Phường Hải Châu II', 'DN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (13, 'Phường Thạch Thang', 'DN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (14, 'Phường Thanh Bình', 'DN');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (15, 'Phường Thuận Phước', 'DN');
+-- Sản phẩm 4: Bộ Kim Đan Vòng Gỗ Sồi (Biến thể 1: 80, BT2: 140, BT3: 100, BT4: 50)
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES 
+(4, 2, 4, 'Bộ Kim Đan Vòng Gỗ Sồi', 'Chất liệu gỗ tự nhiên nối dây cáp dẻo chống xoắn');
 
--- Các phường thuộc Hải Phòng (HP)
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (16, 'Phường Minh Khai', 'HP');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (17, 'Phường Hoàng Văn Thụ', 'HP');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (18, 'Phường Quang Trung', 'HP');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (19, 'Phường Phan Bội Châu', 'HP');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (20, 'Phường Phạm Hồng Thái', 'HP');
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
+(6, 4, 'KD-VONG-40MM', 'kim-dan-vong-40mm', 85000.00, 'Gỗ Tự Nhiên', '4.0mm'),
+(7, 4, 'KD-VONG-50MM', 'kim-dan-vong-50mm', 90000.00, 'Gỗ Tự Nhiên', '5.0mm'),
+(8, 4, 'KD-VONG-60MM', 'kim-dan-vong-60mm', 95000.00, 'Gỗ Tự Nhiên', '6.0mm'),
+(9, 4, 'KD-VONG-70MM', 'kim-dan-vong-70mm', 100000.00, 'Gỗ Tự Nhiên', '7.0mm');
 
--- Các phường thuộc Cần Thơ (CT)
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (21, 'Phường Tân An', 'CT');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (22, 'Phường An Lạc', 'CT');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (23, 'Phường An Cư', 'CT');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (24, 'Phường An Nghiệp', 'CT');
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES (25, 'Phường An Hòa', 'CT');
+INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES 
+(6, 6, 80),
+(7, 7, 140),
+(8, 8, 100),
+(9, 9, 50);
 
--- 8. DON HANG
-INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) 
-VALUES ('DH000003', 4, 25000, 1, '456 Đường Nguyễn Trãi', 'Tran Van C', '0909876543');
+-- Sản phẩm phụ trợ 5: Dành cho phân hệ Workshop học đan khăn mẫu
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES
+(5, 3, 7, 'Workshop Đan Khăn Căn Bản', 'Buổi học thực tế đan khăn trực tiếp');
+INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
+(10, 5, 'WS-KHAN-01', 've-workshop-dan-khan-hcm', 350000.00, 'Mặc định', '1 Buổi');
+INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES (10, 10, 30);
 
-INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) 
-VALUES ('DH000003', 1, 'Len Cotton Milk', 25000, 1);
+-- ----------------------------------------
+-- 4. BẢNG: GIO_HANG
+-- ----------------------------------------
+INSERT INTO gio_hang (nguoi_dung_id, bien_the_id, so_luong) VALUES 
+(4, 2, 2), (4, 4, 1),
+(5, 3, 1), (5, 6, 2),
+(6, 1, 5), (6, 7, 1),
+(7, 8, 1), (8, 9, 3),
+(9, 4, 2), (10, 5, 4);
 
--- 9. THANH TOAN
-INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ('DH000003', 'COD', 'pending');
+-- ----------------------------------------
+-- 5. BẢNG: PHIEU_GIAM_GIA & KHUYEN_MAI (10 dòng mẫu từng bảng)
+-- ----------------------------------------
+-- Phiếu giảm giá (Vouchers)
+INSERT INTO phieu_giam_gia (phieu_giam_gia_id, ma, ten_phieu, kieu_giam_gia, gia_tri, gia_tri_toi_thieu, giam_toi_da, so_luong, da_dung, ngay_bat_dau, ngay_ket_thuc) VALUES 
+(1, 'WELCOME10', 'Giảm 10%', 'percent', 10.00, 50000.00, 50000.00, NULL, 0, NULL, NULL),
+(2, 'LENMOI2026', 'Mừng năm mới', 'fixed', 20000.00, 150000.00, 20000.00, 50, 5, '2026-01-01 00:00:00', '2026-03-01 00:00:00'),
+(3, 'FLASHSALE5', 'Flashsale 5%', 'percent', 5.00, 0.00, 20000.00, 200, 85, '2026-06-15 00:00:00', '2026-06-16 00:00:00'),
+(4, 'DANLENKHOE', 'Yêu đan móc', 'percent', 15.00, 200000.00, 60000.00, 30, 2, '2026-06-01 00:00:00', '2026-07-01 00:00:00'),
+(5, 'CODFREE', 'Hỗ trợ ship', 'fixed', 15000.00, 100000.00, 15000.00, 500, 140, '2026-05-01 00:00:00', '2026-08-01 00:00:00'),
+(6, 'VIPKHACH', 'Tri ân VIP', 'percent', 20.00, 500000.00, 150000.00, 10, 1, '2026-06-01 00:00:00', '2026-12-31 23:59:59'),
+(7, 'PROPION', 'Giảm sâu dụng cụ', 'fixed', 50000.00, 400000.00, 50000.00, 40, 10, '2026-06-10 00:00:00', '2026-06-25 00:00:00'),
+(8, 'LENSIEURE', 'Sợi nhung deal', 'percent', 8.00, 80000.00, 30000.00, 100, 0, '2026-06-12 00:00:00', '2026-06-20 00:00:00'),
+(9, 'HEVUIVE', 'Chào hè rực rỡ', 'fixed', 30000.00, 250000.00, 30000.00, 75, 4, '2026-06-01 00:00:00', '2026-07-31 00:00:00'),
+(10, 'XADONG2026', 'Dọn kho đón hè', 'percent', 25.00, 300000.00, 100000.00, 20, 20, '2026-04-01 00:00:00', '2026-05-01 00:00:00');
 
--- 10. LOYALTY, YEU THICH & SPIN
-INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES (4, 50);
-INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES (4, 1);
-INSERT INTO luot_quay (nguoi_dung_id, so_luot) VALUES (4, 3);
-INSERT INTO cau_hinh_qua_quay (cau_hinh_qua_quay_id, loai_qua, gia_tri, ty_le_thang, so_luong_con_lai) 
-VALUES (1, 'point', 10, 20.00, 100);
+-- Chương trình khuyến mãi (Promotions)
+INSERT INTO khuyen_mai (khuyen_mai_id, tieu_de, kieu_giam_gia, gia_tri, gia_tri_don_hang_toi_thieu, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES 
+(1, 'Sale hè rực rỡ', 'fixed', 5000.00, 0.00, '2026-06-01 00:00:00', '2026-06-30 23:59:59', 'active'),
+(2, 'Tuần lễ vàng Kim móc', 'percent', 10.00, 100000.00, '2026-06-10 00:00:00', '2026-06-17 23:59:59', 'active'),
+(3, 'Ưu đãi tháng 6', 'fixed', 10000.00, 150000.00, '2026-06-01 00:00:00', '2026-06-30 23:59:59', 'active'),
+(4, 'Xả hàng len cotton lỗi mác', 'percent', 15.00, 50000.00, '2026-05-01 00:00:00', '2026-05-15 23:59:59', 'inactive'),
+(5, 'Giờ vàng giá sốc', 'fixed', 20000.00, 300000.00, '2026-06-15 12:00:00', '2026-06-15 14:00:00', 'active'),
+(6, 'Khai trương chi nhánh', 'percent', 5.00, 0.00, '2026-03-01 00:00:00', '2026-03-07 23:59:59', 'inactive'),
+(7, 'Ngày hội Đan Móc Việt Nam', 'percent', 12.00, 200000.00, '2026-07-05 00:00:00', '2026-07-07 23:59:59', 'active'),
+(8, 'Tri ân tương tác', 'fixed', 15000.00, 100000.00, '2026-06-01 00:00:00', '2026-06-20 23:59:59', 'active'),
+(9, 'Chào đón học viên mới', 'percent', 20.00, 400000.00, '2026-06-01 00:00:00', '2026-08-31 23:59:59', 'active'),
+(10, 'Ưu đãi ngày mưa lớn', 'fixed', 8000.00, 120000.00, '2026-06-20 00:00:00', '2026-07-20 23:59:59', 'active');
+
+-- Bảng liên kết trung gian
+INSERT INTO nguoi_dung_phieu_giam_gia (phieu_giam_gia_id, nguoi_dung_id, so_lan_su_dung) VALUES
+(1, 4, 1), (1, 5, 0), (2, 6, 1), (3, 7, 2), (4, 8, 0), (5, 9, 1), (6, 10, 0), (7, 4, 1), (8, 5, 0), (9, 6, 1);
+
+INSERT INTO phieu_giam_gia_san_pham (phieu_giam_gia_id, san_pham_id, bien_the_id) VALUES
+(1, 1, 1), (3, 2, 2), (4, 3, 4), (7, 4, 6), (10, 1, 1), (2, NULL, NULL), (5, NULL, NULL), (6, NULL, NULL), (8, NULL, NULL), (9, NULL, NULL);
+
+INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id, bien_the_id) VALUES
+(1, 1, 1), (2, 2, 2), (2, 2, 3), (5, 4, 8), (7, 3, 4), (3, NULL, NULL), (4, NULL, NULL), (6, NULL, NULL), (8, NULL, NULL), (9, NULL, NULL);
+
+-- ----------------------------------------
+-- 6. BẢNG: DON_HANG, CHI_TIET_DON_HANG & LICH_SU
+-- ----------------------------------------
+-- Toàn bộ đơn hàng mẫu thực tế điền đầy đủ thông tin giao nhận
+INSERT INTO don_hang (don_hang_id, nguoi_dung_id, trang_thai, tong_tien, phieu_giam_gia_id, so_tien_giam, idempotency_key, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) VALUES 
+('DH000003', 4, 'completed', 25000.00, NULL, 0.00, 'key-003', 1, '456 Đường Nguyễn Trãi', 'Nguyễn Văn Huy', '0909876543'),
+('DH000004', 5, 'pending', 240000.00, NULL, 0.00, 'key-004', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678'),
+('DH000005', 6, 'processing', 110000.00, 1, 15000.00, 'key-005', 6, '12 Lý Thường Kiệt', 'Lê Thị Mai', '0923456789'),
+('DH000006', 7, 'shipping', 90000.00, NULL, 0.00, 'key-006', 11, '45 Trần Phú', 'Phạm Minh Đức', '0934567890'),
+('DH000007', 8, 'completed', 135000.00, 2, 20000.00, 'key-007', 16, '88 Điện Biên Phủ', 'Hoàng Thị Dung', '0945678901'),
+('DH000008', 4, 'cancelled', 45000.00, NULL, 0.00, 'key-008', 3, '123 Đinh Tiên Hoàng', 'Nguyễn Văn Huy', '0909876543'),
+('DH000009', 9, 'pending', 170000.00, NULL, 0.00, 'key-009', 21, '34 Nguyễn Trãi', 'Đào Linh Chi', '0956789012'),
+('DH000010', 10, 'completed', 380000.00, 5, 15000.00, 'key-010', 4, '99 Cách Mạng Tháng 8', 'Vũ Anh Tuấn', '0967890123'),
+('DH000011', 11, 'processing', 95000.00, NULL, 0.00, 'key-011', 8, '14 Hàng Bạc', 'Bùi Thị Ngọc', '0978901234'),
+('DH000012', 12, 'shipping', 350000.00, NULL, 0.00, 'key-012', 12, '55 Hùng Vương', 'Đỗ Hoàng Việt', '0989012345'),
+('DH000013', 5, 'completed', 180000.00, NULL, 0.00, 'key-013', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678');
+
+-- Chi tiết các mặt hàng nằm trong đơn
+INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) VALUES 
+('DH000003', 1, 'Len Cotton Milk', 25000.00, 1),
+('DH000004', 2, 'Kim Móc Cán Dẻo Tulip - 2.0mm', 120000.00, 2),
+('DH000005', 3, 'Kim Móc Cán Dẻo Tulip - 3.0mm', 125000.00, 1),
+('DH000006', 7, 'Bộ Kim Đan Vòng Gỗ Sồi - 5.0mm', 90000.00, 1),
+('DH000007', 4, 'Len Sợi Nhung Đũa - Đỏ Đô', 45000.00, 3),
+('DH000008', 5, 'Len Sợi Nhung Đũa - Xanh Rêu', 45000.00, 1),
+('DH000009', 6, 'Bộ Kim Đan Vòng Gỗ Sồi - 4.0mm', 85000.00, 2),
+('DH000010', 8, 'Bộ Kim Đan Vòng Gỗ Sồi - 6.0mm', 95000.00, 4),
+('DH000011', 9, 'Bộ Kim Đan Vòng Gỗ Sồi - 7.0mm', 100000.00, 1),
+('DH000012', 10, 'Vé Workshop Đan Khăn Căn Bản', 350000.00, 1),
+('DH000013', 4, 'Len Sợi Nhung Đũa - Đỏ Đô', 45000.00, 4);
+
+-- Lịch sử vận chuyển và thay đổi trạng thái đơn
+INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES 
+('DH000003', 'pending'), ('DH000003', 'processing'), ('DH000003', 'shipping'), ('DH000003', 'completed'),
+('DH000004', 'pending'),
+('DH000005', 'pending'), ('DH000005', 'processing'),
+('DH000006', 'pending'), ('DH000006', 'processing'), ('DH000006', 'shipping'),
+('DH000007', 'pending'), ('DH000007', 'processing'), ('DH000007', 'shipping'), ('DH000007', 'completed'),
+('DH000008', 'pending'), ('DH000008', 'cancelled');
+
+-- ----------------------------------------
+-- 7. BẢNG: THANH_TOAN & HOAN_TIEN
+-- ----------------------------------------
+INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai, ma_tham_chieu) VALUES 
+('DH000003', 'COD', 'paid', 'COD-003'),
+('DH000004', 'COD', 'pending', NULL),
+('DH000005', 'COD', 'pending', NULL),
+('DH000006', 'COD', 'pending', NULL),
+('DH000007', 'COD', 'paid', 'COD-007'),
+('DH000008', 'COD', 'failed', NULL),
+('DH000009', 'COD', 'pending', NULL),
+('DH000010', 'COD', 'paid', 'COD-010'),
+('DH000011', 'COD', 'pending', NULL),
+('DH000012', 'COD', 'pending', NULL),
+('DH000013', 'COD', 'paid', 'COD-013');
+
+-- Bảng quản lý hoàn trả tiền lỗi (10 dòng mẫu)
+INSERT INTO hoan_tien (don_hang_id, so_tien, ly_do, trang_thai) VALUES 
+('DH000008', 45000.00, 'Khách hàng chủ động hủy đơn hàng', 'success'),
+('DH000004', 240000.00, 'Hệ thống hoàn tiền do kho hết hàng thình lình', 'failed'),
+('DH000005', 30000.00, 'Áp sai giá trị voucher, hoàn tiền thừa', 'pending'),
+('DH000006', 90000.00, 'Sản phẩm móp méo bưu tá trả lại kho', 'pending'),
+('DH000007', 15000.00, 'Hoàn tiền hỗ trợ tổn thất vận chuyển chậm', 'success'),
+('DH000003', 0.00, 'Giao dịch test hệ thống xử lý lỗi hoàn', 'failed'),
+('DH000009', 20000.00, 'Hoàn một phần tiền từ chương trình marketing bổ sung', 'pending'),
+('DH000010', 50000.00, 'Đóng thiếu 1 cuộn len trong gói hàng', 'success'),
+('DH000011', 10000.00, 'Bồi thường khách do trễ hạn cam kết', 'pending'),
+('DH000012', 350000.00, 'Hủy lịch Workshop hoàn tiền 100% học phí', 'success');
+
+-- ----------------------------------------
+-- 8. BẢNG: LOYALTY, YEU_THICH & SPIN (Tương tác khách hàng)
+-- ----------------------------------------
+INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES 
+(4, 150), (5, 240), (6, 95), (7, 0), (8, 450), (9, 30), (10, 620), (11, 10), (12, 105), (1, 0);
+
+-- Danh sách yêu thích cá nhân (10 dòng)
+INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES 
+(4, 1), (4, 3), (5, 2), (5, 6), (6, 4), (7, 8), (8, 9), (9, 1), (10, 5), (11, 7);
+
+-- Trạng thái thông báo thay đổi giá/kho của sản phẩm (10 dòng)
+INSERT INTO thong_bao_yeu_thich (nguoi_dung_id, san_pham_id, loai_thong_bao, da_gui) VALUES 
+(4, 1, 'price_drop', TRUE), (4, 2, 'back_in_stock', FALSE),
+(5, 2, 'back_in_stock', TRUE), (6, 3, 'price_drop', FALSE),
+(7, 4, 'price_drop', TRUE), (8, 4, 'back_in_stock', FALSE),
+(9, 1, 'price_drop', FALSE), (10, 3, 'back_in_stock', TRUE),
+(11, 2, 'price_drop', FALSE), (12, 4, 'back_in_stock', FALSE);
+
+-- Lượt quay mini game còn lại (10 dòng)
+INSERT INTO luot_quay (nguoi_dung_id, so_luot) VALUES 
+(4, 3), (5, 5), (6, 1), (7, 0), (8, 12), (9, 2), (10, 4), (11, 1), (12, 8), (1, 10);
+
+-- Cấu hình cơ cấu giải thưởng Vòng quay may mắn
+INSERT INTO cau_hinh_qua_quay (cau_hinh_qua_quay_id, loai_qua, gia_tri, ty_le_thang, so_luong_con_lai, trang_thai) VALUES 
+(1, 'point', 10, 20.00, 95, 'active'),
+(2, 'voucher', 1, 10.00, 48, 'active'),
+(3, 'none', 0, 50.00, 999, 'active'),
+(4, 'point', 50, 5.00, 20, 'active'),
+(5, 'voucher', 2, 5.00, 10, 'active'),
+(6, 'point', 100, 2.00, 5, 'active'),
+(7, 'voucher', 3, 3.00, 15, 'active'),
+(8, 'none', 0, 5.00, 200, 'inactive');
+
+-- Nhật ký quay vòng may mắn (10 dòng)
+INSERT INTO lich_su_quay (nguoi_dung_id, cau_hinh_qua_quay_id) VALUES 
+(4, 1), (4, 3), (5, 2), (6, 3), (8, 4), (8, 1), (9, 3), (10, 5), (12, 1), (12, 3);
+
+-- ----------------------------------------
+-- 9. BẢNG: WORKSHOP (Quản lý các buổi hội thảo/lớp học)
+-- ----------------------------------------
+INSERT INTO hoi_thao (hoi_thao_id, san_pham_id, tieu_de, mo_ta, dia_diem) VALUES 
+(1, 1, 'Workshop đan khăn len cơ bản', 'Hướng dẫn cách gầy mũi đan dòng đầu tiên và hoàn thiện viền khăn', 'TP. Hồ Chí Minh'),
+(2, 2, 'Học móc len nâng cao Tulip Nhật', 'Ứng dụng kim cán dẻo móc hoa văn dâu tây, hoa hướng dương nổi', 'Hà Nội'),
+(3, 3, 'Tự làm chăn Sofa từ len đũa khổng lồ', 'Kỹ thuật dùng tay không bện các búi len nhung đũa thành chăn nằm', 'Đà Nẵng'),
+(4, 4, 'Ứng dụng kim vòng đan mũ không đường may', 'Kỹ thuật giấu chỉ nối nâng cao khi sử dụng kim vòng gỗ sồi', 'TP. Hồ Chí Minh'),
+(5, 1, 'Móc thú bông Amigurumi mini cho bé', 'Từng bước tạo hình đầu, thân và ráp các chi tiết thú nhồi bông', 'Cần Thơ'),
+(6, 2, 'Chuyên đề sửa các mũi lỗi khi đan móc', 'Phương pháp khắc phục khi bị tuột chỉ, lỏng tay không đều mũi', 'Hải Phòng'),
+(7, 3, 'Móc thảm tròn phòng ngủ từ sợi nhung siêu to', 'Thiết kế thảm dệt chân từ sợi len đũa êm ái cho mùa đông', 'Hà Nội'),
+(8, 4, 'Đan áo Cardigan len dáng lửng', 'Cách xem bảng chart hình vẽ, tính size len và ráp áo hoàn chỉnh', 'TP. Hồ Chí Minh'),
+(9, 1, 'Offline cộng đồng Yêu Đan Móc Việt Nam', 'Giao lưu, trao đổi kinh nghiệm và chia sẻ len sợi thừa', 'Đà Nẵng'),
+(10, 5, 'Khóa học đan khăn len cấp tốc làm quà tặng', 'Hoàn thành trọn vẹn mẫu khăn len đơn giản chỉ trong 1 buổi học', 'TP. Hồ Chí Minh');
+
+-- Quản lý ca học và tình trạng lớp
+INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES 
+(1, 1, '2026-06-10 09:00:00', '2026-06-10 12:00:00', 'closed'),
+(2, 2, '2026-07-01 14:00:00', '2026-07-01 17:00:00', 'open'),
+(3, 4, '2026-07-05 08:30:00', '2026-07-05 11:30:00', 'open'),
+(4, 6, '2026-07-10 18:00:00', '2026-07-10 21:00:00', 'open'),
+(5, 1, '2026-07-15 09:00:00', '2026-07-15 12:00:00', 'open'),
+(6, 3, '2026-06-20 13:00:00', '2026-06-20 16:00:00', 'cancelled'),
+(7, 5, '2026-07-22 09:00:00', '2026-07-22 12:00:00', 'open'),
+(8, 7, '2026-08-01 08:00:00', '2026-08-01 12:00:00', 'open'),
+(9, 1, '2026-08-15 09:00:00', '2026-08-15 17:00:00', 'open'),
+(10, 10, '2026-06-25 14:00:00', '2026-06-25 17:00:00', 'open');
