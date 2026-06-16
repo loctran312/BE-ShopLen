@@ -252,6 +252,7 @@ const buildProductsList = async ({ page, limit }) => {
                 COALESCE(
                     json_agg(
                         json_build_object(
+                            'image_id', vi.hinh_anh_id,
                             'image_url', vi.duong_dan_anh,
                             'sort_order', vi.thu_tu_hien_thi
                         )

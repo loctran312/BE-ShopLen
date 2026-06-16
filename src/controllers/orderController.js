@@ -1,5 +1,6 @@
 const orderRepository = require('../repositories/orderRepository');
 const cartRepository = require('../repositories/cartRepository');
+const momoService = require('../services/momoService');
 const { parsePositiveInteger } = require('../utils/pagination');
 
 // --- PUBLIC ---
@@ -20,11 +21,27 @@ const createOrder = async (req, res) => {
 		// Gọi hàm tạo order phức tạp ở Repository
 		const result = await orderRepository.createOrder(userId, req.body);
 
-		return res.status(201).json({
-			success: true,
-			message: 'Đặt hàng thành công',
-			data: result
-		});
+		let payUrl = null;
+
+        // Nếu khách chọn thanh toán MOMO, tiến hành tạo link thanh toán
+        if (result.payment_method === 'MOMO') {
+            const momoResponse = await momoService.createPaymentUrl(
+                result.order_id, 
+                result.total_amount, 
+                `Thanh toan don hang ${result.order_id} tai ShopLen`
+            );
+            payUrl = momoResponse.payUrl;
+			console.log('--- [MOMO RESPONSE] ---', momoResponse);
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: result.payment_method === 'MOMO' ? 'Vui lòng thanh toán để hoàn tất đơn hàng' : 'Đặt hàng thành công',
+            data: {
+                ...result,
+                payUrl: payUrl
+            }
+        });
 
 	} catch (error) {
 		// Bắt lỗi do kho hết hàng, mã giảm giá sai... ném ra từ Repository

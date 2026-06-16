@@ -445,10 +445,12 @@ const apiDocs = {
                       stock_quantity: 100,
                       images: [
                         {
+                          image_id: 1,
                           image_url: "https://example.com/images/len-red-1.jpg",
                           sort_order: 1,
                         },
                         {
+                          image_id: 2,
                           image_url: "https://example.com/images/len-red-2.jpg",
                           sort_order: 2,
                         },
@@ -497,6 +499,7 @@ const apiDocs = {
                     stock_quantity: 150,
                     images: [
                       {
+                        image_id: 1,
                         image_url: "https://i.ibb.co/example.jpg",
                         sort_order: 1,
                       },
@@ -1750,6 +1753,31 @@ const apiDocs = {
             }
           },
           notes: "Giá trị total_amount trong response là số tiền cuối cùng sau khi đã áp dụng tất cả khuyến mãi (voucher, promotion) chứ không phải tổng tiền trước khuyến mãi. Điều này giúp frontend dễ dàng hiển thị số tiền khách hàng thực sự phải trả mà không cần phải tính toán lại từ đầu. Cần người dùng phải có ít nhất 1 sản phẩm trong giỏ hàng để đặt hàng thành công. Sau khi đặt hàng thành công, giỏ hàng của người dùng sẽ được tự động xóa sạch (nếu có) để tránh tình trạng đơn hàng cũ vẫn còn sản phẩm trong giỏ khi người dùng quay lại mua sắm tiếp.",
+        },
+        {
+          method: "POST",
+          path: "/api/orders",
+          summary: "Tạo đơn hàng mới",
+          auth: true,
+          requestExample: {
+            "phuong_xa_id": 1,
+            "dia_chi_giao_hang": "456 Đường Nguyễn Trãi, Quận 5, TP.HCM",
+            "ten_nguoi_nhan": "Người nhận 1",
+            "sdt_nguoi_nhan": "0901234567",
+            "phieu_giam_gia_code": null,
+            "phuong_thuc_thanh_toan": "MOMO" 
+          },
+          successStatus: 201,
+          successExample: {
+            "success": true,
+            "message": "Vui lòng thanh toán để hoàn tất đơn hàng",
+            "data": {
+              "order_id": "DH-20260616-0002",
+              "total_amount": 295000,
+              "payment_method": "MOMO",
+              "payUrl": "https://test-payment.momo.vn/v2/gateway/pay?t=TU9NT3xESC0yMDI2MDYxNi0wMDAy&s=a7e1971c61afb0860eed836c90bb89d0056bc0c173bb4925ab0fc027c2fc6e19"
+            }
+          },
         },
         {
           method: "GET",
