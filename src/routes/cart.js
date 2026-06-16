@@ -5,7 +5,7 @@ const {
 	addToCart,
 	updateCartItem,
 	deleteCartItem,
-	syncCart // <--- Import hàm mới
+	syncCart
 } = require('../controllers/cartController');
 
 const router = express.Router();

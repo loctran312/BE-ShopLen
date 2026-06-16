@@ -51,14 +51,14 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 | **Giỏ hàng** | Thêm, sửa, xóa, đồng bộ giỏ hàng |
 | **Địa điểm** | Danh sách tỉnh/thành và phường/xã |
 | **Voucher** | Áp dụng mã giảm giá (theo % hoặc số tiền cố định) |
+| **Khuyến mãi** | Chương trình khuyến mãi theo sản phẩm |
+| **Đơn hàng** | Tạo đơn, cập nhật trạng thái, lịch sử đơn hàng |
 
 ### Đang phát triển
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| **Đơn hàng** | Tạo đơn, cập nhật trạng thái, lịch sử đơn hàng |
 | **Thanh toán** | Tích hợp COD và MoMo payment gateway |
-| **Khuyến mãi** | Chương trình khuyến mãi theo sản phẩm |
 | **Workshop** | Quản lý lớp học đan móc trực tiếp |
 | **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
 

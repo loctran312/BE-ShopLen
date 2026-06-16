@@ -477,8 +477,7 @@ const apiDocs = {
             type_id: 1,
             category_id: 2,
             product_name: "Cuộn len Cotton Milk 50g",
-            description:
-              "Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...",
+            description: "Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...",
             product_status: "active",
             variants: [
               {
@@ -486,7 +485,6 @@ const apiDocs = {
                 price: 15000,
                 color: "Đỏ",
                 size: "50g",
-                stock_quantity: 150,
                 images: [
                   {
                     image_url: "https://example.com/images/len-red-1.jpg",
@@ -526,7 +524,6 @@ const apiDocs = {
                 price: 16000,
                 color: "Đỏ",
                 size: "50g",
-                stock_quantity: 120,
                 images: [
                   {
                     image_url: "https://example.com/images/len-red-1.jpg",
@@ -1497,6 +1494,226 @@ const apiDocs = {
           },
         },
       ],
+    },
+    {
+      name: "Đơn hàng",
+      endpoints: [
+        {
+          method: "POST",
+          path: "/api/orders",
+          summary: "Tạo đơn hàng mới",
+          auth: true,
+          requestExample: {
+            "phuong_xa_id": 1,
+            "dia_chi_giao_hang": "Quận 8, TP.HCM",
+            "ten_nguoi_nhan": "Người Nhận 1",
+            "sdt_nguoi_nhan": "0987654321",
+            "phieu_giam_gia_code": "WELCOME10", 
+            "phuong_thuc_thanh_toan": "COD"
+          },
+          successStatus: 201,
+          successExample: {
+            "success": true,
+            "message": "Đặt hàng thành công",
+            "data": {
+              "order_id": "DH-20260616-0001",
+              "total_amount": 285000,
+              "payment_method": "COD"
+            }
+          },
+          notes: "Giá trị total_amount trong response là số tiền cuối cùng sau khi đã áp dụng tất cả khuyến mãi (voucher, promotion) chứ không phải tổng tiền trước khuyến mãi. Điều này giúp frontend dễ dàng hiển thị số tiền khách hàng thực sự phải trả mà không cần phải tính toán lại từ đầu. Cần người dùng phải có ít nhất 1 sản phẩm trong giỏ hàng để đặt hàng thành công. Sau khi đặt hàng thành công, giỏ hàng của người dùng sẽ được tự động xóa sạch (nếu có) để tránh tình trạng đơn hàng cũ vẫn còn sản phẩm trong giỏ khi người dùng quay lại mua sắm tiếp.",
+        },
+        {
+          method: "GET",
+          path: "/api/orders/my-orders",
+          summary: "Lấy danh sách lịch sử đơn hàng của người dùng hiện tại",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy lịch sử đơn hàng thành công",
+            "data": {
+              "orders": [
+                {
+                  "don_hang_id": "DH000008",
+                  "trang_thai": "cancelled",
+                  "tong_tien": "45000.00",
+                  "so_tien_giam": "0.00",
+                  "ten_nguoi_nhan": "Nguyễn Văn Huy",
+                  "dia_chi_giao_hang": "123 Đinh Tiên Hoàng"
+                },
+                {
+                  "don_hang_id": "DH000003",
+                  "trang_thai": "completed",
+                  "tong_tien": "25000.00",
+                  "so_tien_giam": "0.00",
+                  "ten_nguoi_nhan": "Nguyễn Văn Huy",
+                  "dia_chi_giao_hang": "456 Đường Nguyễn Trãi"
+                }
+              ],
+              "pagination": {
+                "total_items": 2,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/orders/:order_id",
+          summary: "Lấy chi tiết đơn hàng theo id",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "data": {
+              "order": {
+                "don_hang_id": "DH000008",
+                "nguoi_dung_id": 4,
+                "trang_thai": "cancelled",
+                "tong_tien": "45000.00",
+                "phieu_giam_gia_id": null,
+                "so_tien_giam": "0.00",
+                "idempotency_key": "key-008",
+                "phuong_xa_id": 3,
+                "dia_chi_giao_hang": "123 Đinh Tiên Hoàng",
+                "ten_nguoi_nhan": "Nguyễn Văn Huy",
+                "sdt_nguoi_nhan": "0909876543",
+                "items": [
+                  {
+                    "chi_tiet_don_hang_id": 6,
+                    "bien_the_id": 5,
+                    "ten_san_pham": "Len Sợi Nhung Đũa - Xanh Rêu",
+                    "gia": "45000.00",
+                    "so_luong": 1
+                  }
+                ],
+                "payment": {
+                  "phuong_thuc": "COD",
+                  "trang_thai": "failed",
+                  "ma_tham_chieu": null
+                }
+              }
+            }
+          },
+          notes: "Mã đơn hàng (don_hang_id) có định dạng DH + ngày tháng năm + số thứ tự chạy trong ngày. Ví dụ đơn hàng đầu tiên tạo vào ngày 16/06/2026 sẽ có mã DH-20260616-0001, đơn hàng thứ 15 tạo cùng ngày sẽ có mã DH-20260616-0015. Trạng thái đơn hàng có thể là: pending (đang xử lý), completed (hoàn thành), cancelled (đã hủy). Trạng thái thanh toán có thể là: pending (đang chờ), completed (thành công), failed (thất bại).",
+        },
+        {
+          method: "POST",
+          path: "/api/orders/repurchase/:order_id",
+          summary: "Mua lại đơn hàng - USER",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Đã thêm 1 sản phẩm vào giỏ hàng."
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/orders/admin/all",
+          summary: "Lấy danh sách tất cả đơn hàng - ADMIN",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách đơn hàng thành công",
+            "data": {
+              "orders": [
+                {
+                  "don_hang_id": "DH000013",
+                  "nguoi_dung_id": 5,
+                  "trang_thai": "completed",
+                  "tong_tien": "180000.00",
+                  "ten_nguoi_nhan": "Nguyễn Văn Long",
+                  "sdt_nguoi_nhan": "0912345678"
+                },
+                {
+                  "don_hang_id": "DH000012",
+                  "nguoi_dung_id": 12,
+                  "trang_thai": "shipping",
+                  "tong_tien": "350000.00",
+                  "ten_nguoi_nhan": "Đỗ Hoàng Việt",
+                  "sdt_nguoi_nhan": "0989012345"
+                },
+              ],
+              "pagination": {
+                "total_items": 12,
+                "total_pages": 2,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/orders/admin/:order_id",
+          summary: "Lấy chi tiết đơn hàng theo id - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "data": {
+              "order": {
+                "don_hang_id": "DH000004",
+                "nguoi_dung_id": 5,
+                "trang_thai": "pending",
+                "tong_tien": "240000.00",
+                "phieu_giam_gia_id": null,
+                "so_tien_giam": "0.00",
+                "idempotency_key": "key-004",
+                "phuong_xa_id": 2,
+                "dia_chi_giao_hang": "789 Đường Lê Lợi",
+                "ten_nguoi_nhan": "Nguyễn Văn Long",
+                "sdt_nguoi_nhan": "0912345678",
+                "items": [
+                  {
+                    "chi_tiet_don_hang_id": 2,
+                    "bien_the_id": 2,
+                    "ten_san_pham": "Kim Móc Cán Dẻo Tulip - 2.0mm",
+                    "gia": "120000.00",
+                    "so_luong": 2
+                  }
+                ],
+                "payment": {
+                  "phuong_thuc": "COD",
+                  "trang_thai": "pending",
+                  "ma_tham_chieu": null
+                }
+              }
+            }
+          },
+        },
+        {
+          method: "PUT",
+          path: "/api/orders/admin/:order_id/status",
+          summary: "Cập nhật trạng thái đơn hàng - ADMIN",
+          auth: true,
+          requestExample: {
+            "status": "processing"
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật trạng thái đơn hàng thành công"
+          },
+          notes: "Trạng thái đơn hàng có thể được cập nhật lần lượt theo thứ tự: pending -> processing -> shipping -> completed. Hoặc có thể chuyển trực tiếp từ trạng thái pending sang cancelled nếu muốn hủy đơn hàng.",
+        },
+      ]
     },
   ],
 };

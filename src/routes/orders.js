@@ -1,0 +1,27 @@
+const express = require('express');
+const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
+const { 
+	createOrder, 
+	getMyOrders, 
+	getMyOrderDetail, 
+	repurchaseOrder,
+	getAllOrdersAdmin, 
+	getOrderDetailAdmin, 
+	updateOrderStatus 
+} = require('../controllers/orderController');
+
+const router = express.Router();
+
+// --- PUBLIC ROUTES (USER) ---
+// Yêu cầu user phải đăng nhập mới được đặt hàng và xem lịch sử
+router.post('/', requireAuth, createOrder);
+router.get('/my-orders', requireAuth, getMyOrders);
+router.get('/my-orders/:id', requireAuth, getMyOrderDetail);
+router.post('/repurchase/:id', requireAuth, repurchaseOrder);
+
+// --- ADMIN ROUTES ---
+router.get('/admin/all', requireAdmin, getAllOrdersAdmin);
+router.get('/admin/:id', requireAdmin, getOrderDetailAdmin);
+router.put('/admin/:id/status', requireAdmin, updateOrderStatus);
+
+module.exports = router;

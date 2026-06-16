@@ -174,9 +174,6 @@ const normalizeVariantPayload = (variant, index) => {
     const price = parsePrice(variant.price);
     const color = normalizeText(variant.color) || null;
     const size = normalizeText(variant.size) || null;
-    const stockQuantity = variant.stock_quantity === undefined || variant.stock_quantity === null || variant.stock_quantity === ''
-        ? null
-        : parseInteger(variant.stock_quantity, 'stock_quantity');
     const slug = normalizeText(variant.slug) || null;
     const images = normalizeImageItems(variant.images, index);
 
@@ -192,7 +189,6 @@ const normalizeVariantPayload = (variant, index) => {
         price,
         color,
         size,
-        stock_quantity: stockQuantity,
         slug,
         images,
     };
@@ -575,7 +571,7 @@ const createProduct = async (payload) => {
             );
 
             const createdVariant = variantResult.rows[0];
-            await upsertVariantInventory(client, createdVariant.variant_id, variant.stock_quantity);
+            await upsertVariantInventory(client, createdVariant.variant_id, 0);
 
             if (Array.isArray(variant.images) && variant.images.length > 0) {
                 await replaceVariantImages(client, createdVariant.variant_id, variant.images);
@@ -738,17 +734,6 @@ const updateProduct = async (productId, payload) => {
                          WHERE bien_the_id = $6`,
                         [nextSlug, variant.sku, variant.price, variant.color, variant.size, variant.variant_id]
                     );
-
-                    const currentStockResult = await client.query(
-                        'SELECT so_luong_ton AS stock_quantity FROM ton_kho WHERE bien_the_id = $1 LIMIT 1',
-                        [variant.variant_id]
-                    );
-
-                    const nextStockQuantity = variant.stock_quantity === null
-                        ? Number(currentStockResult.rows[0]?.stock_quantity || 0)
-                        : variant.stock_quantity;
-
-                    await upsertVariantInventory(client, variant.variant_id, nextStockQuantity);
 
                     if (uploadedImages !== null) {
                         await replaceVariantImages(client, variant.variant_id, uploadedImages);
