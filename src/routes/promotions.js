@@ -6,7 +6,8 @@ const {
 	getAllPromotionsAdmin, 
 	createPromotion, 
 	updatePromotion, 
-	deletePromotion 
+	deletePromotion,
+	filterPromotionsAdmin
 } = require('../controllers/promotionController');
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get('/promotions/all', requireAdmin, getAllPromotionsAdmin);
 router.post('/promotions', requireAdmin, createPromotion);
 router.put('/promotions/:id', requireAdmin, updatePromotion);
 router.delete('/promotions/:id', requireAdmin, deletePromotion);
+router.post('/promotions/filter', requireAdmin, filterPromotionsAdmin);
 
 module.exports = router;

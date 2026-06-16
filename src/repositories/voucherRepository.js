@@ -157,6 +157,49 @@ const deleteVoucher = async (id) => {
 	}
 };
 
+const filterVouchersAdmin = async (filters) => {
+    const { page = 1, limit = 10, keyword, discount_types } = filters;
+    const offset = (page - 1) * limit;
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    // Tìm kiếm theo Mã voucher hoặc Tên voucher
+    if (keyword) {
+        whereClauses.push(`(ma ILIKE $${paramIndex} OR ten_phieu ILIKE $${paramIndex})`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    // Lọc theo mảng kiểu giảm giá ('percent', 'fixed')
+    if (Array.isArray(discount_types) && discount_types.length > 0) {
+        whereClauses.push(`kieu_giam_gia = ANY($${paramIndex}::text[])`);
+        params.push(discount_types);
+        paramIndex++;
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM phieu_giam_gia ${whereString}`, params);
+    const totalItems = countRes.rows[0].total;
+
+    const fetchParams = [...params, limit, offset];
+    const vouchersRes = await pool.query(
+        `SELECT phieu_giam_gia_id AS voucher_id, ma AS code, ten_phieu AS voucher_name, 
+                kieu_giam_gia AS discount_type, gia_tri AS value, gia_tri_toi_thieu AS minimum_value, 
+                giam_toi_da AS max_discount, so_luong AS quantity, da_dung AS used_count, 
+                ngay_bat_dau AS start_date, ngay_ket_thuc AS end_date
+         FROM phieu_giam_gia ${whereString}
+         ORDER BY phieu_giam_gia_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        fetchParams
+    );
+
+    return {
+        vouchers: vouchersRes.rows,
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
 	getAvailableVouchers,
 	getVoucherByCode,
@@ -165,5 +208,6 @@ module.exports = {
 	getVoucherById,
 	createVoucher,
 	updateVoucher,
-	deleteVoucher
+	deleteVoucher,
+	filterVouchersAdmin,
 };

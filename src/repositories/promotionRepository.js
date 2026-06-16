@@ -189,11 +189,61 @@ const deletePromotion = async (id) => {
 	}
 };
 
+const filterPromotionsAdmin = async (filters) => {
+    const { page = 1, limit = 10, keyword, discount_types, statuses } = filters;
+    const offset = (page - 1) * limit;
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    // Tìm theo tiêu đề chương trình khuyến mãi
+    if (keyword) {
+        whereClauses.push(`tieu_de ILIKE $${paramIndex}`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    // Lọc theo mảng kiểu giảm giá ('percent', 'fixed')
+    if (Array.isArray(discount_types) && discount_types.length > 0) {
+        whereClauses.push(`kieu_giam_gia = ANY($${paramIndex}::text[])`);
+        params.push(discount_types);
+        paramIndex++;
+    }
+
+    // Lọc theo trạng thái ('active', 'inactive')
+    if (Array.isArray(statuses) && statuses.length > 0) {
+        whereClauses.push(`trang_thai = ANY($${paramIndex}::text[])`);
+        params.push(statuses);
+        paramIndex++;
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM khuyen_mai ${whereString}`, params);
+    const totalItems = countRes.rows[0].total;
+
+    const fetchParams = [...params, limit, offset];
+    const promotionsRes = await pool.query(
+        `SELECT khuyen_mai_id AS promotion_id, tieu_de AS title, kieu_giam_gia AS discount_type,
+                gia_tri AS value, gia_tri_don_hang_toi_thieu AS min_order_value,
+                ngay_bat_dau AS start_date, ngay_ket_thuc AS end_date, trang_thai AS status
+         FROM khuyen_mai ${whereString}
+         ORDER BY khuyen_mai_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        fetchParams
+    );
+
+    return {
+        promotions: promotionsRes.rows,
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
 	getActivePromotions,
 	getAllPromotionsAdmin,
 	getPromotionById,
 	createPromotion,
 	updatePromotion,
-	deletePromotion
+	deletePromotion,
+	filterPromotionsAdmin,
 };

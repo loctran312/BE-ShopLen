@@ -343,6 +343,45 @@ const apiDocs = {
             message: "Đổi mật khẩu thành công",
           },
         },
+        {
+          method: "POST",
+          path: "/api/users/filter",
+          summary: "Lọc người dùng theo nhiều tiêu chí (quyền admin)",
+          auth: true,
+          requestExample: {
+            "keyword": "Nguyễn", 
+            "roles": ["customer"],
+            "statuses": ["active", "inactive"],
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc người dùng thành công",
+            "data": {
+              "users": [
+                {
+                  "user_id": 5,
+                  "username": "user04",
+                  "first_name": "Nguyễn",
+                  "last_name": "Văn Long",
+                  "email": "khachhang4@gmail.com",
+                  "phone_number": "0912345678",
+                  "status": "active",
+                  "role": "customer"
+                },
+              ],
+              "pagination": {
+                "total_items": 2,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes: "Endpoint này cho phép admin lọc người dùng dựa trên nhiều tiêu chí khác nhau như từ khóa tìm kiếm (áp dụng cho username, first_name, last_name, email), vai trò (role) và trạng thái (status). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
+        },
       ],
     },
     {
@@ -636,6 +675,57 @@ const apiDocs = {
             },
           },
         },
+        {
+          method: "POST",
+          path: "/api/products/filter",
+          summary: "Lọc sản phẩm theo nhiều tiêu chí",
+          auth: false,
+          requestExample: {
+            "keyword": "len cotton",
+            "category_ids": [1, 2],
+            "type_ids": [1],
+            "min_price": 10000,
+            "max_price": 50000,
+            "status": "active",
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc sản phẩm thành công",
+            "data": {
+              "products": [
+                {
+                  "product_id": 1,
+                  "product_name": "Len Cotton Milk",
+                  "product_status": "active",
+                  "category_name": "Len Cotton",
+                  "type_name": "Len cuộn",
+                  "variants": [
+                    {
+                      "variant_id": 1,
+                      "sku": "L-COTTON-001",
+                      "slug": "len-cotton-milk-trang",
+                      "price": "25000.00",
+                      "color": "Trắng",
+                      "size": "M",
+                      "stock_quantity": 100,
+                      "images": []
+                    }
+                  ]
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes: "Endpoint này hỗ trợ lọc sản phẩm theo nhiều tiêu chí khác nhau như từ khóa, danh mục, loại, khoảng giá và trạng thái. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó."
+        },
       ],
     },
     {
@@ -792,7 +882,6 @@ const apiDocs = {
             },
           },
         },
-
         {
           method: "PUT",
           path: "/api/categories/:category_id",
@@ -837,7 +926,6 @@ const apiDocs = {
           notes:
             "Payload children hỗ trợ: id tồn tại sẽ cập nhật, không có id sẽ tạo mới; những con cũ trong DB không xuất hiện trong payload sẽ bị xóa.",
         },
-
         {
           method: "DELETE",
           path: "/api/categories/:category_id",
@@ -848,6 +936,43 @@ const apiDocs = {
           successExample: {
             message: "Xóa danh mục thành công",
           },
+        },
+        {
+          method: "POST",
+          path: "/api/categories/filter",
+          summary: "Lọc danh mục theo từ khóa - ADMIN",
+          auth: true,
+          requestExample: {
+            "keyword": "len cotton",
+            "parent_category_id": 1,
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc danh mục thành công",
+            "data": {
+              "categories": [
+                {
+                  "category_id": 2,
+                  "category_name": "Len Cotton",
+                  "description": "Các dòng len thành phần cotton mềm, mịn, ít xù sợi",
+                  "image_url": null,
+                  "parent_category_id": 1,
+                  "slug": "len-cotton",
+                  "parent_category_name": "Len đan"
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes: "Endpoint này cho phép admin lọc danh mục dựa trên từ khóa tìm kiếm (áp dụng cho category_name và description) và/hoặc theo danh mục cha. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
         },
       ],
     },
@@ -1263,6 +1388,48 @@ const apiDocs = {
             message: "Xóa voucher thành công",
           },
         },
+        {
+          method: "POST",
+          path: "/api/vouchers/vouchers/filter",
+          summary: "Lọc voucher theo nhiều tiêu chí - ADMIN",
+          auth: true,
+          requestExample: {
+            "keyword": "WELCOME", 
+            "discount_types": ["percent", "fixed"],
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc mã giảm giá thành công",
+            "data": {
+              "vouchers": [
+                {
+                  "voucher_id": 1,
+                  "code": "WELCOME10",
+                  "voucher_name": "Giảm 10%",
+                  "discount_type": "percent",
+                  "value": "10.00",
+                  "minimum_value": "50000.00",
+                  "max_discount": "50000.00",
+                  "quantity": null,
+                  "used_count": 0,
+                  "start_date": null,
+                  "end_date": null
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes:
+            "Endpoint này hỗ trợ lọc voucher theo nhiều tiêu chí khác nhau như từ khóa (áp dụng cho code và voucher_name) và loại giảm giá (percent hoặc fixed). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
+        },
       ],
     },
     {
@@ -1493,6 +1660,46 @@ const apiDocs = {
             "message": "Xóa khuyến mãi thành công"
           },
         },
+        {
+          method: "POST",
+          path: "/api/promotions/promotions/filter",
+          summary: "Lọc khuyến mãi theo nhiều tiêu chí - ADMIN",
+          auth: true,
+          requestExample: {
+            "keyword": "Sale", 
+            "discount_types": ["fixed"],
+            "statuses": ["active"],
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc khuyến mãi thành công",
+            "data": {
+              "promotions": [
+                {
+                  "promotion_id": 1,
+                  "title": "Sale hè rực rỡ",
+                  "discount_type": "fixed",
+                  "value": "5000.00",
+                  "min_order_value": "0.00",
+                  "start_date": "2026-05-31T17:00:00.000Z",
+                  "end_date": "2026-06-30T16:59:59.000Z",
+                  "status": "active"
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes:
+            "Endpoint này hỗ trợ lọc khuyến mãi theo nhiều tiêu chí khác nhau như từ khóa (áp dụng cho title), loại giảm giá (percent hoặc fixed) và trạng thái (active hoặc inactive). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
+        },
       ],
     },
     {
@@ -1713,13 +1920,48 @@ const apiDocs = {
           },
           notes: "Trạng thái đơn hàng có thể được cập nhật lần lượt theo thứ tự: pending -> processing -> shipping -> completed. Hoặc có thể chuyển trực tiếp từ trạng thái pending sang cancelled nếu muốn hủy đơn hàng.",
         },
+        {
+          method: "POST",
+          path: "/api/orders/admin/filter",
+          summary: "Lọc đơn hàng theo trạng thái và khoảng thời gian - ADMIN",
+          auth: true,
+          requestExample: {
+            "keyword": "Người", 
+            "statuses": ["pending", "processing"],
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lọc đơn hàng thành công",
+            "data": {
+              "orders": [
+                {
+                  "don_hang_id": "DH-20260616-0001",
+                  "nguoi_dung_id": 4,
+                  "trang_thai": "pending",
+                  "tong_tien": "285000.00",
+                  "ten_nguoi_nhan": "Người Nhận 1",
+                  "sdt_nguoi_nhan": "0987654321"
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+          notes: "API này cho phép admin lọc đơn hàng dựa trên trạng thái (có thể chọn nhiều trạng thái cùng lúc) và từ khóa tìm kiếm (có thể là tên người nhận hoặc số điện thoại).",
+        },
       ]
     },
   ],
 };
 
-const renderCodeBlock = (value) =>
-  `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+const renderCodeBlock = (value) => `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
 
 const renderDocsPage = () => {
   const sections = apiDocs.groups

@@ -446,6 +446,24 @@ const changePassword = async (req, res) => {
   }
 }
 
+const filterUsersAdmin = async (req, res) => {
+    try {
+        const page = parsePositiveInteger(req.body.page || 1, 'page');
+        const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
+        
+        const result = await userRepository.filterUsersAdmin({
+            page, limit,
+            keyword: req.body.keyword,
+            roles: req.body.roles,
+            statuses: req.body.statuses
+        });
+
+        return res.json({ success: true, message: 'Lọc người dùng thành công', data: result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -453,5 +471,6 @@ module.exports = {
   updateUser,
   updateCurrentUser,
   deleteUser,
-  changePassword
+  changePassword,
+  filterUsersAdmin,
 }

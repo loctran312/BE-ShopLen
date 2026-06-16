@@ -163,6 +163,51 @@ const updateCurrentUser = async (userId, {
   [username, email, firstName, lastName, phoneNumber, userId]
 );
 
+const filterUsersAdmin = async (filters) => {
+    const { page = 1, limit = 10, keyword, roles, statuses } = filters;
+    const offset = (page - 1) * limit;
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    if (keyword) {
+        whereClauses.push(`(ten_dang_nhap ILIKE $${paramIndex} OR thu_dien_tu ILIKE $${paramIndex} OR so_dien_thoai ILIKE $${paramIndex} OR ho ILIKE $${paramIndex} OR ten ILIKE $${paramIndex})`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    if (Array.isArray(roles) && roles.length > 0) {
+        whereClauses.push(`vai_tro = ANY($${paramIndex}::text[])`);
+        params.push(roles);
+        paramIndex++;
+    }
+
+    if (Array.isArray(statuses) && statuses.length > 0) {
+        whereClauses.push(`trang_thai = ANY($${paramIndex}::text[])`);
+        params.push(statuses);
+        paramIndex++;
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM nguoi_dung ${whereString}`, params);
+    const totalItems = countRes.rows[0].total;
+
+    const fetchParams = [...params, limit, offset];
+    const usersRes = await pool.query(
+        `SELECT nguoi_dung_id AS user_id, ten_dang_nhap AS username, ho AS first_name, ten AS last_name, 
+                thu_dien_tu AS email, so_dien_thoai AS phone_number, trang_thai AS status, vai_tro AS role
+         FROM nguoi_dung ${whereString}
+         ORDER BY nguoi_dung_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        fetchParams
+    );
+
+    return {
+        users: usersRes.rows,
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
   getNextUserId,
   isUsernameTaken,
@@ -175,4 +220,5 @@ module.exports = {
   deleteUser,
   getPasswordByUserId,
   updateUserPassword,
+  filterUsersAdmin,
 };

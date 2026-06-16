@@ -8,6 +8,7 @@ const {
 	updateCurrentUser,
 	deleteUser,
 	changePassword,
+	filterUsersAdmin
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.put('/:user_id', requireAdmin, updateUser);
 router.put('/user/me', updateCurrentUser);
 router.delete('/:user_id', requireAdmin, deleteUser);
 router.post('/change-password', changePassword);
+router.post('/filter', requireAdmin, filterUsersAdmin);
 
 module.exports = router;

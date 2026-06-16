@@ -841,6 +841,117 @@ const deleteProduct = async (productId) => {
     }
 };
 
+const filterProducts = async (filters) => {
+    const { page = 1, limit = 10, keyword, category_ids, type_ids, min_price, max_price, status } = filters;
+    const offset = (page - 1) * limit;
+
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    // Lọc theo từ khóa (Tìm tên sản phẩm không phân biệt hoa thường)
+    if (keyword) {
+        whereClauses.push(`p.ten_san_pham ILIKE $${paramIndex}`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    // Lọc theo mảng ID Danh Mục
+    if (Array.isArray(category_ids) && category_ids.length > 0) {
+        whereClauses.push(`p.danh_muc_id = ANY($${paramIndex}::int[])`);
+        params.push(category_ids);
+        paramIndex++;
+    }
+
+    // Lọc theo mảng ID Loại Sản Phẩm
+    if (Array.isArray(type_ids) && type_ids.length > 0) {
+        whereClauses.push(`p.loai_san_pham_id = ANY($${paramIndex}::int[])`);
+        params.push(type_ids);
+        paramIndex++;
+    }
+
+    // Lọc theo trạng thái
+    if (status) {
+        whereClauses.push(`p.trang_thai_san_pham = $${paramIndex}`);
+        params.push(status);
+        paramIndex++;
+    }
+
+    // Lọc theo Khoảng Giá (Kiểm tra xem có biến thể nào nằm trong khoảng giá không)
+    if (min_price !== undefined || max_price !== undefined) {
+        let priceClause = `EXISTS (SELECT 1 FROM bien_the_san_pham bt WHERE bt.san_pham_id = p.san_pham_id`;
+        if (min_price !== undefined) {
+            priceClause += ` AND bt.gia >= $${paramIndex}`;
+            params.push(min_price);
+            paramIndex++;
+        }
+        if (max_price !== undefined) {
+            priceClause += ` AND bt.gia <= $${paramIndex}`;
+            params.push(max_price);
+            paramIndex++;
+        }
+        priceClause += `)`;
+        whereClauses.push(priceClause);
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    // Đếm tổng số lượng
+    const countQuery = `SELECT COUNT(*)::int AS total_items FROM san_pham p ${whereString}`;
+    const countResult = await pool.query(countQuery, params);
+    const totalItems = countResult.rows[0].total_items;
+
+    if (totalItems === 0) {
+        return { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
+    }
+
+    // Truy vấn sản phẩm
+    const fetchParams = [...params, limit, offset];
+    const fetchQuery = `
+        SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.trang_thai_san_pham AS product_status,
+               c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
+        FROM san_pham p
+        LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
+        LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
+        ${whereString}
+        ORDER BY p.san_pham_id DESC
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+
+    const productsResult = await pool.query(fetchQuery, fetchParams);
+    const productIds = productsResult.rows.map((product) => product.product_id);
+
+    // Kế thừa nguyên vẹn logic móc nối Biến thể từ hàm buildProductsList
+    const variantsResult = await pool.query(
+        `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
+                COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
+                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images
+         FROM bien_the_san_pham pv
+         LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id
+         LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
+         WHERE pv.san_pham_id = ANY($1::int[])
+         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co, tk.so_luong_ton
+         ORDER BY pv.san_pham_id DESC, pv.bien_the_id ASC`,
+        [productIds]
+    );
+
+    const variantsByProductId = new Map();
+    for (const row of variantsResult.rows) {
+        if (!variantsByProductId.has(row.product_id)) variantsByProductId.set(row.product_id, []);
+        variantsByProductId.get(row.product_id).push({
+            variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || []
+        });
+    }
+
+    return {
+        products: productsResult.rows.map((product) => ({
+            ...product,
+            variants: variantsByProductId.get(product.product_id) || [],
+        })),
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
     getAllProductTypes,
     getAllProducts,
@@ -849,4 +960,5 @@ module.exports = {
     updateProduct,
     deleteProduct,
     parsePositiveInteger,
+    filterProducts,
 };

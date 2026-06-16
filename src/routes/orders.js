@@ -7,7 +7,8 @@ const {
 	repurchaseOrder,
 	getAllOrdersAdmin, 
 	getOrderDetailAdmin, 
-	updateOrderStatus 
+	updateOrderStatus,
+	filterOrdersAdmin,
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.post('/repurchase/:id', requireAuth, repurchaseOrder);
 router.get('/admin/all', requireAdmin, getAllOrdersAdmin);
 router.get('/admin/:id', requireAdmin, getOrderDetailAdmin);
 router.put('/admin/:id/status', requireAdmin, updateOrderStatus);
+router.post('/admin/filter', requireAdmin, filterOrdersAdmin);
 
 module.exports = router;

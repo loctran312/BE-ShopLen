@@ -288,6 +288,57 @@ const getCategorySubtree = async (categoryId) => pool.query(
   [categoryId]
 );
 
+const filterCategoriesAdmin = async (filters) => {
+    const { page = 1, limit = 10, keyword, parent_category_id } = filters;
+    const offset = (page - 1) * limit;
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    // Tìm theo tên danh mục hoặc slug
+    if (keyword) {
+        whereClauses.push(`(c.ten_danh_muc ILIKE $${paramIndex} OR c.slug ILIKE $${paramIndex})`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    // Lọc theo danh mục cha (Nếu truyền null thì lấy danh mục gốc, truyền số thì lấy danh mục con)
+    if (parent_category_id !== undefined) {
+        if (parent_category_id === null) {
+            whereClauses.push(`c.danh_muc_cha_id IS NULL`);
+        } else {
+            whereClauses.push(`c.danh_muc_cha_id = $${paramIndex}`);
+            params.push(parent_category_id);
+            paramIndex++;
+        }
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM danh_muc c ${whereString}`, params);
+    const totalItems = countRes.rows[0].total;
+
+    const fetchParams = [...params, limit, offset];
+    
+    // JOIN thêm chính bảng danh_muc (Self-Join) để lấy tên danh mục cha cho dễ nhìn
+    const categoriesRes = await pool.query(
+        `SELECT c.danh_muc_id AS category_id, c.ten_danh_muc AS category_name, c.mo_ta AS description,
+                c.hinh_anh AS image_url, c.danh_muc_cha_id AS parent_category_id, c.slug,
+                p.ten_danh_muc AS parent_category_name
+         FROM danh_muc c
+         LEFT JOIN danh_muc p ON c.danh_muc_cha_id = p.danh_muc_id
+         ${whereString}
+         ORDER BY c.danh_muc_id DESC 
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        fetchParams
+    );
+
+    return {
+        categories: categoriesRes.rows,
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
   insertCategoryClient,
   updateCategoryClient,
@@ -306,4 +357,5 @@ module.exports = {
   getAllCategories,
   getCategoriesList,
   getCategorySubtree,
+  filterCategoriesAdmin,
 };

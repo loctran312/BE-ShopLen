@@ -327,10 +327,49 @@ const updateOrderStatus = async (orderId, newStatus) => {
 	}
 };
 
+const filterOrdersAdmin = async (filters) => {
+    const { page = 1, limit = 10, keyword, statuses } = filters;
+    const offset = (page - 1) * limit;
+    const params = [];
+    let paramIndex = 1;
+    let whereClauses = [];
+
+    if (keyword) {
+        whereClauses.push(`(don_hang_id ILIKE $${paramIndex} OR ten_nguoi_nhan ILIKE $${paramIndex} OR sdt_nguoi_nhan ILIKE $${paramIndex})`);
+        params.push(`%${keyword}%`);
+        paramIndex++;
+    }
+
+    if (Array.isArray(statuses) && statuses.length > 0) {
+        whereClauses.push(`trang_thai = ANY($${paramIndex}::text[])`);
+        params.push(statuses);
+        paramIndex++;
+    }
+
+    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM don_hang ${whereString}`, params);
+    const totalItems = countRes.rows[0].total;
+
+    const fetchParams = [...params, limit, offset];
+    const ordersRes = await pool.query(
+        `SELECT don_hang_id, nguoi_dung_id, trang_thai, tong_tien, ten_nguoi_nhan, sdt_nguoi_nhan
+         FROM don_hang ${whereString}
+         ORDER BY don_hang_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        fetchParams
+    );
+
+    return {
+        orders: ordersRes.rows,
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+    };
+};
+
 module.exports = {
 	createOrder,
 	getUserOrders,
 	getOrderDetail,
 	getAllOrdersAdmin,
 	updateOrderStatus,
+	filterOrdersAdmin,
 };

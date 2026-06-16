@@ -137,6 +137,27 @@ const deleteProduct = async (req, res) => {
 	}
 };
 
+const filterProducts = async (req, res) => {
+    try {
+        const page = productRepository.parsePositiveInteger(req.body.page || 1, 'page');
+        const limit = productRepository.parsePositiveInteger(req.body.limit || 10, 'limit');
+        
+        const result = await productRepository.filterProducts({
+            page, limit,
+            keyword: req.body.keyword,
+            category_ids: req.body.category_ids,
+            type_ids: req.body.type_ids,
+            min_price: req.body.min_price,
+            max_price: req.body.max_price,
+            status: req.body.status
+        });
+
+        return res.json({ success: true, message: 'Lọc sản phẩm thành công', data: result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lọc sản phẩm' });
+    }
+};
+
 module.exports = {
 	getAllProductTypes,
 	getAllProducts,
@@ -144,4 +165,5 @@ module.exports = {
 	createProduct,
 	updateProduct,
 	deleteProduct,
+	filterProducts,
 };

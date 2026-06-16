@@ -98,11 +98,30 @@ const deletePromotion = async (req, res) => {
 	}
 };
 
+const filterPromotionsAdmin = async (req, res) => {
+    try {
+        const page = parsePositiveInteger(req.body.page || 1, 'page');
+        const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
+        
+        const result = await promotionRepository.filterPromotionsAdmin({
+            page, limit,
+            keyword: req.body.keyword,
+            discount_types: req.body.discount_types,
+            statuses: req.body.statuses
+        });
+
+        return res.json({ success: true, message: 'Lọc khuyến mãi thành công', data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
 	getActivePromotions,
 	getPromotionDetail,
 	getAllPromotionsAdmin,
 	createPromotion,
 	updatePromotion,
-	deletePromotion
+	deletePromotion,
+	filterPromotionsAdmin
 };

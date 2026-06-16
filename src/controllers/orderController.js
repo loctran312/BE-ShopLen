@@ -210,6 +210,23 @@ const updateOrderStatus = async (req, res) => {
 	}
 };
 
+const filterOrdersAdmin = async (req, res) => {
+    try {
+        const page = parsePositiveInteger(req.body.page || 1, 'page');
+        const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
+        
+        const result = await orderRepository.filterOrdersAdmin({
+            page, limit,
+            keyword: req.body.keyword,
+            statuses: req.body.statuses
+        });
+
+        return res.json({ success: true, message: 'Lọc đơn hàng thành công', data: result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
 	createOrder,
 	getMyOrders,
@@ -218,4 +235,5 @@ module.exports = {
 	getAllOrdersAdmin,
 	getOrderDetailAdmin,
 	updateOrderStatus,
+	filterOrdersAdmin,
 };

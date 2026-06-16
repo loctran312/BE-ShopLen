@@ -7,7 +7,8 @@ const {
 	getVoucherDetail, 
 	createVoucher, 
 	updateVoucher, 
-	deleteVoucher 
+	deleteVoucher,
+	filterVouchersAdmin
 } = require('../controllers/voucherController');
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.get('/vouchers/:id', requireAdmin, getVoucherDetail);
 router.post('/vouchers', requireAdmin, createVoucher);
 router.put('/vouchers/:id', requireAdmin, updateVoucher);
 router.delete('/vouchers/:id', requireAdmin, deleteVoucher);
+router.post('/vouchers/filter', requireAdmin, filterVouchersAdmin);
 
 module.exports = router;

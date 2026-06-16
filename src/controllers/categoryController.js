@@ -902,10 +902,34 @@ const createCategoriesTree = async (req, res) => {
   }
 };
 
+const filterCategoriesAdmin = async (req, res) => {
+    try {
+        const page = parsePositiveInteger(req.body.page || 1, 'page');
+        const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
+        
+        // Xử lý riêng parent_category_id vì nó có thể là null (danh mục gốc)
+        let parentCategoryId = req.body.parent_category_id;
+        if (parentCategoryId !== undefined && parentCategoryId !== null) {
+            parentCategoryId = Number(parentCategoryId);
+        }
+
+        const result = await categoryRepository.filterCategoriesAdmin({
+            page, limit,
+            keyword: req.body.keyword,
+            parent_category_id: parentCategoryId
+        });
+
+        return res.json({ success: true, message: 'Lọc danh mục thành công', data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
   getAllCategories,
   getCategoryDetail,
   createCategory,
   updateCategory,
   deleteCategory,
+  filterCategoriesAdmin,
 };
