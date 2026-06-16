@@ -554,23 +554,44 @@ const apiDocs = {
           summary: "Cập nhật sản phẩm và tùy chọn biến thể",
           auth: true,
           requestExample: {
-            product_name: "Cuộn len Cotton Milk 50g - mới",
-            product_status: "active",
-            variants: [
+            "type_id": 2,
+            "category_id": 3,
+            "product_name": "Cuộn len Cotton Milk 50g (Bản nâng cấp)",
+            "description": "Len cotton milk 50g loại 1, sợi mềm mịn, không xù lông, thích hợp đan móc thú bông và áo len.",
+            "product_status": "active",
+            "variants": [
               {
-                variant_id: 1,
-                sku: "LEN-CM-RED-50G",
-                price: 16000,
-                color: "Đỏ",
-                size: "50g",
-                images: [
+                "variant_id": 1,
+                "sku": "LEN-CM-RED-50G",
+                "price": 16000,
+                "color": "Đỏ",
+                "size": "50g",
+                "slug": "cuon-len-cotton-milk-50g-do",
+                "images": [
                   {
-                    image_url: "https://example.com/images/len-red-1.jpg",
-                    sort_order: 1,
+                    "image_url": "https://example.com/images/len-red-1.jpg",
+                    "sort_order": 1
                   },
-                ],
+                  {
+                    "image_url": "https://example.com/images/len-red-2.jpg",
+                    "sort_order": 2
+                  }
+                ]
               },
-            ],
+              {
+                "sku": "LEN-CM-BLUE-50G",
+                "price": 15000,
+                "color": "Xanh Dương",
+                "size": "50g",
+                "stock_quantity": 100,
+                "images": [
+                  {
+                    "image_url": "https://example.com/images/len-blue-1.jpg",
+                    "sort_order": 1
+                  }
+                ]
+              }
+            ]
           },
           successStatus: 200,
           successExample: {
