@@ -2029,6 +2029,265 @@ const apiDocs = {
         },
       ]
     },
+    {
+      name: "Workshop",
+      endpoints: [
+        {
+          method: "POST",
+          path: "/api/workshops/filter",
+          summary: "Lọc workshop theo nhiều tiêu chí - ADMIN",
+          auth: true,
+          requestExample: {
+            "keyword": "Hà Nội",
+            "status": "active",
+            "page": 1,
+            "limit": 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách Workshop thành công",
+            "data": {
+              "workshops": [
+                {
+                  "workshop_id": 7,
+                  "product_id": 3,
+                  "title": "Móc thảm tròn phòng ngủ từ sợi nhung siêu to",
+                  "location": "Hà Nội",
+                  "status": "active",
+                  "category_id": 10
+                },
+                {
+                  "workshop_id": 2,
+                  "product_id": 2,
+                  "title": "Học móc len nâng cao Tulip Nhật",
+                  "location": "Hà Nội",
+                  "status": "active",
+                  "category_id": 5
+                }
+              ],
+              "pagination": {
+                "total_items": 2,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/workshops",
+          summary: "Tạo workshop mới - ADMIN",
+          auth: true,
+          requestExample: {
+            "title": "Workshop Đan Khăn Len Mùa Đông",
+            "description": "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
+            "location": "The Coffee House, Quận 1, TP.HCM",
+            "category_id": 7,
+            "status": "active",
+            "sessions": [
+              {
+                "session_name": "Ca Sáng (Thứ 7)",
+                "price": 350000,
+                "capacity": 15,
+                "start_date": "2026-10-15T08:00:00Z",
+                "end_date": "2026-10-15T11:30:00Z",
+                "status": "open",
+                "images": [
+                  {
+                    "image_url": "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
+                    "sort_order": 1
+                  }
+                ]
+              },
+              {
+                "session_name": "Ca Chiều (Thứ 7)",
+                "price": 350000,
+                "capacity": 20,
+                "start_date": "2026-10-15T14:00:00Z",
+                "end_date": "2026-10-15T17:30:00Z",
+                "status": "open",
+                "images": [
+                  {
+                    "image_url": "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
+                    "sort_order": 1
+                  }
+                ]
+              }
+            ]
+          },
+          successStatus: 201,
+          responseExample: {
+            "success": true,
+            "message": "Tạo Workshop thành công",
+            "data": {
+              "workshop": {
+                "workshop_id": 11,
+                "product_id": 6,
+                "title": "Workshop Đan Khăn Len Mùa Đông",
+                "description": "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
+                "location": "The Coffee House, Quận 1, TP.HCM",
+                "category_id": 7,
+                "status": "active",
+                "sessions": [
+                  {
+                    "variant_id": 11,
+                    "start_date": "2026-10-15T01:00:00.000Z",
+                    "end_date": "2026-10-15T04:30:00.000Z",
+                    "status": "open",
+                    "sku": "WS6-2E4U",
+                    "slug": "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
+                    "price": "350000.00",
+                    "session_name": "Ca Sáng (Thứ 7)",
+                    "capacity": 15,
+                    "images": [
+                      {
+                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        "sort_order": 1
+                      }
+                    ]
+                  },
+                  {
+                    "variant_id": 12,
+                    "start_date": "2026-10-15T07:00:00.000Z",
+                    "end_date": "2026-10-15T10:30:00.000Z",
+                    "status": "open",
+                    "sku": "WS6-7NRA",
+                    "slug": "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
+                    "price": "350000.00",
+                    "session_name": "Ca Chiều (Thứ 7)",
+                    "capacity": 20,
+                    "images": [
+                      {
+                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        "sort_order": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          notes: "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
+        },
+        {
+          method: "PUT",
+          path: "/api/workshops/:workshop_id",
+          summary: "Cập nhật thông tin workshop - ADMIN",
+          auth: true,
+          requestExample: {
+            "title": "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
+            "description": "Thêm ưu đãi tặng len cho học viên.",
+            "location": "The Coffee House, Quận 1, TP.HCM",
+            "category_id": 7,
+            "status": "active",
+            "sessions": [
+              {
+                "variant_id": 11, 
+                "session_name": "Ca Sáng (Thứ 7) - Update",
+                "price": 300000,
+                "capacity": 10,
+                "start_date": "2026-10-15T08:00:00Z",
+                "end_date": "2026-10-15T11:30:00Z",
+                "status": "open",
+                "images": [] 
+              },
+              {
+                "session_name": "Ca Tối (Mở thêm)",
+                "price": 350000,
+                "capacity": 15,
+                "start_date": "2026-10-15T19:00:00Z",
+                "end_date": "2026-10-15T21:30:00Z",
+                "status": "open",
+                "images": [
+                  {
+                    "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                    "sort_order": 1
+                  }
+                ]
+              }
+            ]
+          },
+          successStatus: 200,
+          responseExample: {
+            "success": true,
+            "message": "Cập nhật Workshop thành công",
+            "data": {
+              "workshop": {
+                "workshop_id": 11,
+                "product_id": 6,
+                "title": "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
+                "description": "Thêm ưu đãi tặng len cho học viên.",
+                "location": "The Coffee House, Quận 1, TP.HCM",
+                "category_id": 7,
+                "status": "active",
+                "sessions": [
+                  {
+                    "variant_id": 11,
+                    "start_date": "2026-10-15T01:00:00.000Z",
+                    "end_date": "2026-10-15T04:30:00.000Z",
+                    "status": "open",
+                    "sku": "WS6-2E4U",
+                    "slug": "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
+                    "price": "300000.00",
+                    "session_name": "Ca Sáng (Thứ 7) - Update",
+                    "capacity": 10,
+                    "images": []
+                  },
+                  {
+                    "variant_id": 12,
+                    "start_date": "2026-10-15T07:00:00.000Z",
+                    "end_date": "2026-10-15T10:30:00.000Z",
+                    "status": "open",
+                    "sku": "WS6-7NRA",
+                    "slug": "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
+                    "price": "350000.00",
+                    "session_name": "Ca Chiều (Thứ 7)",
+                    "capacity": 20,
+                    "images": [
+                      {
+                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        "sort_order": 1
+                      }
+                    ]
+                  },
+                  {
+                    "variant_id": 13,
+                    "start_date": "2026-10-15T12:00:00.000Z",
+                    "end_date": "2026-10-15T14:30:00.000Z",
+                    "status": "open",
+                    "sku": "WS6-KLW5",
+                    "slug": "workshop-an-khan-len-mua-ong-a-cap-nhat-ca-toi-mo-them-9989",
+                    "price": "350000.00",
+                    "session_name": "Ca Tối (Mở thêm)",
+                    "capacity": 15,
+                    "images": [
+                      {
+                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        "sort_order": 1
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+        },
+        {
+          method: "DELETE",
+          path: "/api/workshops/:workshop_id",
+          summary: "Xóa workshop - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Xóa Workshop thành công"
+          },
+        }
+      ]
+    },
   ],
 };
 

@@ -53,6 +53,7 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 | **Voucher** | Áp dụng mã giảm giá (theo % hoặc số tiền cố định) |
 | **Khuyến mãi** | Chương trình khuyến mãi theo sản phẩm |
 | **Đơn hàng** | Tạo đơn, cập nhật trạng thái, lịch sử đơn hàng |
+| **Workshop** | Quản lý lớp học đan móc trực tiếp |
 | **Thanh toán** | Tích hợp COD và MoMo payment gateway |
 | **Hoàn tiền** | Xử lý yêu cầu hoàn tiền |
 
@@ -60,7 +61,6 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| **Workshop** | Quản lý lớp học đan móc trực tiếp |
 | **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
 
 ### Kế hoạch phát triển

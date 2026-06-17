@@ -85,6 +85,13 @@ const buildVariantBaseSlug = (productName, variant) => {
     return slug;
 };
 
+// Hàm hỗ trợ: Sinh SKU tự động
+const generateSKU = (prefix, id) => {
+    // Tạo 4 ký tự ngẫu nhiên (chữ + số)
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+    return `${prefix}${id}-${randomStr}`;
+};
+
 const generateUniqueVariantSlug = async (baseSlug, ignoreVariantId = null) => {
     if (!baseSlug) {
         const error = new Error('slug không hợp lệ');
@@ -176,12 +183,6 @@ const normalizeVariantPayload = (variant, index) => {
     const size = normalizeText(variant.size) || null;
     const slug = normalizeText(variant.slug) || null;
     const images = normalizeImageItems(variant.images, index);
-
-    if (!sku) {
-        const error = new Error(`sku ở biến thể ${index + 1} không được để trống`);
-        error.statusCode = 400;
-        throw error;
-    }
 
     return {
         variant_id: variantId,
@@ -523,17 +524,7 @@ const createProduct = async (payload) => {
 
         const seenSkus = new Set();
         const normalizedVariants = payload.variants.map((variant, index) => {
-            const normalized = normalizeVariantPayload(variant, index);
-            const skuKey = normalized.sku.toLowerCase();
-
-            if (seenSkus.has(skuKey)) {
-                const error = new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
-                error.statusCode = 400;
-                throw error;
-            }
-
-            seenSkus.add(skuKey);
-            return normalized;
+            return normalizeVariantPayload(variant, index);
         });
 
         const preparedVariants = [];
@@ -563,12 +554,15 @@ const createProduct = async (payload) => {
 
         const createdProduct = productResult.rows[0];
 
-        for (const variant of preparedVariants) {
+        for (const variant of variants) {
+            const sku = generateSKU('SP', productId);
+            const variantSlug = await generateUniqueVariantSlug(productName, variant.color, variant.size);
+
             const variantResult = await client.query(
                 `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
                  VALUES ($1, $2, $3, $4, $5, $6)
-                 RETURNING bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size`,
-                [createdProduct.product_id, variant.sku, variant.slug, variant.price, variant.color, variant.size]
+                 RETURNING bien_the_id`,
+                [productId, sku, variantSlug, variant.price, variant.color || null, variant.size || null]
             );
 
             const createdVariant = variantResult.rows[0];
@@ -667,19 +661,8 @@ const updateProduct = async (productId, payload) => {
                 throw error;
             }
 
-            const seenSkus = new Set();
-            normalizedVariants = payload.variants.map((variant, index) => {
-                const normalized = normalizeVariantPayload(variant, index);
-                const skuKey = normalized.sku.toLowerCase();
-
-                if (seenSkus.has(skuKey)) {
-                    const error = new Error(`sku bị trùng trong variants ở vị trí ${index + 1}`);
-                    error.statusCode = 400;
-                    throw error;
-                }
-
-                seenSkus.add(skuKey);
-                return normalized;
+            const normalizedVariants = payload.variants.map((variant, index) => {
+                return normalizeVariantPayload(variant, index);
             });
         }
 
@@ -746,11 +729,13 @@ const updateProduct = async (productId, payload) => {
                         ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
                         : null;
 
+                    const sku = generateSKU('SP', productId);
+
                     const insertedVariantResult = await client.query(
                         `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
                          VALUES ($1, $2, $3, $4, $5, $6)
                          RETURNING bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size`,
-                        [productId, variant.sku, nextSlug, variant.price, variant.color, variant.size]
+                        [productId, sku, nextSlug, variant.price, variant.color, variant.size]
                     );
 
                     const newVariantId = insertedVariantResult.rows[0].variant_id;
