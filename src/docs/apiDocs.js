@@ -2285,6 +2285,9 @@ const apiDocs = {
             "success": true,
             "message": "Xóa Workshop thành công"
           },
+        },
+        {
+          notes: "User đăng ký tham gia workshop thông qua API (POST /api/cart) và điền thông tin cá nhân thông qua API (POST /api/orders). ",
         }
       ]
     },
