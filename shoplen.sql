@@ -948,3 +948,35 @@ INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_
 (8, 7, '2026-08-01 08:00:00', '2026-08-01 12:00:00', 'open'),
 (9, 1, '2026-08-15 09:00:00', '2026-08-15 17:00:00', 'open'),
 (10, 10, '2026-06-25 14:00:00', '2026-06-25 17:00:00', 'open');
+
+DO $$
+DECLARE
+    seq_record RECORD;
+    seq_name TEXT;
+    max_val BIGINT;
+BEGIN
+    FOR seq_record IN 
+        -- Tìm tất cả các cột có sử dụng Sequence (SERIAL, BIGSERIAL) trong database
+        SELECT table_name, column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = 'public' AND column_default LIKE 'nextval(%'
+    LOOP
+        -- Lấy tên chuẩn của Sequence tương ứng
+        seq_name := pg_get_serial_sequence(seq_record.table_name, seq_record.column_name);
+        
+        IF seq_name IS NOT NULL THEN
+            -- Truy vấn ID lớn nhất hiện tại của bảng
+            EXECUTE format('SELECT MAX(%I) FROM %I', seq_record.column_name, seq_record.table_name) INTO max_val;
+            
+            IF max_val IS NOT NULL THEN
+                -- Nếu bảng CÓ dữ liệu -> Set bộ đếm bằng với MAX(id)
+                EXECUTE format('SELECT setval(%L, %L)', seq_name, max_val);
+                RAISE NOTICE 'Đã cập nhật % (Bảng: %) -> MAX ID: %', seq_name, seq_record.table_name, max_val;
+            ELSE
+                -- Nếu bảng RỖNG -> Set bộ đếm về 1 (tham số false để lần INSERT tiếp theo sẽ dùng luôn số 1)
+                EXECUTE format('SELECT setval(%L, 1, false)', seq_name);
+                RAISE NOTICE 'Bảng % rỗng -> Đã reset % về 1', seq_record.table_name, seq_name;
+            END IF;
+        END IF;
+    END LOOP;
+END $$;
