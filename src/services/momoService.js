@@ -56,20 +56,25 @@ const createPaymentUrl = async (orderId, amount, orderInfo = 'Thanh toan don han
 
 // TẠO YÊU CẦU HOÀN TIỀN (REFUND)
 const refundPayment = async (orderId, amount, transId) => {
-    const requestId = `REFUND-${orderId}-${Date.now()}`;
+    // 1. Ép kiểu số tiền về số nguyên (tránh lỗi chuỗi hoặc số thập phân)
+    const cleanAmount = Math.round(Number(amount));
+
+    // 2. Tạo ID DUY NHẤT cho riêng giao dịch hoàn tiền này (MoMo bắt buộc)
+    const refundOrderId = `RF-${orderId}-${Date.now()}`;
+    const requestId = `REQ-${refundOrderId}`;
     const description = `Hoan tien don hang ${orderId}`;
 
-    // Format rawSignature cho API Refund của MoMo v2
-    const rawSignature = `accessKey=${MOMO_CONFIG.accessKey}&amount=${amount}&description=${description}&orderId=${orderId}&partnerCode=${MOMO_CONFIG.partnerCode}&requestId=${requestId}&transId=${transId}`;
+    // Format rawSignature (Dùng refundOrderId đã chế)
+    const rawSignature = `accessKey=${MOMO_CONFIG.accessKey}&amount=${cleanAmount}&description=${description}&orderId=${refundOrderId}&partnerCode=${MOMO_CONFIG.partnerCode}&requestId=${requestId}&transId=${transId}`;
     
     const signature = createSignature(rawSignature);
 
     const requestBody = {
         partnerCode: MOMO_CONFIG.partnerCode,
-        orderId: orderId,
+        orderId: refundOrderId, // Phải dùng mã hoàn tiền duy nhất
         requestId: requestId,
-        amount: amount,
-        transId: transId,
+        amount: cleanAmount,    // Phải là số nguyên
+        transId: Number(transId),
         lang: "vi",
         description: description,
         signature: signature

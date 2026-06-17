@@ -175,8 +175,17 @@ const repurchaseOrder = async (req, res) => {
 
 const getAllOrdersAdmin = async (req, res) => {
 	try {
-		const page = parsePositiveInteger(req.query.page || 1, 'page');
-		const limit = parsePositiveInteger(req.query.limit || 10, 'limit');
+		// Lấy từ Query URL trước, nếu không có thì tìm trong Body, nếu vẫn không có thì mặc định là 1
+		const rawPage = req.query.page !== undefined 
+            ? req.query.page 
+            : (req.body && req.body.page !== undefined ? req.body.page : 1);
+            
+		const rawLimit = req.query.limit !== undefined 
+            ? req.query.limit 
+            : (req.body && req.body.limit !== undefined ? req.body.limit : 10);
+
+		const page = parsePositiveInteger(rawPage, 'page');
+		const limit = parsePositiveInteger(rawLimit, 'limit');
 
 		const { orders, pagination } = await orderRepository.getAllOrdersAdmin({ page, limit });
 

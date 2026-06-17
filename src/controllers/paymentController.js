@@ -99,12 +99,17 @@ const processRefund = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Đơn hàng này chưa thanh toán hoặc đã được hoàn tiền' });
         }
 
+        // Ép kiểu tổng tiền thành số trước khi gửi qua Service
+        const amountToRefund = Math.round(Number(paymentInfo.tong_tien));
+
         // Gọi API MoMo để thực hiện hoàn tiền
         const refundResult = await momoService.refundPayment(
             orderId, 
-            paymentInfo.tong_tien, 
-            paymentInfo.ma_tham_chieu // transId bắt buộc phải có
+            amountToRefund, 
+            paymentInfo.ma_tham_chieu
         );
+
+        console.log('--- [MOMO REFUND RESPONSE] ---', refundResult);
 
         if (refundResult.resultCode === 0) {
             // Đổi trạng thái thanh toán thành 'refunded'

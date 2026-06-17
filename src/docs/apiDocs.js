@@ -1315,7 +1315,7 @@ const apiDocs = {
         },
         {
           method: "GET",
-          path: "/api/vouchers/:voucher_id",
+          path: "/api/vouchers/vouchers/:voucher_id",
           summary: "Lấy chi tiết voucher theo id - ADMIN",
           auth: true,
           requestExample: null,
@@ -1757,7 +1757,7 @@ const apiDocs = {
         {
           method: "POST",
           path: "/api/orders",
-          summary: "Tạo đơn hàng mới",
+          summary: "Tạo đơn hàng mới với thanh toán MOMO",
           auth: true,
           requestExample: {
             "phuong_xa_id": 1,
@@ -1776,6 +1776,28 @@ const apiDocs = {
               "total_amount": 295000,
               "payment_method": "MOMO",
               "payUrl": "https://test-payment.momo.vn/v2/gateway/pay?t=TU9NT3xESC0yMDI2MDYxNi0wMDAy&s=a7e1971c61afb0860eed836c90bb89d0056bc0c173bb4925ab0fc027c2fc6e19"
+            }
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/payment/refund/:order_id",
+          summary: "Yêu cầu hoàn tiền cho đơn hàng",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Hoàn tiền thành công",
+            "data": {
+              "partnerCode": "MOMO",
+              "orderId": "RF-DH-20260616-0006-1781675994563",
+              "requestId": "REQ-RF-DH-20260616-0006-1781675994563",
+              "amount": 90000,
+              "transId": 4763108949,
+              "resultCode": 0,
+              "message": "Thành công.",
+              "responseTime": 1781675997127
             }
           },
         },
