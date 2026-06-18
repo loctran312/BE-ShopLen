@@ -431,18 +431,26 @@ const apiDocs = {
               products: [
                 {
                   product_id: 1,
-                  product_name: "Cuộn len Cotton Milk 50g",
-                  category_name: "Len sợi",
-                  type_name: "Sợi len",
+                  product_name: "Len Cotton Milk",
+                  description: "Dòng len sợi sữa mềm thích hợp cho cả da em bé",
                   product_status: "active",
+                  category_name: "Len Cotton",
+                  type_name: "Len cuộn",
                   variants: [
                     {
                       variant_id: 1,
-                      sku: "LEN-CM-RED-50G",
-                      slug: "cuon-len-cotton-milk-50g-mau-do",
-                      price: "15000.00",
-                      color: "Đỏ",
-                      size: "50g",
+                      sku: "L-COTTON-001",
+                      slug: "len-cotton-milk-trang",
+                      price: 25000,
+                      discount: {
+                        voucher_id: 1,
+                        voucher_name: "Sale hè rực rỡ",
+                        type: "fixed",
+                        value: 5000,
+                      },
+                      final_price: 20000,
+                      color: "Trắng",
+                      size: "M",
                       stock_quantity: 100,
                       images: [
                         {
@@ -461,8 +469,8 @@ const apiDocs = {
                 },
               ],
               pagination: {
-                total_items: 125,
-                total_pages: 13,
+                total_items: 5,
+                total_pages: 1,
                 current_page: 1,
                 limit: 10,
               },
@@ -477,38 +485,39 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            success: true,
-            message: "Lấy chi tiết sản phẩm thành công",
-            data: {
-              product: {
-                product_id: 1,
-                type_id: 1,
-                category_id: 2,
-                product_name: "Cuộn len Cotton Milk 50g",
-                description: "Len sợi mềm mại...",
-                product_status: "active",
-                category_name: "Len sợi",
-                type_name: "Sợi len",
-                variants: [
+            "success": true,
+            "message": "Lấy chi tiết sản phẩm thành công",
+            "data": {
+              "product": {
+                "product_id": 1,
+                "type_id": 1,
+                "category_id": 2,
+                "product_name": "Len Cotton Milk",
+                "description": "Dòng len sợi sữa mềm thích hợp cho cả da em bé",
+                "product_status": "active",
+                "category_name": "Len Cotton",
+                "type_name": "Len cuộn",
+                "variants": [
                   {
-                    variant_id: 1,
-                    sku: "LEN-CM-RED-50G",
-                    slug: "cuon-len-cotton-milk-50g-mau-do",
-                    price: "15000.00",
-                    color: "Đỏ",
-                    size: "50g",
-                    stock_quantity: 150,
-                    images: [
-                      {
-                        image_id: 1,
-                        image_url: "https://i.ibb.co/example.jpg",
-                        sort_order: 1,
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
+                    "variant_id": 1,
+                    "sku": "L-COTTON-001",
+                    "slug": "len-cotton-milk-trang",
+                    "price": 25000,
+                    "discount": {
+                      "voucher_id": 1,
+                      "voucher_name": "Sale hè rực rỡ",
+                      "type": "fixed",
+                      "value": 5000
+                    },
+                    "final_price": 20000,
+                    "color": "Trắng",
+                    "size": "M",
+                    "stock_quantity": 100,
+                    "images": []
+                  }
+                ]
+              }
+            }
           },
         },
         {
@@ -719,37 +728,45 @@ const apiDocs = {
           },
           successStatus: 200,
           successExample: {
-            success: true,
-            message: "Lọc sản phẩm thành công",
-            data: {
-              products: [
+            "success": true,
+            "message": "Lọc sản phẩm thành công",
+            "data": {
+              "products": [
                 {
-                  product_id: 1,
-                  product_name: "Len Cotton Milk",
-                  product_status: "active",
-                  category_name: "Len Cotton",
-                  type_name: "Len cuộn",
-                  variants: [
+                  "product_id": 1,
+                  "product_name": "Len Cotton Milk",
+                  "description": "Dòng len sợi sữa mềm thích hợp cho cả da em bé",
+                  "product_status": "active",
+                  "category_name": "Len Cotton",
+                  "type_name": "Len cuộn",
+                  "variants": [
                     {
-                      variant_id: 1,
-                      sku: "L-COTTON-001",
-                      slug: "len-cotton-milk-trang",
-                      price: "25000.00",
-                      color: "Trắng",
-                      size: "M",
-                      stock_quantity: 100,
-                      images: [],
-                    },
-                  ],
-                },
+                      "variant_id": 1,
+                      "sku": "L-COTTON-001",
+                      "slug": "len-cotton-milk-trang",
+                      "price": 25000,
+                      "discount": {
+                        "voucher_id": 1,
+                        "voucher_name": "Sale hè rực rỡ",
+                        "type": "fixed",
+                        "value": 5000
+                      },
+                      "final_price": 20000,
+                      "color": "Trắng",
+                      "size": "M",
+                      "stock_quantity": 100,
+                      "images": []
+                    }
+                  ]
+                }
               ],
-              pagination: {
-                total_items: 1,
-                total_pages: 1,
-                current_page: 1,
-                limit: 10,
-              },
-            },
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
           },
           notes:
             "Endpoint này hỗ trợ lọc sản phẩm theo nhiều tiêu chí khác nhau như từ khóa, danh mục, loại, khoảng giá và trạng thái. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
@@ -2337,46 +2354,48 @@ const apiDocs = {
           auth: true,
           requestExample: {
             page: 1,
-            limit: 10
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách yêu thích thành công",
-            "data": {
-              "items": [
+            success: true,
+            message: "Lấy danh sách yêu thích thành công",
+            data: {
+              items: [
                 {
-                  "variant_id": 2,
-                  "product_name": "Kim Móc Cán Dẻo Tulip",
-                  "color": "Vàng Kim",
-                  "price": "120000.00",
-                  "slug": "kim-moc-tulip-20mm",
-                  "stock_quantity": 150,
-                  "image_url": null
-                }
+                  variant_id: 2,
+                  product_name: "Kim Móc Cán Dẻo Tulip",
+                  color: "Vàng Kim",
+                  price: "120000.00",
+                  slug: "kim-moc-tulip-20mm",
+                  stock_quantity: 150,
+                  image_url: null,
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
         },
         {
           method: "POST",
           path: "/api/wishlist/trigger-emails",
-          summary: "Gửi email nhắc nhở người dùng về sản phẩm yêu thích - ADMIN",
+          summary:
+            "Gửi email nhắc nhở người dùng về sản phẩm yêu thích - ADMIN",
           auth: true,
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Đã quét và gửi thành công 6 email thông báo."
+            success: true,
+            message: "Đã quét và gửi thành công 6 email thông báo.",
           },
-          notes: "API này sẽ được chạy định kỳ mỗi 5-10 phút một lần để tự động gửi email nhắc nhở người dùng về các sản phẩm trong wishlist của họ. Email sẽ chỉ gửi 1 lần duy nhất hoặc có thể được gửi lại nếu Admin cập nhật lại nội dung email",
-        }
+          notes:
+            "API này sẽ được chạy định kỳ mỗi 5-10 phút một lần để tự động gửi email nhắc nhở người dùng về các sản phẩm trong wishlist của họ. Email sẽ chỉ gửi 1 lần duy nhất hoặc có thể được gửi lại nếu Admin cập nhật lại nội dung email",
+        },
       ],
     },
   ],

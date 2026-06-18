@@ -173,7 +173,7 @@ const buildProductsList = async ({ page, limit }) => {
     const [countResult, productsResult] = await Promise.all([
         pool.query('SELECT COUNT(*)::int AS total_items FROM san_pham'),
         pool.query(
-            `SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.trang_thai_san_pham AS product_status,
+            `SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
                     c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
              FROM san_pham p
              LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
@@ -194,7 +194,18 @@ const buildProductsList = async ({ page, limit }) => {
     const variantsResult = await pool.query(
         `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
                 COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
-                COALESCE(json_agg(json_build_object('image_id', vi.hinh_anh_id, 'image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images
+                COALESCE(json_agg(json_build_object('image_id', vi.hinh_anh_id, 'image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+                (SELECT row_to_json(d) FROM (
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    LIMIT 1
+                ) d) AS discount
          FROM bien_the_san_pham pv
          LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
@@ -207,8 +218,25 @@ const buildProductsList = async ({ page, limit }) => {
     const variantsByProductId = new Map();
     for (const row of variantsResult.rows) {
         if (!variantsByProductId.has(row.product_id)) variantsByProductId.set(row.product_id, []);
+
+        const price = Number(row.price);
+        let finalPrice = price;
+        let discount = row.discount || null;
+
+        if (discount) {
+            discount.value = Number(discount.value);
+            if (discount.type === 'percent') {
+                finalPrice = price - (price * discount.value / 100);
+            } else if (discount.type === 'fixed') {
+                finalPrice = price - discount.value;
+            }
+            if (finalPrice < 0) finalPrice = 0;
+        }
+
         variantsByProductId.get(row.product_id).push({
-            variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || [],
+            variant_id: row.variant_id, sku: row.sku, slug: row.slug, 
+            price: price, discount: discount, final_price: finalPrice, 
+            color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || [],
         });
     }
 
@@ -234,7 +262,18 @@ const buildProductDetail = async (productId) => {
     if (productResult.rows.length === 0) return null;
 
     const variantResult = await pool.query(
-        `SELECT pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size, COALESCE(i.so_luong_ton, 0) AS stock_quantity, vi.hinh_anh_id AS image_id, vi.duong_dan_anh AS image_url, vi.thu_tu_hien_thi AS sort_order
+        `SELECT pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size, COALESCE(i.so_luong_ton, 0) AS stock_quantity, vi.hinh_anh_id AS image_id, vi.duong_dan_anh AS image_url, vi.thu_tu_hien_thi AS sort_order,
+                (SELECT row_to_json(d) FROM (
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    LIMIT 1
+                ) d) AS discount
          FROM bien_the_san_pham pv
          LEFT JOIN ton_kho i ON i.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
@@ -246,8 +285,25 @@ const buildProductDetail = async (productId) => {
     const variantMap = new Map();
     for (const row of variantResult.rows) {
         if (!variantMap.has(row.variant_id)) {
+            // BỔ SUNG: Tính toán final_price cho detail
+            const price = Number(row.price);
+            let finalPrice = price;
+            let discount = row.discount || null;
+
+            if (discount) {
+                discount.value = Number(discount.value);
+                if (discount.type === 'percent') {
+                    finalPrice = price - (price * discount.value / 100);
+                } else if (discount.type === 'fixed') {
+                    finalPrice = price - discount.value;
+                }
+                if (finalPrice < 0) finalPrice = 0;
+            }
+
             variantMap.set(row.variant_id, {
-                variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity || 0), images: [],
+                variant_id: row.variant_id, sku: row.sku, slug: row.slug, 
+                price: price, discount: discount, final_price: finalPrice,
+                color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity || 0), images: [],
             });
         }
         if (row.image_id) {
@@ -605,7 +661,7 @@ const filterProducts = async (filters) => {
 
     const fetchParams = [...params, limit, offset];
     const fetchQuery = `
-        SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.trang_thai_san_pham AS product_status,
+        SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
                c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
         FROM san_pham p
         LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
@@ -621,7 +677,18 @@ const filterProducts = async (filters) => {
     const variantsResult = await pool.query(
         `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
                 COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
-                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images
+                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+                (SELECT row_to_json(d) FROM (
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    LIMIT 1
+                ) d) AS discount
          FROM bien_the_san_pham pv
          LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
@@ -634,8 +701,25 @@ const filterProducts = async (filters) => {
     const variantsByProductId = new Map();
     for (const row of variantsResult.rows) {
         if (!variantsByProductId.has(row.product_id)) variantsByProductId.set(row.product_id, []);
+
+        const price = Number(row.price);
+        let finalPrice = price;
+        let discount = row.discount || null;
+
+        if (discount) {
+            discount.value = Number(discount.value);
+            if (discount.type === 'percent') {
+                finalPrice = price - (price * discount.value / 100);
+            } else if (discount.type === 'fixed') {
+                finalPrice = price - discount.value;
+            }
+            if (finalPrice < 0) finalPrice = 0;
+        }
+
         variantsByProductId.get(row.product_id).push({
-            variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || []
+            variant_id: row.variant_id, sku: row.sku, slug: row.slug, 
+            price: price, discount: discount, final_price: finalPrice,
+            color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || []
         });
     }
 
