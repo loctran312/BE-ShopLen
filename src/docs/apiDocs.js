@@ -349,38 +349,39 @@ const apiDocs = {
           summary: "Lọc người dùng theo nhiều tiêu chí (quyền admin)",
           auth: true,
           requestExample: {
-            "keyword": "Nguyễn", 
-            "roles": ["customer"],
-            "statuses": ["active", "inactive"],
-            "page": 1,
-            "limit": 10
+            keyword: "Nguyễn",
+            roles: ["customer"],
+            statuses: ["active", "inactive"],
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc người dùng thành công",
-            "data": {
-              "users": [
+            success: true,
+            message: "Lọc người dùng thành công",
+            data: {
+              users: [
                 {
-                  "user_id": 5,
-                  "username": "user04",
-                  "first_name": "Nguyễn",
-                  "last_name": "Văn Long",
-                  "email": "khachhang4@gmail.com",
-                  "phone_number": "0912345678",
-                  "status": "active",
-                  "role": "customer"
+                  user_id: 5,
+                  username: "user04",
+                  first_name: "Nguyễn",
+                  last_name: "Văn Long",
+                  email: "khachhang4@gmail.com",
+                  phone_number: "0912345678",
+                  status: "active",
+                  role: "customer",
                 },
               ],
-              "pagination": {
-                "total_items": 2,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 2,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
-          notes: "Endpoint này cho phép admin lọc người dùng dựa trên nhiều tiêu chí khác nhau như từ khóa tìm kiếm (áp dụng cho username, first_name, last_name, email), vai trò (role) và trạng thái (status). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
+          notes:
+            "Endpoint này cho phép admin lọc người dùng dựa trên nhiều tiêu chí khác nhau như từ khóa tìm kiếm (áp dụng cho username, first_name, last_name, email), vai trò (role) và trạng thái (status). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
         },
       ],
     },
@@ -519,7 +520,8 @@ const apiDocs = {
             type_id: 1,
             category_id: 2,
             product_name: "Cuộn len Cotton Milk 50g",
-            description: "Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...",
+            description:
+              "Len sợi mềm mại, an toàn cho da em bé. Thích hợp đan móc thú bông, áo len...",
             product_status: "active",
             variants: [
               {
@@ -557,44 +559,45 @@ const apiDocs = {
           summary: "Cập nhật sản phẩm và tùy chọn biến thể",
           auth: true,
           requestExample: {
-            "type_id": 2,
-            "category_id": 3,
-            "product_name": "Cuộn len Cotton Milk 50g (Bản nâng cấp)",
-            "description": "Len cotton milk 50g loại 1, sợi mềm mịn, không xù lông, thích hợp đan móc thú bông và áo len.",
-            "product_status": "active",
-            "variants": [
+            type_id: 2,
+            category_id: 3,
+            product_name: "Cuộn len Cotton Milk 50g (Bản nâng cấp)",
+            description:
+              "Len cotton milk 50g loại 1, sợi mềm mịn, không xù lông, thích hợp đan móc thú bông và áo len.",
+            product_status: "active",
+            variants: [
               {
-                "variant_id": 1,
-                "sku": "LEN-CM-RED-50G",
-                "price": 16000,
-                "color": "Đỏ",
-                "size": "50g",
-                "slug": "cuon-len-cotton-milk-50g-do",
-                "images": [
+                variant_id: 1,
+                sku: "LEN-CM-RED-50G",
+                price: 16000,
+                color: "Đỏ",
+                size: "50g",
+                slug: "cuon-len-cotton-milk-50g-do",
+                images: [
                   {
-                    "image_url": "https://example.com/images/len-red-1.jpg",
-                    "sort_order": 1
+                    image_url: "https://example.com/images/len-red-1.jpg",
+                    sort_order: 1,
                   },
                   {
-                    "image_url": "https://example.com/images/len-red-2.jpg",
-                    "sort_order": 2
-                  }
-                ]
+                    image_url: "https://example.com/images/len-red-2.jpg",
+                    sort_order: 2,
+                  },
+                ],
               },
               {
-                "sku": "LEN-CM-BLUE-50G",
-                "price": 15000,
-                "color": "Xanh Dương",
-                "size": "50g",
-                "stock_quantity": 100,
-                "images": [
+                sku: "LEN-CM-BLUE-50G",
+                price: 15000,
+                color: "Xanh Dương",
+                size: "50g",
+                stock_quantity: 100,
+                images: [
                   {
-                    "image_url": "https://example.com/images/len-blue-1.jpg",
-                    "sort_order": 1
-                  }
-                ]
-              }
-            ]
+                    image_url: "https://example.com/images/len-blue-1.jpg",
+                    sort_order: 1,
+                  },
+                ],
+              },
+            ],
           },
           successStatus: 200,
           successExample: {
@@ -705,50 +708,51 @@ const apiDocs = {
           summary: "Lọc sản phẩm theo nhiều tiêu chí",
           auth: false,
           requestExample: {
-            "keyword": "len cotton",
-            "category_ids": [1, 2],
-            "type_ids": [1],
-            "min_price": 10000,
-            "max_price": 50000,
-            "status": "active",
-            "page": 1,
-            "limit": 10
+            keyword: "len cotton",
+            category_ids: [1, 2],
+            type_ids: [1],
+            min_price: 10000,
+            max_price: 50000,
+            status: "active",
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc sản phẩm thành công",
-            "data": {
-              "products": [
+            success: true,
+            message: "Lọc sản phẩm thành công",
+            data: {
+              products: [
                 {
-                  "product_id": 1,
-                  "product_name": "Len Cotton Milk",
-                  "product_status": "active",
-                  "category_name": "Len Cotton",
-                  "type_name": "Len cuộn",
-                  "variants": [
+                  product_id: 1,
+                  product_name: "Len Cotton Milk",
+                  product_status: "active",
+                  category_name: "Len Cotton",
+                  type_name: "Len cuộn",
+                  variants: [
                     {
-                      "variant_id": 1,
-                      "sku": "L-COTTON-001",
-                      "slug": "len-cotton-milk-trang",
-                      "price": "25000.00",
-                      "color": "Trắng",
-                      "size": "M",
-                      "stock_quantity": 100,
-                      "images": []
-                    }
-                  ]
-                }
+                      variant_id: 1,
+                      sku: "L-COTTON-001",
+                      slug: "len-cotton-milk-trang",
+                      price: "25000.00",
+                      color: "Trắng",
+                      size: "M",
+                      stock_quantity: 100,
+                      images: [],
+                    },
+                  ],
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
-          notes: "Endpoint này hỗ trợ lọc sản phẩm theo nhiều tiêu chí khác nhau như từ khóa, danh mục, loại, khoảng giá và trạng thái. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó."
+          notes:
+            "Endpoint này hỗ trợ lọc sản phẩm theo nhiều tiêu chí khác nhau như từ khóa, danh mục, loại, khoảng giá và trạng thái. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
         },
       ],
     },
@@ -967,36 +971,38 @@ const apiDocs = {
           summary: "Lọc danh mục theo từ khóa - ADMIN",
           auth: true,
           requestExample: {
-            "keyword": "len cotton",
-            "parent_category_id": 1,
-            "page": 1,
-            "limit": 10
+            keyword: "len cotton",
+            parent_category_id: 1,
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc danh mục thành công",
-            "data": {
-              "categories": [
+            success: true,
+            message: "Lọc danh mục thành công",
+            data: {
+              categories: [
                 {
-                  "category_id": 2,
-                  "category_name": "Len Cotton",
-                  "description": "Các dòng len thành phần cotton mềm, mịn, ít xù sợi",
-                  "image_url": null,
-                  "parent_category_id": 1,
-                  "slug": "len-cotton",
-                  "parent_category_name": "Len đan"
-                }
+                  category_id: 2,
+                  category_name: "Len Cotton",
+                  description:
+                    "Các dòng len thành phần cotton mềm, mịn, ít xù sợi",
+                  image_url: null,
+                  parent_category_id: 1,
+                  slug: "len-cotton",
+                  parent_category_name: "Len đan",
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
-          notes: "Endpoint này cho phép admin lọc danh mục dựa trên từ khóa tìm kiếm (áp dụng cho category_name và description) và/hoặc theo danh mục cha. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
+          notes:
+            "Endpoint này cho phép admin lọc danh mục dựa trên từ khóa tìm kiếm (áp dụng cho category_name và description) và/hoặc theo danh mục cha. Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
         },
       ],
     },
@@ -1418,38 +1424,38 @@ const apiDocs = {
           summary: "Lọc voucher theo nhiều tiêu chí - ADMIN",
           auth: true,
           requestExample: {
-            "keyword": "WELCOME", 
-            "discount_types": ["percent", "fixed"],
-            "page": 1,
-            "limit": 10
+            keyword: "WELCOME",
+            discount_types: ["percent", "fixed"],
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc mã giảm giá thành công",
-            "data": {
-              "vouchers": [
+            success: true,
+            message: "Lọc mã giảm giá thành công",
+            data: {
+              vouchers: [
                 {
-                  "voucher_id": 1,
-                  "code": "WELCOME10",
-                  "voucher_name": "Giảm 10%",
-                  "discount_type": "percent",
-                  "value": "10.00",
-                  "minimum_value": "50000.00",
-                  "max_discount": "50000.00",
-                  "quantity": null,
-                  "used_count": 0,
-                  "start_date": null,
-                  "end_date": null
-                }
+                  voucher_id: 1,
+                  code: "WELCOME10",
+                  voucher_name: "Giảm 10%",
+                  discount_type: "percent",
+                  value: "10.00",
+                  minimum_value: "50000.00",
+                  max_discount: "50000.00",
+                  quantity: null,
+                  used_count: 0,
+                  start_date: null,
+                  end_date: null,
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
           notes:
             "Endpoint này hỗ trợ lọc voucher theo nhiều tiêu chí khác nhau như từ khóa (áp dụng cho code và voucher_name) và loại giảm giá (percent hoặc fixed). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
@@ -1630,44 +1636,41 @@ const apiDocs = {
           summary: "Cập nhật thông tin khuyến mãi - ADMIN",
           auth: true,
           requestExample: {
-            "title": "Flash Sale Len Đan Mùa Đông (Gia hạn)",
-            "discount_type": "percent",
-            "value": 25,
-            "min_order_value": 0,
-            "start_date": "2026-11-01T00:00:00Z",
-            "end_date": "2026-12-15T23:59:59Z",
-            "status": "active",
-            "applicable_products": [
-              { "product_id": 1 },
-              { "product_id": 3 }
-            ]
+            title: "Flash Sale Len Đan Mùa Đông (Gia hạn)",
+            discount_type: "percent",
+            value: 25,
+            min_order_value: 0,
+            start_date: "2026-11-01T00:00:00Z",
+            end_date: "2026-12-15T23:59:59Z",
+            status: "active",
+            applicable_products: [{ product_id: 1 }, { product_id: 3 }],
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Cập nhật khuyến mãi thành công",
-            "data": {
-              "promotion": {
-                "promotion_id": 11,
-                "title": "Flash Sale Len Đan Mùa Đông (Gia hạn)",
-                "discount_type": "percent",
-                "value": "25.00",
-                "min_order_value": "0.00",
-                "start_date": "2026-10-31T17:00:00.000Z",
-                "end_date": "2026-12-15T16:59:59.000Z",
-                "status": "active",
-                "applicable_products": [
+            success: true,
+            message: "Cập nhật khuyến mãi thành công",
+            data: {
+              promotion: {
+                promotion_id: 11,
+                title: "Flash Sale Len Đan Mùa Đông (Gia hạn)",
+                discount_type: "percent",
+                value: "25.00",
+                min_order_value: "0.00",
+                start_date: "2026-10-31T17:00:00.000Z",
+                end_date: "2026-12-15T16:59:59.000Z",
+                status: "active",
+                applicable_products: [
                   {
-                    "product_id": 1,
-                    "variant_id": null
+                    product_id: 1,
+                    variant_id: null,
                   },
                   {
-                    "product_id": 3,
-                    "variant_id": null
-                  }
-                ]
-              }
-            }
+                    product_id: 3,
+                    variant_id: null,
+                  },
+                ],
+              },
+            },
           },
           notes:
             "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
@@ -1680,8 +1683,8 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Xóa khuyến mãi thành công"
+            success: true,
+            message: "Xóa khuyến mãi thành công",
           },
         },
         {
@@ -1690,36 +1693,36 @@ const apiDocs = {
           summary: "Lọc khuyến mãi theo nhiều tiêu chí - ADMIN",
           auth: true,
           requestExample: {
-            "keyword": "Sale", 
-            "discount_types": ["fixed"],
-            "statuses": ["active"],
-            "page": 1,
-            "limit": 10
+            keyword: "Sale",
+            discount_types: ["fixed"],
+            statuses: ["active"],
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc khuyến mãi thành công",
-            "data": {
-              "promotions": [
+            success: true,
+            message: "Lọc khuyến mãi thành công",
+            data: {
+              promotions: [
                 {
-                  "promotion_id": 1,
-                  "title": "Sale hè rực rỡ",
-                  "discount_type": "fixed",
-                  "value": "5000.00",
-                  "min_order_value": "0.00",
-                  "start_date": "2026-05-31T17:00:00.000Z",
-                  "end_date": "2026-06-30T16:59:59.000Z",
-                  "status": "active"
-                }
+                  promotion_id: 1,
+                  title: "Sale hè rực rỡ",
+                  discount_type: "fixed",
+                  value: "5000.00",
+                  min_order_value: "0.00",
+                  start_date: "2026-05-31T17:00:00.000Z",
+                  end_date: "2026-06-30T16:59:59.000Z",
+                  status: "active",
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
           notes:
             "Endpoint này hỗ trợ lọc khuyến mãi theo nhiều tiêu chí khác nhau như từ khóa (áp dụng cho title), loại giảm giá (percent hoặc fixed) và trạng thái (active hoặc inactive). Các tham số đều là tùy chọn, nếu không cung cấp sẽ không áp dụng tiêu chí đó.",
@@ -1735,24 +1738,25 @@ const apiDocs = {
           summary: "Tạo đơn hàng mới",
           auth: true,
           requestExample: {
-            "phuong_xa_id": 1,
-            "dia_chi_giao_hang": "Quận 8, TP.HCM",
-            "ten_nguoi_nhan": "Người Nhận 1",
-            "sdt_nguoi_nhan": "0987654321",
-            "phieu_giam_gia_code": "WELCOME10", 
-            "phuong_thuc_thanh_toan": "COD"
+            phuong_xa_id: 1,
+            dia_chi_giao_hang: "Quận 8, TP.HCM",
+            ten_nguoi_nhan: "Người Nhận 1",
+            sdt_nguoi_nhan: "0987654321",
+            phieu_giam_gia_code: "WELCOME10",
+            phuong_thuc_thanh_toan: "COD",
           },
           successStatus: 201,
           successExample: {
-            "success": true,
-            "message": "Đặt hàng thành công",
-            "data": {
-              "order_id": "DH-20260616-0001",
-              "total_amount": 285000,
-              "payment_method": "COD"
-            }
+            success: true,
+            message: "Đặt hàng thành công",
+            data: {
+              order_id: "DH-20260616-0001",
+              total_amount: 285000,
+              payment_method: "COD",
+            },
           },
-          notes: "Giá trị total_amount trong response là số tiền cuối cùng sau khi đã áp dụng tất cả khuyến mãi (voucher, promotion) chứ không phải tổng tiền trước khuyến mãi. Điều này giúp frontend dễ dàng hiển thị số tiền khách hàng thực sự phải trả mà không cần phải tính toán lại từ đầu. Cần người dùng phải có ít nhất 1 sản phẩm trong giỏ hàng để đặt hàng thành công. Sau khi đặt hàng thành công, giỏ hàng của người dùng sẽ được tự động xóa sạch (nếu có) để tránh tình trạng đơn hàng cũ vẫn còn sản phẩm trong giỏ khi người dùng quay lại mua sắm tiếp.",
+          notes:
+            "Giá trị total_amount trong response là số tiền cuối cùng sau khi đã áp dụng tất cả khuyến mãi (voucher, promotion) chứ không phải tổng tiền trước khuyến mãi. Điều này giúp frontend dễ dàng hiển thị số tiền khách hàng thực sự phải trả mà không cần phải tính toán lại từ đầu. Cần người dùng phải có ít nhất 1 sản phẩm trong giỏ hàng để đặt hàng thành công. Sau khi đặt hàng thành công, giỏ hàng của người dùng sẽ được tự động xóa sạch (nếu có) để tránh tình trạng đơn hàng cũ vẫn còn sản phẩm trong giỏ khi người dùng quay lại mua sắm tiếp.",
         },
         {
           method: "POST",
@@ -1760,23 +1764,24 @@ const apiDocs = {
           summary: "Tạo đơn hàng mới với thanh toán MOMO",
           auth: true,
           requestExample: {
-            "phuong_xa_id": 1,
-            "dia_chi_giao_hang": "456 Đường Nguyễn Trãi, Quận 5, TP.HCM",
-            "ten_nguoi_nhan": "Người nhận 1",
-            "sdt_nguoi_nhan": "0901234567",
-            "phieu_giam_gia_code": null,
-            "phuong_thuc_thanh_toan": "MOMO" 
+            phuong_xa_id: 1,
+            dia_chi_giao_hang: "456 Đường Nguyễn Trãi, Quận 5, TP.HCM",
+            ten_nguoi_nhan: "Người nhận 1",
+            sdt_nguoi_nhan: "0901234567",
+            phieu_giam_gia_code: null,
+            phuong_thuc_thanh_toan: "MOMO",
           },
           successStatus: 201,
           successExample: {
-            "success": true,
-            "message": "Vui lòng thanh toán để hoàn tất đơn hàng",
-            "data": {
-              "order_id": "DH-20260616-0002",
-              "total_amount": 295000,
-              "payment_method": "MOMO",
-              "payUrl": "https://test-payment.momo.vn/v2/gateway/pay?t=TU9NT3xESC0yMDI2MDYxNi0wMDAy&s=a7e1971c61afb0860eed836c90bb89d0056bc0c173bb4925ab0fc027c2fc6e19"
-            }
+            success: true,
+            message: "Vui lòng thanh toán để hoàn tất đơn hàng",
+            data: {
+              order_id: "DH-20260616-0002",
+              total_amount: 295000,
+              payment_method: "MOMO",
+              payUrl:
+                "https://test-payment.momo.vn/v2/gateway/pay?t=TU9NT3xESC0yMDI2MDYxNi0wMDAy&s=a7e1971c61afb0860eed836c90bb89d0056bc0c173bb4925ab0fc027c2fc6e19",
+            },
           },
         },
         {
@@ -1787,18 +1792,18 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Hoàn tiền thành công",
-            "data": {
-              "partnerCode": "MOMO",
-              "orderId": "RF-DH-20260616-0006-1781675994563",
-              "requestId": "REQ-RF-DH-20260616-0006-1781675994563",
-              "amount": 90000,
-              "transId": 4763108949,
-              "resultCode": 0,
-              "message": "Thành công.",
-              "responseTime": 1781675997127
-            }
+            success: true,
+            message: "Hoàn tiền thành công",
+            data: {
+              partnerCode: "MOMO",
+              orderId: "RF-DH-20260616-0006-1781675994563",
+              requestId: "REQ-RF-DH-20260616-0006-1781675994563",
+              amount: 90000,
+              transId: 4763108949,
+              resultCode: 0,
+              message: "Thành công.",
+              responseTime: 1781675997127,
+            },
           },
         },
         {
@@ -1812,34 +1817,34 @@ const apiDocs = {
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy lịch sử đơn hàng thành công",
-            "data": {
-              "orders": [
+            success: true,
+            message: "Lấy lịch sử đơn hàng thành công",
+            data: {
+              orders: [
                 {
-                  "don_hang_id": "DH000008",
-                  "trang_thai": "cancelled",
-                  "tong_tien": "45000.00",
-                  "so_tien_giam": "0.00",
-                  "ten_nguoi_nhan": "Nguyễn Văn Huy",
-                  "dia_chi_giao_hang": "123 Đinh Tiên Hoàng"
+                  don_hang_id: "DH000008",
+                  trang_thai: "cancelled",
+                  tong_tien: "45000.00",
+                  so_tien_giam: "0.00",
+                  ten_nguoi_nhan: "Nguyễn Văn Huy",
+                  dia_chi_giao_hang: "123 Đinh Tiên Hoàng",
                 },
                 {
-                  "don_hang_id": "DH000003",
-                  "trang_thai": "completed",
-                  "tong_tien": "25000.00",
-                  "so_tien_giam": "0.00",
-                  "ten_nguoi_nhan": "Nguyễn Văn Huy",
-                  "dia_chi_giao_hang": "456 Đường Nguyễn Trãi"
-                }
+                  don_hang_id: "DH000003",
+                  trang_thai: "completed",
+                  tong_tien: "25000.00",
+                  so_tien_giam: "0.00",
+                  ten_nguoi_nhan: "Nguyễn Văn Huy",
+                  dia_chi_giao_hang: "456 Đường Nguyễn Trãi",
+                },
               ],
-              "pagination": {
-                "total_items": 2,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 2,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
         },
         {
@@ -1850,38 +1855,39 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "data": {
-              "order": {
-                "don_hang_id": "DH000008",
-                "nguoi_dung_id": 4,
-                "trang_thai": "cancelled",
-                "tong_tien": "45000.00",
-                "phieu_giam_gia_id": null,
-                "so_tien_giam": "0.00",
-                "idempotency_key": "key-008",
-                "phuong_xa_id": 3,
-                "dia_chi_giao_hang": "123 Đinh Tiên Hoàng",
-                "ten_nguoi_nhan": "Nguyễn Văn Huy",
-                "sdt_nguoi_nhan": "0909876543",
-                "items": [
+            success: true,
+            data: {
+              order: {
+                don_hang_id: "DH000008",
+                nguoi_dung_id: 4,
+                trang_thai: "cancelled",
+                tong_tien: "45000.00",
+                phieu_giam_gia_id: null,
+                so_tien_giam: "0.00",
+                idempotency_key: "key-008",
+                phuong_xa_id: 3,
+                dia_chi_giao_hang: "123 Đinh Tiên Hoàng",
+                ten_nguoi_nhan: "Nguyễn Văn Huy",
+                sdt_nguoi_nhan: "0909876543",
+                items: [
                   {
-                    "chi_tiet_don_hang_id": 6,
-                    "bien_the_id": 5,
-                    "ten_san_pham": "Len Sợi Nhung Đũa - Xanh Rêu",
-                    "gia": "45000.00",
-                    "so_luong": 1
-                  }
+                    chi_tiet_don_hang_id: 6,
+                    bien_the_id: 5,
+                    ten_san_pham: "Len Sợi Nhung Đũa - Xanh Rêu",
+                    gia: "45000.00",
+                    so_luong: 1,
+                  },
                 ],
-                "payment": {
-                  "phuong_thuc": "COD",
-                  "trang_thai": "failed",
-                  "ma_tham_chieu": null
-                }
-              }
-            }
+                payment: {
+                  phuong_thuc: "COD",
+                  trang_thai: "failed",
+                  ma_tham_chieu: null,
+                },
+              },
+            },
           },
-          notes: "Mã đơn hàng (don_hang_id) có định dạng DH + ngày tháng năm + số thứ tự chạy trong ngày. Ví dụ đơn hàng đầu tiên tạo vào ngày 16/06/2026 sẽ có mã DH-20260616-0001, đơn hàng thứ 15 tạo cùng ngày sẽ có mã DH-20260616-0015. Trạng thái đơn hàng có thể là: pending (đang xử lý), completed (hoàn thành), cancelled (đã hủy). Trạng thái thanh toán có thể là: pending (đang chờ), completed (thành công), failed (thất bại).",
+          notes:
+            "Mã đơn hàng (don_hang_id) có định dạng DH + ngày tháng năm + số thứ tự chạy trong ngày. Ví dụ đơn hàng đầu tiên tạo vào ngày 16/06/2026 sẽ có mã DH-20260616-0001, đơn hàng thứ 15 tạo cùng ngày sẽ có mã DH-20260616-0015. Trạng thái đơn hàng có thể là: pending (đang xử lý), completed (hoàn thành), cancelled (đã hủy). Trạng thái thanh toán có thể là: pending (đang chờ), completed (thành công), failed (thất bại).",
         },
         {
           method: "POST",
@@ -1891,8 +1897,8 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Đã thêm 1 sản phẩm vào giỏ hàng."
+            success: true,
+            message: "Đã thêm 1 sản phẩm vào giỏ hàng.",
           },
         },
         {
@@ -1906,34 +1912,34 @@ const apiDocs = {
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách đơn hàng thành công",
-            "data": {
-              "orders": [
+            success: true,
+            message: "Lấy danh sách đơn hàng thành công",
+            data: {
+              orders: [
                 {
-                  "don_hang_id": "DH000013",
-                  "nguoi_dung_id": 5,
-                  "trang_thai": "completed",
-                  "tong_tien": "180000.00",
-                  "ten_nguoi_nhan": "Nguyễn Văn Long",
-                  "sdt_nguoi_nhan": "0912345678"
+                  don_hang_id: "DH000013",
+                  nguoi_dung_id: 5,
+                  trang_thai: "completed",
+                  tong_tien: "180000.00",
+                  ten_nguoi_nhan: "Nguyễn Văn Long",
+                  sdt_nguoi_nhan: "0912345678",
                 },
                 {
-                  "don_hang_id": "DH000012",
-                  "nguoi_dung_id": 12,
-                  "trang_thai": "shipping",
-                  "tong_tien": "350000.00",
-                  "ten_nguoi_nhan": "Đỗ Hoàng Việt",
-                  "sdt_nguoi_nhan": "0989012345"
+                  don_hang_id: "DH000012",
+                  nguoi_dung_id: 12,
+                  trang_thai: "shipping",
+                  tong_tien: "350000.00",
+                  ten_nguoi_nhan: "Đỗ Hoàng Việt",
+                  sdt_nguoi_nhan: "0989012345",
                 },
               ],
-              "pagination": {
-                "total_items": 12,
-                "total_pages": 2,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 12,
+                total_pages: 2,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
         },
         {
@@ -1944,36 +1950,36 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "data": {
-              "order": {
-                "don_hang_id": "DH000004",
-                "nguoi_dung_id": 5,
-                "trang_thai": "pending",
-                "tong_tien": "240000.00",
-                "phieu_giam_gia_id": null,
-                "so_tien_giam": "0.00",
-                "idempotency_key": "key-004",
-                "phuong_xa_id": 2,
-                "dia_chi_giao_hang": "789 Đường Lê Lợi",
-                "ten_nguoi_nhan": "Nguyễn Văn Long",
-                "sdt_nguoi_nhan": "0912345678",
-                "items": [
+            success: true,
+            data: {
+              order: {
+                don_hang_id: "DH000004",
+                nguoi_dung_id: 5,
+                trang_thai: "pending",
+                tong_tien: "240000.00",
+                phieu_giam_gia_id: null,
+                so_tien_giam: "0.00",
+                idempotency_key: "key-004",
+                phuong_xa_id: 2,
+                dia_chi_giao_hang: "789 Đường Lê Lợi",
+                ten_nguoi_nhan: "Nguyễn Văn Long",
+                sdt_nguoi_nhan: "0912345678",
+                items: [
                   {
-                    "chi_tiet_don_hang_id": 2,
-                    "bien_the_id": 2,
-                    "ten_san_pham": "Kim Móc Cán Dẻo Tulip - 2.0mm",
-                    "gia": "120000.00",
-                    "so_luong": 2
-                  }
+                    chi_tiet_don_hang_id: 2,
+                    bien_the_id: 2,
+                    ten_san_pham: "Kim Móc Cán Dẻo Tulip - 2.0mm",
+                    gia: "120000.00",
+                    so_luong: 2,
+                  },
                 ],
-                "payment": {
-                  "phuong_thuc": "COD",
-                  "trang_thai": "pending",
-                  "ma_tham_chieu": null
-                }
-              }
-            }
+                payment: {
+                  phuong_thuc: "COD",
+                  trang_thai: "pending",
+                  ma_tham_chieu: null,
+                },
+              },
+            },
           },
         },
         {
@@ -1982,14 +1988,15 @@ const apiDocs = {
           summary: "Cập nhật trạng thái đơn hàng - ADMIN",
           auth: true,
           requestExample: {
-            "status": "processing"
+            status: "processing",
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Cập nhật trạng thái đơn hàng thành công"
+            success: true,
+            message: "Cập nhật trạng thái đơn hàng thành công",
           },
-          notes: "Trạng thái đơn hàng có thể được cập nhật lần lượt theo thứ tự: pending -> processing -> shipping -> completed. Hoặc có thể chuyển trực tiếp từ trạng thái pending sang cancelled nếu muốn hủy đơn hàng.",
+          notes:
+            "Trạng thái đơn hàng có thể được cập nhật lần lượt theo thứ tự: pending -> processing -> shipping -> completed. Hoặc có thể chuyển trực tiếp từ trạng thái pending sang cancelled nếu muốn hủy đơn hàng.",
         },
         {
           method: "POST",
@@ -1997,37 +2004,38 @@ const apiDocs = {
           summary: "Lọc đơn hàng theo trạng thái và khoảng thời gian - ADMIN",
           auth: true,
           requestExample: {
-            "keyword": "Người", 
-            "statuses": ["pending", "processing"],
-            "page": 1,
-            "limit": 10
+            keyword: "Người",
+            statuses: ["pending", "processing"],
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lọc đơn hàng thành công",
-            "data": {
-              "orders": [
+            success: true,
+            message: "Lọc đơn hàng thành công",
+            data: {
+              orders: [
                 {
-                  "don_hang_id": "DH-20260616-0001",
-                  "nguoi_dung_id": 4,
-                  "trang_thai": "pending",
-                  "tong_tien": "285000.00",
-                  "ten_nguoi_nhan": "Người Nhận 1",
-                  "sdt_nguoi_nhan": "0987654321"
-                }
+                  don_hang_id: "DH-20260616-0001",
+                  nguoi_dung_id: 4,
+                  trang_thai: "pending",
+                  tong_tien: "285000.00",
+                  ten_nguoi_nhan: "Người Nhận 1",
+                  sdt_nguoi_nhan: "0987654321",
+                },
               ],
-              "pagination": {
-                "total_items": 1,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
-          notes: "API này cho phép admin lọc đơn hàng dựa trên trạng thái (có thể chọn nhiều trạng thái cùng lúc) và từ khóa tìm kiếm (có thể là tên người nhận hoặc số điện thoại).",
+          notes:
+            "API này cho phép admin lọc đơn hàng dựa trên trạng thái (có thể chọn nhiều trạng thái cùng lúc) và từ khóa tìm kiếm (có thể là tên người nhận hoặc số điện thoại).",
         },
-      ]
+      ],
     },
     {
       name: "Workshop",
@@ -2038,43 +2046,44 @@ const apiDocs = {
           summary: "Lọc workshop theo nhiều tiêu chí - ADMIN",
           auth: true,
           requestExample: {
-            "keyword": "Hà Nội",
-            "status": "active",
-            "page": 1,
-            "limit": 10
+            keyword: "Hà Nội",
+            status: "active",
+            page: 1,
+            limit: 10,
           },
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Lấy danh sách Workshop thành công",
-            "data": {
-              "workshops": [
+            success: true,
+            message: "Lấy danh sách Workshop thành công",
+            data: {
+              workshops: [
                 {
-                  "workshop_id": 7,
-                  "product_id": 3,
-                  "title": "Móc thảm tròn phòng ngủ từ sợi nhung siêu to",
-                  "location": "Hà Nội",
-                  "status": "active",
-                  "category_id": 10
+                  workshop_id: 7,
+                  product_id: 3,
+                  title: "Móc thảm tròn phòng ngủ từ sợi nhung siêu to",
+                  location: "Hà Nội",
+                  status: "active",
+                  category_id: 10,
                 },
                 {
-                  "workshop_id": 2,
-                  "product_id": 2,
-                  "title": "Học móc len nâng cao Tulip Nhật",
-                  "location": "Hà Nội",
-                  "status": "active",
-                  "category_id": 5
-                }
+                  workshop_id: 2,
+                  product_id: 2,
+                  title: "Học móc len nâng cao Tulip Nhật",
+                  location: "Hà Nội",
+                  status: "active",
+                  category_id: 5,
+                },
               ],
-              "pagination": {
-                "total_items": 2,
-                "total_pages": 1,
-                "current_page": 1,
-                "limit": 10
-              }
-            }
+              pagination: {
+                total_items: 2,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
           },
-          notes: "User đăng ký tham gia workshop thông qua API (POST /api/cart) và điền thông tin cá nhân thông qua API (POST /api/orders).",
+          notes:
+            "User đăng ký tham gia workshop thông qua API (POST /api/cart) và điền thông tin cá nhân thông qua API (POST /api/orders).",
         },
         {
           method: "POST",
@@ -2082,95 +2091,100 @@ const apiDocs = {
           summary: "Tạo workshop mới - ADMIN",
           auth: true,
           requestExample: {
-            "title": "Workshop Đan Khăn Len Mùa Đông",
-            "description": "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
-            "location": "The Coffee House, Quận 1, TP.HCM",
-            "category_id": 7,
-            "status": "active",
-            "sessions": [
+            title: "Workshop Đan Khăn Len Mùa Đông",
+            description:
+              "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
+            location: "The Coffee House, Quận 1, TP.HCM",
+            category_id: 7,
+            status: "active",
+            sessions: [
               {
-                "session_name": "Ca Sáng (Thứ 7)",
-                "price": 350000,
-                "capacity": 15,
-                "start_date": "2026-10-15T08:00:00Z",
-                "end_date": "2026-10-15T11:30:00Z",
-                "status": "open",
-                "images": [
+                session_name: "Ca Sáng (Thứ 7)",
+                price: 350000,
+                capacity: 15,
+                start_date: "2026-10-15T08:00:00Z",
+                end_date: "2026-10-15T11:30:00Z",
+                status: "open",
+                images: [
                   {
-                    "image_url": "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
-                    "sort_order": 1
-                  }
-                ]
+                    image_url:
+                      "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
+                    sort_order: 1,
+                  },
+                ],
               },
               {
-                "session_name": "Ca Chiều (Thứ 7)",
-                "price": 350000,
-                "capacity": 20,
-                "start_date": "2026-10-15T14:00:00Z",
-                "end_date": "2026-10-15T17:30:00Z",
-                "status": "open",
-                "images": [
+                session_name: "Ca Chiều (Thứ 7)",
+                price: 350000,
+                capacity: 20,
+                start_date: "2026-10-15T14:00:00Z",
+                end_date: "2026-10-15T17:30:00Z",
+                status: "open",
+                images: [
                   {
-                    "image_url": "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
-                    "sort_order": 1
-                  }
-                ]
-              }
-            ]
+                    image_url:
+                      "https://noithatkendesign.vn/storage/app/media/uploaded-files/a2-cach-to-chuc-buoi-workshop-thanh-cong.jpg",
+                    sort_order: 1,
+                  },
+                ],
+              },
+            ],
           },
           successStatus: 201,
           responseExample: {
-            "success": true,
-            "message": "Tạo Workshop thành công",
-            "data": {
-              "workshop": {
-                "workshop_id": 11,
-                "product_id": 6,
-                "title": "Workshop Đan Khăn Len Mùa Đông",
-                "description": "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
-                "location": "The Coffee House, Quận 1, TP.HCM",
-                "category_id": 7,
-                "status": "active",
-                "sessions": [
+            success: true,
+            message: "Tạo Workshop thành công",
+            data: {
+              workshop: {
+                workshop_id: 11,
+                product_id: 6,
+                title: "Workshop Đan Khăn Len Mùa Đông",
+                description:
+                  "Hướng dẫn người mới bắt đầu cầm kim đan và hoàn thiện một chiếc khăn len cơ bản.",
+                location: "The Coffee House, Quận 1, TP.HCM",
+                category_id: 7,
+                status: "active",
+                sessions: [
                   {
-                    "variant_id": 11,
-                    "start_date": "2026-10-15T01:00:00.000Z",
-                    "end_date": "2026-10-15T04:30:00.000Z",
-                    "status": "open",
-                    "sku": "WS6-2E4U",
-                    "slug": "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
-                    "price": "350000.00",
-                    "session_name": "Ca Sáng (Thứ 7)",
-                    "capacity": 15,
-                    "images": [
+                    variant_id: 11,
+                    start_date: "2026-10-15T01:00:00.000Z",
+                    end_date: "2026-10-15T04:30:00.000Z",
+                    status: "open",
+                    sku: "WS6-2E4U",
+                    slug: "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
+                    price: "350000.00",
+                    session_name: "Ca Sáng (Thứ 7)",
+                    capacity: 15,
+                    images: [
                       {
-                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
-                        "sort_order": 1
-                      }
-                    ]
+                        image_url: "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        sort_order: 1,
+                      },
+                    ],
                   },
                   {
-                    "variant_id": 12,
-                    "start_date": "2026-10-15T07:00:00.000Z",
-                    "end_date": "2026-10-15T10:30:00.000Z",
-                    "status": "open",
-                    "sku": "WS6-7NRA",
-                    "slug": "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
-                    "price": "350000.00",
-                    "session_name": "Ca Chiều (Thứ 7)",
-                    "capacity": 20,
-                    "images": [
+                    variant_id: 12,
+                    start_date: "2026-10-15T07:00:00.000Z",
+                    end_date: "2026-10-15T10:30:00.000Z",
+                    status: "open",
+                    sku: "WS6-7NRA",
+                    slug: "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
+                    price: "350000.00",
+                    session_name: "Ca Chiều (Thứ 7)",
+                    capacity: 20,
+                    images: [
                       {
-                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
-                        "sort_order": 1
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
+                        image_url: "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        sort_order: 1,
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
           },
-          notes: "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
+          notes:
+            "Các trường không bắt buộc có thể bỏ qua nếu không muốn cập nhật. Ví dụ nếu chỉ muốn cập nhật status thì payload có thể chỉ gồm { status: 'inactive' }",
         },
         {
           method: "PUT",
@@ -2178,101 +2192,101 @@ const apiDocs = {
           summary: "Cập nhật thông tin workshop - ADMIN",
           auth: true,
           requestExample: {
-            "title": "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
-            "description": "Thêm ưu đãi tặng len cho học viên.",
-            "location": "The Coffee House, Quận 1, TP.HCM",
-            "category_id": 7,
-            "status": "active",
-            "sessions": [
+            title: "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
+            description: "Thêm ưu đãi tặng len cho học viên.",
+            location: "The Coffee House, Quận 1, TP.HCM",
+            category_id: 7,
+            status: "active",
+            sessions: [
               {
-                "variant_id": 11, 
-                "session_name": "Ca Sáng (Thứ 7) - Update",
-                "price": 300000,
-                "capacity": 10,
-                "start_date": "2026-10-15T08:00:00Z",
-                "end_date": "2026-10-15T11:30:00Z",
-                "status": "open",
-                "images": [] 
+                variant_id: 11,
+                session_name: "Ca Sáng (Thứ 7) - Update",
+                price: 300000,
+                capacity: 10,
+                start_date: "2026-10-15T08:00:00Z",
+                end_date: "2026-10-15T11:30:00Z",
+                status: "open",
+                images: [],
               },
               {
-                "session_name": "Ca Tối (Mở thêm)",
-                "price": 350000,
-                "capacity": 15,
-                "start_date": "2026-10-15T19:00:00Z",
-                "end_date": "2026-10-15T21:30:00Z",
-                "status": "open",
-                "images": [
+                session_name: "Ca Tối (Mở thêm)",
+                price: 350000,
+                capacity: 15,
+                start_date: "2026-10-15T19:00:00Z",
+                end_date: "2026-10-15T21:30:00Z",
+                status: "open",
+                images: [
                   {
-                    "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
-                    "sort_order": 1
-                  }
-                ]
-              }
-            ]
+                    image_url: "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                    sort_order: 1,
+                  },
+                ],
+              },
+            ],
           },
           successStatus: 200,
           responseExample: {
-            "success": true,
-            "message": "Cập nhật Workshop thành công",
-            "data": {
-              "workshop": {
-                "workshop_id": 11,
-                "product_id": 6,
-                "title": "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
-                "description": "Thêm ưu đãi tặng len cho học viên.",
-                "location": "The Coffee House, Quận 1, TP.HCM",
-                "category_id": 7,
-                "status": "active",
-                "sessions": [
+            success: true,
+            message: "Cập nhật Workshop thành công",
+            data: {
+              workshop: {
+                workshop_id: 11,
+                product_id: 6,
+                title: "Workshop Đan Khăn Len Mùa Đông (Đã Cập Nhật)",
+                description: "Thêm ưu đãi tặng len cho học viên.",
+                location: "The Coffee House, Quận 1, TP.HCM",
+                category_id: 7,
+                status: "active",
+                sessions: [
                   {
-                    "variant_id": 11,
-                    "start_date": "2026-10-15T01:00:00.000Z",
-                    "end_date": "2026-10-15T04:30:00.000Z",
-                    "status": "open",
-                    "sku": "WS6-2E4U",
-                    "slug": "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
-                    "price": "300000.00",
-                    "session_name": "Ca Sáng (Thứ 7) - Update",
-                    "capacity": 10,
-                    "images": []
+                    variant_id: 11,
+                    start_date: "2026-10-15T01:00:00.000Z",
+                    end_date: "2026-10-15T04:30:00.000Z",
+                    status: "open",
+                    sku: "WS6-2E4U",
+                    slug: "workshop-an-khan-len-mua-ong-ca-sang-thu-7-1336",
+                    price: "300000.00",
+                    session_name: "Ca Sáng (Thứ 7) - Update",
+                    capacity: 10,
+                    images: [],
                   },
                   {
-                    "variant_id": 12,
-                    "start_date": "2026-10-15T07:00:00.000Z",
-                    "end_date": "2026-10-15T10:30:00.000Z",
-                    "status": "open",
-                    "sku": "WS6-7NRA",
-                    "slug": "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
-                    "price": "350000.00",
-                    "session_name": "Ca Chiều (Thứ 7)",
-                    "capacity": 20,
-                    "images": [
+                    variant_id: 12,
+                    start_date: "2026-10-15T07:00:00.000Z",
+                    end_date: "2026-10-15T10:30:00.000Z",
+                    status: "open",
+                    sku: "WS6-7NRA",
+                    slug: "workshop-an-khan-len-mua-ong-ca-chieu-thu-7-2819",
+                    price: "350000.00",
+                    session_name: "Ca Chiều (Thứ 7)",
+                    capacity: 20,
+                    images: [
                       {
-                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
-                        "sort_order": 1
-                      }
-                    ]
+                        image_url: "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        sort_order: 1,
+                      },
+                    ],
                   },
                   {
-                    "variant_id": 13,
-                    "start_date": "2026-10-15T12:00:00.000Z",
-                    "end_date": "2026-10-15T14:30:00.000Z",
-                    "status": "open",
-                    "sku": "WS6-KLW5",
-                    "slug": "workshop-an-khan-len-mua-ong-a-cap-nhat-ca-toi-mo-them-9989",
-                    "price": "350000.00",
-                    "session_name": "Ca Tối (Mở thêm)",
-                    "capacity": 15,
-                    "images": [
+                    variant_id: 13,
+                    start_date: "2026-10-15T12:00:00.000Z",
+                    end_date: "2026-10-15T14:30:00.000Z",
+                    status: "open",
+                    sku: "WS6-KLW5",
+                    slug: "workshop-an-khan-len-mua-ong-a-cap-nhat-ca-toi-mo-them-9989",
+                    price: "350000.00",
+                    session_name: "Ca Tối (Mở thêm)",
+                    capacity: 15,
+                    images: [
                       {
-                        "image_url": "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
-                        "sort_order": 1
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
+                        image_url: "https://i.ibb.co/F4qG2j4p/WS6-2-E4-U-0.jpg",
+                        sort_order: 1,
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
           },
         },
         {
@@ -2283,16 +2297,93 @@ const apiDocs = {
           requestExample: null,
           successStatus: 200,
           successExample: {
-            "success": true,
-            "message": "Xóa Workshop thành công"
+            success: true,
+            message: "Xóa Workshop thành công",
           },
         },
-      ]
+      ],
+    },
+    {
+      name: "Wishlist",
+      endpoints: [
+        {
+          method: "POST",
+          path: "/api/wishlist/toggle",
+          summary: "Thêm hoặc xóa sản phẩm khỏi danh sách yêu thích",
+          auth: true,
+          requestExample: {
+            variant_id: 2,
+          },
+          successStatus: 200,
+          successExample: [
+            {
+              success: true,
+              message: "Đã thêm vào danh sách yêu thích",
+              action: "added",
+            },
+            {
+              success: true,
+              message: "Đã gỡ khỏi danh sách yêu thích",
+              action: "removed",
+            },
+          ],
+          notes:
+            "Nếu sản phẩm chưa có trong wishlist thì sẽ được thêm vào và trả về action: 'added'. Nếu sản phẩm đã có trong wishlist thì sẽ bị xóa đi và trả về action: 'removed'.",
+        },
+        {
+          method: "GET",
+          path: "/api/wishlist",
+          summary: "Lấy danh sách sản phẩm yêu thích của người dùng",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách yêu thích thành công",
+            "data": {
+              "items": [
+                {
+                  "variant_id": 2,
+                  "product_name": "Kim Móc Cán Dẻo Tulip",
+                  "color": "Vàng Kim",
+                  "price": "120000.00",
+                  "slug": "kim-moc-tulip-20mm",
+                  "stock_quantity": 150,
+                  "image_url": null
+                }
+              ],
+              "pagination": {
+                "total_items": 1,
+                "total_pages": 1,
+                "current_page": 1,
+                "limit": 10
+              }
+            }
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/wishlist/trigger-emails",
+          summary: "Gửi email nhắc nhở người dùng về sản phẩm yêu thích - ADMIN",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Đã quét và gửi thành công 6 email thông báo."
+          },
+          notes: "API này sẽ được chạy định kỳ mỗi 5-10 phút một lần để tự động gửi email nhắc nhở người dùng về các sản phẩm trong wishlist của họ. Email sẽ chỉ gửi 1 lần duy nhất hoặc có thể được gửi lại nếu Admin cập nhật lại nội dung email",
+        }
+      ],
     },
   ],
 };
 
-const renderCodeBlock = (value) => `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
+const renderCodeBlock = (value) =>
+  `<pre class="code">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`;
 
 const renderDocsPage = () => {
   const sections = apiDocs.groups

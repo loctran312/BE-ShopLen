@@ -14,50 +14,41 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
 
 const parseInteger = (value, fieldName) => {
     const parsed = Number(value);
-
     if (!Number.isInteger(parsed) || parsed < 0) {
         const error = new Error(`${fieldName} không hợp lệ`);
         error.statusCode = 400;
         throw error;
     }
-
     return parsed;
 };
 
 const parsePositiveInteger = (value, fieldName) => {
     const parsed = parseInteger(value, fieldName);
-
     if (parsed <= 0) {
         const error = new Error(`${fieldName} không hợp lệ`);
         error.statusCode = 400;
         throw error;
     }
-
     return parsed;
 };
 
 const parsePrice = (value) => {
     const parsed = Number(value);
-
     if (!Number.isFinite(parsed) || parsed < 0) {
         const error = new Error('price không hợp lệ');
         error.statusCode = 400;
         throw error;
     }
-
     return parsed;
 };
 
-
 const normalizeCategoryOrTypeId = (value, fieldName) => {
     const parsed = Number(value);
-
     if (!Number.isInteger(parsed) || parsed <= 0) {
         const error = new Error(`${fieldName} không hợp lệ`);
         error.statusCode = 400;
         throw error;
     }
-
     return parsed;
 };
 
@@ -65,7 +56,6 @@ const validateProductStatus = (value) => {
     if (value === undefined || value === null || value === '') {
         return 'active';
     }
-
     return normalizeText(value).toLowerCase();
 };
 
@@ -75,19 +65,15 @@ const buildVariantBaseSlug = (productName, variant) => {
         || (variant.size ? `${productName} ${variant.size}` : productName);
 
     const slug = slugifyText(slugSource);
-
     if (!slug) {
         const error = new Error('Không thể tạo slug cho biến thể');
         error.statusCode = 400;
         throw error;
     }
-
     return slug;
 };
 
-// Hàm hỗ trợ: Sinh SKU tự động
 const generateSKU = (prefix, id) => {
-    // Tạo 4 ký tự ngẫu nhiên (chữ + số)
     const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `${prefix}${id}-${randomStr}`;
 };
@@ -104,37 +90,25 @@ const generateUniqueVariantSlug = async (baseSlug, ignoreVariantId = null) => {
         : [baseSlug, `${baseSlug}-%`];
 
     const query = ignoreVariantId
-        ? `SELECT slug
-               FROM bien_the_san_pham
-               WHERE (slug = $1 OR slug LIKE $2)
-                  AND bien_the_id <> $3`
-        : `SELECT slug
-               FROM bien_the_san_pham
-               WHERE slug = $1 OR slug LIKE $2`;
+        ? `SELECT slug FROM bien_the_san_pham WHERE (slug = $1 OR slug LIKE $2) AND bien_the_id <> $3`
+        : `SELECT slug FROM bien_the_san_pham WHERE slug = $1 OR slug LIKE $2`;
 
     const result = await pool.query(query, params);
     const usedSlugs = new Set(result.rows.map((row) => row.slug));
 
-    if (!usedSlugs.has(baseSlug)) {
-        return baseSlug;
-    }
+    if (!usedSlugs.has(baseSlug)) return baseSlug;
 
     let suffix = 2;
     let candidate = `${baseSlug}-${suffix}`;
-
     while (usedSlugs.has(candidate)) {
         suffix += 1;
         candidate = `${baseSlug}-${suffix}`;
     }
-
     return candidate;
 };
 
 const normalizeImageItems = (images, variantIndex) => {
-    if (images === undefined || images === null) {
-        return null;
-    }
-
+    if (images === undefined || images === null) return null;
     if (!Array.isArray(images)) {
         const error = new Error(`images ở biến thể ${variantIndex + 1} phải là mảng`);
         error.statusCode = 400;
@@ -149,7 +123,6 @@ const normalizeImageItems = (images, variantIndex) => {
         }
 
         const imageUrl = normalizeText(image.image_url);
-
         if (!imageUrl) {
             const error = new Error(`image_url ở biến thể ${variantIndex + 1}, vị trí ${imageIndex + 1} không được để trống`);
             error.statusCode = 400;
@@ -160,10 +133,7 @@ const normalizeImageItems = (images, variantIndex) => {
             ? imageIndex + 1
             : parseInteger(image.sort_order, 'sort_order');
 
-        return {
-            image_url: imageUrl,
-            sort_order: sortOrder,
-        };
+        return { image_url: imageUrl, sort_order: sortOrder };
     });
 };
 
@@ -184,15 +154,7 @@ const normalizeVariantPayload = (variant, index) => {
     const slug = normalizeText(variant.slug) || null;
     const images = normalizeImageItems(variant.images, index);
 
-    return {
-        variant_id: variantId,
-        sku,
-        price,
-        color,
-        size,
-        slug,
-        images,
-    };
+    return { variant_id: variantId, sku, price, color, size, slug, images, stock_quantity: variant.stock_quantity };
 };
 
 const getProductTypeById = (typeId) => pool.query(
@@ -211,16 +173,12 @@ const buildProductsList = async ({ page, limit }) => {
     const [countResult, productsResult] = await Promise.all([
         pool.query('SELECT COUNT(*)::int AS total_items FROM san_pham'),
         pool.query(
-            `SELECT p.san_pham_id AS product_id,
-                    p.ten_san_pham AS product_name,
-                    p.trang_thai_san_pham AS product_status,
-                    c.ten_danh_muc AS category_name,
-                    pt.ten_loai AS type_name
+            `SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.trang_thai_san_pham AS product_status,
+                    c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
              FROM san_pham p
              LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
              LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
-             ORDER BY p.san_pham_id DESC
-             LIMIT $1 OFFSET $2`,
+             ORDER BY p.san_pham_id DESC LIMIT $1 OFFSET $2`,
             [limit, offset]
         ),
     ]);
@@ -228,95 +186,44 @@ const buildProductsList = async ({ page, limit }) => {
     const products = productsResult.rows;
 
     if (products.length === 0) {
-        return {
-            products: [],
-            pagination: {
-                total_items: countResult.rows[0].total_items,
-                total_pages: Math.max(1, Math.ceil(countResult.rows[0].total_items / limit)),
-                current_page: page,
-                limit,
-            },
-        };
+        return { products: [], pagination: { total_items: countResult.rows[0].total_items, total_pages: Math.max(1, Math.ceil(countResult.rows[0].total_items / limit)), current_page: page, limit } };
     }
 
     const productIds = products.map((product) => product.product_id);
 
     const variantsResult = await pool.query(
-        `SELECT pv.san_pham_id AS product_id,
-                pv.bien_the_id AS variant_id,
-                pv.sku,
-                pv.slug,
-                pv.gia AS price,
-                pv.mau_sac AS color,
-                pv.kich_co AS size,
-                COALESCE(tk.so_luong_ton, 0) AS stock_quantity, /* THÊM DÒNG NÀY: Lấy tồn kho */
-                COALESCE(
-                    json_agg(
-                        json_build_object(
-                            'image_id', vi.hinh_anh_id,
-                            'image_url', vi.duong_dan_anh,
-                            'sort_order', vi.thu_tu_hien_thi
-                        )
-                        ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC
-                    ) FILTER (WHERE vi.hinh_anh_id IS NOT NULL),
-                    '[]'
-                ) AS images
+        `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
+                COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
+                COALESCE(json_agg(json_build_object('image_id', vi.hinh_anh_id, 'image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images
          FROM bien_the_san_pham pv
-         LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id /* THÊM DÒNG NÀY: Kết nối bảng ton_kho */
+         LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
          WHERE pv.san_pham_id = ANY($1::int[])
-         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co, tk.so_luong_ton /* THÊM tk.so_luong_ton VÀO GROUP BY */
+         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co, tk.so_luong_ton
          ORDER BY pv.san_pham_id DESC, pv.bien_the_id ASC`,
         [productIds]
     );
 
     const variantsByProductId = new Map();
-
     for (const row of variantsResult.rows) {
-        if (!variantsByProductId.has(row.product_id)) {
-            variantsByProductId.set(row.product_id, []);
-        }
-
+        if (!variantsByProductId.has(row.product_id)) variantsByProductId.set(row.product_id, []);
         variantsByProductId.get(row.product_id).push({
-            variant_id: row.variant_id,
-            sku: row.sku,
-            slug: row.slug,
-            price: row.price,
-            color: row.color,
-            size: row.size,
-            stock_quantity: Number(row.stock_quantity),
-            images: row.images || [],
+            variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || [],
         });
     }
 
     return {
         products: products.map((product) => ({
-            product_id: product.product_id,
-            product_name: product.product_name,
-            category_name: product.category_name,
-            type_name: product.type_name,
-            product_status: product.product_status,
+            ...product,
             variants: variantsByProductId.get(product.product_id) || [],
         })),
-        pagination: {
-            total_items: countResult.rows[0].total_items,
-            total_pages: Math.max(1, Math.ceil(countResult.rows[0].total_items / limit)),
-            current_page: page,
-            limit,
-        },
+        pagination: { total_items: countResult.rows[0].total_items, total_pages: Math.max(1, Math.ceil(countResult.rows[0].total_items / limit)), current_page: page, limit },
     };
 };
 
 const buildProductDetail = async (productId) => {
     const productResult = await pool.query(
-        `SELECT p.san_pham_id AS product_id,
-                        p.loai_san_pham_id AS type_id,
-                        p.danh_muc_id AS category_id,
-                        p.ten_san_pham AS product_name,
-                        p.mo_ta AS description,
-                        p.trang_thai_san_pham AS product_status,
-                        c.ten_danh_muc AS category_name,
-                        pt.ten_loai AS type_name
+        `SELECT p.san_pham_id AS product_id, p.loai_san_pham_id AS type_id, p.danh_muc_id AS category_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status, c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
          FROM san_pham p
          LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
          LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
@@ -324,21 +231,10 @@ const buildProductDetail = async (productId) => {
         [productId]
     );
 
-    if (productResult.rows.length === 0) {
-        return null;
-    }
+    if (productResult.rows.length === 0) return null;
 
     const variantResult = await pool.query(
-        `SELECT pv.bien_the_id AS variant_id,
-                        pv.sku,
-                        pv.slug,
-                        pv.gia AS price,
-                        pv.mau_sac AS color,
-                        pv.kich_co AS size,
-                        COALESCE(i.so_luong_ton, 0) AS stock_quantity,
-                        vi.hinh_anh_id AS image_id,
-                        vi.duong_dan_anh AS image_url,
-                        vi.thu_tu_hien_thi AS sort_order
+        `SELECT pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size, COALESCE(i.so_luong_ton, 0) AS stock_quantity, vi.hinh_anh_id AS image_id, vi.duong_dan_anh AS image_url, vi.thu_tu_hien_thi AS sort_order
          FROM bien_the_san_pham pv
          LEFT JOIN ton_kho i ON i.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
@@ -348,144 +244,95 @@ const buildProductDetail = async (productId) => {
     );
 
     const variantMap = new Map();
-
     for (const row of variantResult.rows) {
         if (!variantMap.has(row.variant_id)) {
             variantMap.set(row.variant_id, {
-                variant_id: row.variant_id,
-                sku: row.sku,
-                slug: row.slug,
-                price: row.price,
-                color: row.color,
-                size: row.size,
-                stock_quantity: Number(row.stock_quantity || 0),
-                images: [],
+                variant_id: row.variant_id, sku: row.sku, slug: row.slug, price: row.price, color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity || 0), images: [],
             });
         }
-
         if (row.image_id) {
-            variantMap.get(row.variant_id).images.push({
-                image_id: row.image_id,
-                image_url: row.image_url,
-                sort_order: row.sort_order,
-            });
+            variantMap.get(row.variant_id).images.push({ image_id: row.image_id, image_url: row.image_url, sort_order: row.sort_order });
         }
     }
 
     const product = productResult.rows[0];
-
-    return {
-        product_id: product.product_id,
-        type_id: product.type_id,
-        category_id: product.category_id,
-        product_name: product.product_name,
-        description: product.description,
-        product_status: product.product_status,
-        category_name: product.category_name,
-        type_name: product.type_name,
-        variants: Array.from(variantMap.values()),
-    };
+    return { ...product, variants: Array.from(variantMap.values()) };
 };
 
 const ensureProductDependenciesAreClear = async (client, productId) => {
     const [workshops, cartItems, wishlistItems, workshopVariants] = await Promise.all([
         client.query('SELECT 1 FROM hoi_thao WHERE san_pham_id = $1 LIMIT 1', [productId]),
-        client.query(
-            `SELECT 1
-             FROM gio_hang c
-             INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = c.bien_the_id
-             WHERE pv.san_pham_id = $1
-             LIMIT 1`,
-            [productId]
-        ),
-        client.query(
-            `SELECT 1
-             FROM danh_sach_yeu_thich w
-             INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = w.bien_the_id
-             WHERE pv.san_pham_id = $1
-             LIMIT 1`,
-            [productId]
-        ),
-        client.query(
-            `SELECT 1
-             FROM hoi_thao_bien_the wv
-             INNER JOIN hoi_thao ws ON ws.hoi_thao_id = wv.hoi_thao_id
-             WHERE ws.san_pham_id = $1
-             LIMIT 1`,
-            [productId]
-        ),
+        client.query(`SELECT 1 FROM gio_hang c INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = c.bien_the_id WHERE pv.san_pham_id = $1 LIMIT 1`, [productId]),
+        client.query(`SELECT 1 FROM danh_sach_yeu_thich w INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = w.bien_the_id WHERE pv.san_pham_id = $1 LIMIT 1`, [productId]),
+        client.query(`SELECT 1 FROM hoi_thao_bien_the wv INNER JOIN hoi_thao ws ON ws.hoi_thao_id = wv.hoi_thao_id WHERE ws.san_pham_id = $1 LIMIT 1`, [productId]),
     ]);
 
-    return workshops.rows.length > 0
-        || cartItems.rows.length > 0
-        || wishlistItems.rows.length > 0
-        || workshopVariants.rows.length > 0;
+    return workshops.rows.length > 0 || cartItems.rows.length > 0 || wishlistItems.rows.length > 0 || workshopVariants.rows.length > 0;
 };
 
 const uploadVariantImages = async (images, slugPrefix, variantIndex) => {
-    if (images === null) {
-        return [];
-    }
-
-    if (!Array.isArray(images)) {
-        return null;
-    }
+    if (images === null) return [];
+    if (!Array.isArray(images)) return null;
 
     const uploadedImages = [];
-
     for (let imageIndex = 0; imageIndex < images.length; imageIndex += 1) {
         const image = images[imageIndex];
-        const imageUrl = await uploadImageToImgBB(
-            image.image_url,
-            `${slugPrefix}-${variantIndex + 1}-${imageIndex + 1}`
-        );
-
-        uploadedImages.push({
-            image_url: imageUrl,
-            sort_order: image.sort_order,
-        });
+        const imageUrl = await uploadImageToImgBB(image.image_url, `${slugPrefix}-${variantIndex + 1}-${imageIndex + 1}`);
+        uploadedImages.push({ image_url: imageUrl, sort_order: image.sort_order });
     }
-
     return uploadedImages;
 };
 
 const upsertVariantInventory = async (client, variantId, stockQuantity) => {
     await client.query(
-        `INSERT INTO ton_kho (bien_the_id, so_luong_ton)
-         VALUES ($1, $2)
-         ON CONFLICT (bien_the_id)
-         DO UPDATE SET so_luong_ton = EXCLUDED.so_luong_ton`,
+        `INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2) ON CONFLICT (bien_the_id) DO UPDATE SET so_luong_ton = EXCLUDED.so_luong_ton`,
         [variantId, stockQuantity]
     );
 };
 
 const replaceVariantImages = async (client, variantId, images) => {
     await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = $1', [variantId]);
-
-    if (!Array.isArray(images) || images.length === 0) {
-        return;
-    }
-
+    if (!Array.isArray(images) || images.length === 0) return;
     for (const image of images) {
         await client.query(
-            `INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi)
-             VALUES ($1, $2, $3)`,
+            `INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi) VALUES ($1, $2, $3)`,
             [variantId, image.image_url, image.sort_order]
         );
     }
 };
 
-const getAllProductTypes = async () => pool.query(
-    'SELECT loai_san_pham_id AS type_id, ten_loai AS type_name, mo_ta AS description FROM loai_san_pham ORDER BY loai_san_pham_id ASC'
-);
+// ==========================================
+// HÀM GHI NHẬN SỰ KIỆN WISHLIST (GIẢM GIÁ / HÀNG VỀ)
+// ==========================================
+const triggerWishlistEvent = async (client, variantId, productId, eventType) => {
+    const usersRes = await client.query(
+        `SELECT nguoi_dung_id FROM danh_sach_yeu_thich WHERE bien_the_id = $1`, 
+        [variantId]
+    );
 
+    for (const row of usersRes.rows) {
+        const checkSpam = await client.query(
+            `SELECT 1 FROM thong_bao_yeu_thich 
+             WHERE nguoi_dung_id = $1 AND san_pham_id = $2 AND loai_thong_bao = $3 AND da_gui = FALSE`,
+            [row.nguoi_dung_id, productId, eventType]
+        );
+
+        if (checkSpam.rows.length === 0) {
+            await client.query(
+                `INSERT INTO thong_bao_yeu_thich (nguoi_dung_id, san_pham_id, loai_thong_bao, da_gui) 
+                 VALUES ($1, $2, $3, FALSE)`,
+                [row.nguoi_dung_id, productId, eventType]
+            );
+        }
+    }
+};
+
+const getAllProductTypes = async () => pool.query('SELECT loai_san_pham_id AS type_id, ten_loai AS type_name, mo_ta AS description FROM loai_san_pham ORDER BY loai_san_pham_id ASC');
 const getAllProducts = async ({ page, limit }) => buildProductsList({ page, limit });
-
 const getProductDetail = async (productId) => buildProductDetail(productId);
 
 const createProduct = async (payload) => {
     const client = await pool.connect();
-
     try {
         const typeId = normalizeCategoryOrTypeId(payload.type_id, 'type_id');
         const categoryId = normalizeCategoryOrTypeId(payload.category_id, 'category_id');
@@ -505,28 +352,11 @@ const createProduct = async (payload) => {
             throw error;
         }
 
-        const [typeExists, categoryExists] = await Promise.all([
-            getProductTypeById(typeId),
-            getCategoryById(categoryId),
-        ]);
+        const [typeExists, categoryExists] = await Promise.all([getProductTypeById(typeId), getCategoryById(categoryId)]);
+        if (typeExists.rows.length === 0) { const error = new Error('type_id không tồn tại'); error.statusCode = 400; throw error; }
+        if (categoryExists.rows.length === 0) { const error = new Error('category_id không tồn tại'); error.statusCode = 400; throw error; }
 
-        if (typeExists.rows.length === 0) {
-            const error = new Error('type_id không tồn tại');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (categoryExists.rows.length === 0) {
-            const error = new Error('category_id không tồn tại');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const seenSkus = new Set();
-        const normalizedVariants = payload.variants.map((variant, index) => {
-            return normalizeVariantPayload(variant, index);
-        });
-
+        const normalizedVariants = payload.variants.map((variant, index) => normalizeVariantPayload(variant, index));
         const preparedVariants = [];
 
         for (let index = 0; index < normalizedVariants.length; index += 1) {
@@ -536,58 +366,36 @@ const createProduct = async (payload) => {
             const uploadedImages = await uploadVariantImages(variant.images, resolvedSlug, index);
 
             preparedVariants.push({
-                ...variant,
-                slug: resolvedSlug,
-                images: uploadedImages,
-                stock_quantity: variant.stock_quantity === null ? 0 : variant.stock_quantity,
+                ...variant, slug: resolvedSlug, images: uploadedImages, stock_quantity: variant.stock_quantity === null ? 0 : variant.stock_quantity,
             });
         }
 
         await client.query('BEGIN');
-
         const productResult = await client.query(
-            `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status`,
+            `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham) VALUES ($1, $2, $3, $4, $5) RETURNING san_pham_id AS product_id`,
             [typeId, categoryId, productName, description, productStatus]
         );
+        const productId = productResult.rows[0].product_id;
 
-        const createdProduct = productResult.rows[0];
-
-        for (const variant of variants) {
+        for (const variant of preparedVariants) {
             const sku = generateSKU('SP', productId);
-            const variantSlug = await generateUniqueVariantSlug(productName, variant.color, variant.size);
-
             const variantResult = await client.query(
-                `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
-                 VALUES ($1, $2, $3, $4, $5, $6)
-                 RETURNING bien_the_id`,
-                [productId, sku, variantSlug, variant.price, variant.color || null, variant.size || null]
+                `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES ($1, $2, $3, $4, $5, $6) RETURNING bien_the_id`,
+                [productId, sku, variant.slug, variant.price, variant.color, variant.size]
             );
-
             const createdVariant = variantResult.rows[0];
-            await upsertVariantInventory(client, createdVariant.variant_id, 0);
+            await upsertVariantInventory(client, createdVariant.bien_the_id, variant.stock_quantity);
 
             if (Array.isArray(variant.images) && variant.images.length > 0) {
-                await replaceVariantImages(client, createdVariant.variant_id, variant.images);
+                await replaceVariantImages(client, createdVariant.bien_the_id, variant.images);
             }
         }
-
         await client.query('COMMIT');
-
-        const product = await buildProductDetail(createdProduct.product_id);
-        return product;
+        return await buildProductDetail(productId);
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
-
-        if (!error.statusCode) {
-            error.statusCode = error.code === '23505' ? 400 : 400;
-        }
-
-        if (error.code === '23505') {
-            error.message = 'SKU hoặc slug đã tồn tại';
-        }
-
+        if (!error.statusCode) error.statusCode = error.code === '23505' ? 400 : 400;
+        if (error.code === '23505') error.message = 'SKU hoặc slug đã tồn tại';
         throw error;
     } finally {
         client.release();
@@ -596,172 +404,105 @@ const createProduct = async (payload) => {
 
 const updateProduct = async (productId, payload) => {
     const client = await pool.connect();
-
     try {
-        const currentProductResult = await client.query(
-            `SELECT san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status
-             FROM san_pham
-             WHERE san_pham_id = $1`,
-            [productId]
-        );
-
-        if (currentProductResult.rows.length === 0) {
-            const error = new Error('Sản phẩm không tồn tại');
-            error.statusCode = 404;
-            throw error;
-        }
+        const currentProductResult = await client.query(`SELECT * FROM san_pham WHERE san_pham_id = $1`, [productId]);
+        if (currentProductResult.rows.length === 0) { const error = new Error('Sản phẩm không tồn tại'); error.statusCode = 404; throw error; }
 
         const currentProduct = currentProductResult.rows[0];
-        const typeId = payload.type_id === undefined
-            ? currentProduct.type_id
-            : normalizeCategoryOrTypeId(payload.type_id, 'type_id');
-        const categoryId = payload.category_id === undefined
-            ? currentProduct.category_id
-            : normalizeCategoryOrTypeId(payload.category_id, 'category_id');
-        const productName = payload.product_name === undefined
-            ? currentProduct.product_name
-            : normalizeText(payload.product_name);
-        const description = payload.description === undefined
-            ? currentProduct.description
-            : (normalizeText(payload.description) || null);
-        const productStatus = payload.product_status === undefined
-            ? currentProduct.product_status
-            : validateProductStatus(payload.product_status);
+        const typeId = payload.type_id === undefined ? currentProduct.loai_san_pham_id : normalizeCategoryOrTypeId(payload.type_id, 'type_id');
+        const categoryId = payload.category_id === undefined ? currentProduct.danh_muc_id : normalizeCategoryOrTypeId(payload.category_id, 'category_id');
+        const productName = payload.product_name === undefined ? currentProduct.ten_san_pham : normalizeText(payload.product_name);
+        const description = payload.description === undefined ? currentProduct.mo_ta : (normalizeText(payload.description) || null);
+        const productStatus = payload.product_status === undefined ? currentProduct.trang_thai_san_pham : validateProductStatus(payload.product_status);
 
-        if (!productName) {
-            const error = new Error('product_name không được để trống');
-            error.statusCode = 400;
-            throw error;
-        }
+        if (!productName) { const error = new Error('product_name không được để trống'); error.statusCode = 400; throw error; }
 
-        const [typeExists, categoryExists] = await Promise.all([
-            getProductTypeById(typeId),
-            getCategoryById(categoryId),
-        ]);
-
-        if (typeExists.rows.length === 0) {
-            const error = new Error('type_id không tồn tại');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (categoryExists.rows.length === 0) {
-            const error = new Error('category_id không tồn tại');
-            error.statusCode = 400;
-            throw error;
-        }
+        const [typeExists, categoryExists] = await Promise.all([getProductTypeById(typeId), getCategoryById(categoryId)]);
+        if (typeExists.rows.length === 0) { const error = new Error('type_id không tồn tại'); error.statusCode = 400; throw error; }
+        if (categoryExists.rows.length === 0) { const error = new Error('category_id không tồn tại'); error.statusCode = 400; throw error; }
 
         const hasVariantsPayload = Array.isArray(payload.variants);
         let normalizedVariants = [];
 
         if (hasVariantsPayload) {
-            if (payload.variants.length === 0) {
-                const error = new Error('variants không được để trống khi gửi cập nhật');
-                error.statusCode = 400;
-                throw error;
-            }
-
-            const normalizedVariants = payload.variants.map((variant, index) => {
-                return normalizeVariantPayload(variant, index);
-            });
+            if (payload.variants.length === 0) { const error = new Error('variants không được để trống khi gửi cập nhật'); error.statusCode = 400; throw error; }
+            normalizedVariants = payload.variants.map((variant, index) => normalizeVariantPayload(variant, index));
         }
 
-        const preparedVariants = normalizedVariants.map((variant, index) => ({
-            ...variant,
-            _uploadIndex: index,
-        }));
+        const preparedVariants = normalizedVariants.map((variant, index) => ({ ...variant, _uploadIndex: index }));
 
         await client.query('BEGIN');
-
-        const updatedProductResult = await client.query(
-            `UPDATE san_pham
-             SET loai_san_pham_id = $1,
-                 danh_muc_id = $2,
-                 ten_san_pham = $3,
-                 mo_ta = $4,
-                 trang_thai_san_pham = $5
-             WHERE san_pham_id = $6
-             RETURNING san_pham_id AS product_id, loai_san_pham_id AS type_id, danh_muc_id AS category_id, ten_san_pham AS product_name, mo_ta AS description, trang_thai_san_pham AS product_status`,
+        await client.query(
+            `UPDATE san_pham SET loai_san_pham_id = $1, danh_muc_id = $2, ten_san_pham = $3, mo_ta = $4, trang_thai_san_pham = $5 WHERE san_pham_id = $6`,
             [typeId, categoryId, productName, description, productStatus, productId]
         );
 
         if (hasVariantsPayload) {
             for (const variant of preparedVariants) {
                 if (variant.variant_id) {
+                    // Lấy ra GIÁ CŨ và TỒN KHO CŨ để so sánh
                     const currentVariantResult = await client.query(
-                        `SELECT bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size
-                         FROM bien_the_san_pham
-                         WHERE bien_the_id = $1 AND san_pham_id = $2`,
+                        `SELECT bt.bien_the_id AS variant_id, bt.san_pham_id AS product_id, bt.sku, bt.slug, bt.gia AS price, COALESCE(tk.so_luong_ton, 0) AS stock_quantity
+                         FROM bien_the_san_pham bt
+                         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+                         WHERE bt.bien_the_id = $1 AND bt.san_pham_id = $2`,
                         [variant.variant_id, productId]
                     );
 
                     if (currentVariantResult.rows.length === 0) {
                         const error = new Error(`variant_id ${variant.variant_id} không tồn tại trong sản phẩm này`);
-                        error.statusCode = 400;
-                        throw error;
+                        error.statusCode = 400; throw error;
                     }
 
-                    const nextSlug = variant.slug
-                        ? await generateUniqueVariantSlug(variant.slug, variant.variant_id)
-                        : currentVariantResult.rows[0].slug;
-                    const uploadedImages = variant.images !== null
-                        ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
-                        : null;
+                    const currentVariant = currentVariantResult.rows[0];
+                    const nextSlug = variant.slug ? await generateUniqueVariantSlug(variant.slug, variant.variant_id) : currentVariant.slug;
+                    const uploadedImages = variant.images !== null ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex) : null;
 
                     await client.query(
-                        `UPDATE bien_the_san_pham
-                         SET slug = $1,
-                             sku = $2,
-                             gia = $3,
-                             mau_sac = $4,
-                             kich_co = $5
-                         WHERE bien_the_id = $6`,
+                        `UPDATE bien_the_san_pham SET slug = $1, sku = $2, gia = $3, mau_sac = $4, kich_co = $5 WHERE bien_the_id = $6`,
                         [nextSlug, variant.sku, variant.price, variant.color, variant.size, variant.variant_id]
                     );
 
-                    if (uploadedImages !== null) {
-                        await replaceVariantImages(client, variant.variant_id, uploadedImages);
+                    const newStock = variant.stock_quantity === null ? Number(currentVariant.stock_quantity) : Number(variant.stock_quantity);
+                    await upsertVariantInventory(client, variant.variant_id, newStock);
+
+                    if (uploadedImages !== null) await replaceVariantImages(client, variant.variant_id, uploadedImages);
+
+                    // KIỂM TRA ĐIỀU KIỆN ĐỂ TẠO THÔNG BÁO WISHLIST
+                    const oldPrice = Number(currentVariant.price);
+                    const newPrice = Number(variant.price);
+                    if (newPrice < oldPrice) {
+                        await triggerWishlistEvent(client, variant.variant_id, productId, 'price_drop');
+                    }
+
+                    const oldStock = Number(currentVariant.stock_quantity);
+                    if (oldStock === 0 && newStock > 0) {
+                        await triggerWishlistEvent(client, variant.variant_id, productId, 'back_in_stock');
                     }
                 } else {
                     const baseSlug = variant.slug || buildVariantBaseSlug(productName, variant);
                     const nextSlug = await generateUniqueVariantSlug(baseSlug);
-                    const uploadedImages = variant.images !== null
-                        ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex)
-                        : null;
-
+                    const uploadedImages = variant.images !== null ? await uploadVariantImages(variant.images, nextSlug, variant._uploadIndex) : null;
                     const sku = generateSKU('SP', productId);
 
                     const insertedVariantResult = await client.query(
-                        `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
-                         VALUES ($1, $2, $3, $4, $5, $6)
-                         RETURNING bien_the_id AS variant_id, san_pham_id AS product_id, sku, slug, gia AS price, mau_sac AS color, kich_co AS size`,
+                        `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES ($1, $2, $3, $4, $5, $6) RETURNING bien_the_id AS variant_id`,
                         [productId, sku, nextSlug, variant.price, variant.color, variant.size]
                     );
 
                     const newVariantId = insertedVariantResult.rows[0].variant_id;
                     await upsertVariantInventory(client, newVariantId, variant.stock_quantity === null ? 0 : variant.stock_quantity);
-
-                    if (uploadedImages !== null && uploadedImages.length > 0) {
-                        await replaceVariantImages(client, newVariantId, uploadedImages);
-                    }
+                    if (uploadedImages !== null && uploadedImages.length > 0) await replaceVariantImages(client, newVariantId, uploadedImages);
                 }
             }
         }
 
         await client.query('COMMIT');
-
-        return buildProductDetail(updatedProductResult.rows[0].product_id);
+        return buildProductDetail(productId);
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
-
-        if (!error.statusCode) {
-            error.statusCode = error.code === '23505' ? 400 : 400;
-        }
-
-        if (error.code === '23505') {
-            error.message = 'SKU hoặc slug đã tồn tại';
-        }
-
+        if (!error.statusCode) error.statusCode = error.code === '23505' ? 400 : 400;
+        if (error.code === '23505') error.message = 'SKU hoặc slug đã tồn tại';
         throw error;
     } finally {
         client.release();
@@ -770,33 +511,15 @@ const updateProduct = async (productId, payload) => {
 
 const deleteProduct = async (productId) => {
     const client = await pool.connect();
-
     try {
-        const currentProductResult = await client.query(
-            'SELECT san_pham_id AS product_id FROM san_pham WHERE san_pham_id = $1',
-            [productId]
-        );
-
-        if (currentProductResult.rows.length === 0) {
-            const error = new Error('Sản phẩm không tồn tại');
-            error.statusCode = 404;
-            throw error;
-        }
+        const currentProductResult = await client.query('SELECT san_pham_id AS product_id FROM san_pham WHERE san_pham_id = $1', [productId]);
+        if (currentProductResult.rows.length === 0) { const error = new Error('Sản phẩm không tồn tại'); error.statusCode = 404; throw error; }
 
         const blocked = await ensureProductDependenciesAreClear(client, productId);
-
-        if (blocked) {
-            const error = new Error('Không thể xóa sản phẩm đang được sử dụng');
-            error.statusCode = 400;
-            throw error;
-        }
+        if (blocked) { const error = new Error('Không thể xóa sản phẩm đang được sử dụng'); error.statusCode = 400; throw error; }
 
         await client.query('BEGIN');
-
-        const variantResult = await client.query(
-            'SELECT bien_the_id AS variant_id FROM bien_the_san_pham WHERE san_pham_id = $1',
-            [productId]
-        );
+        const variantResult = await client.query('SELECT bien_the_id AS variant_id FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
         const variantIds = variantResult.rows.map((row) => row.variant_id);
 
         if (variantIds.length > 0) {
@@ -812,15 +535,10 @@ const deleteProduct = async (productId) => {
         await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM san_pham WHERE san_pham_id = $1', [productId]);
-
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
-
-        if (!error.statusCode) {
-            error.statusCode = 400;
-        }
-
+        if (!error.statusCode) error.statusCode = 400;
         throw error;
     } finally {
         client.release();
@@ -835,35 +553,30 @@ const filterProducts = async (filters) => {
     let paramIndex = 1;
     let whereClauses = [];
 
-    // Lọc theo từ khóa (Tìm tên sản phẩm không phân biệt hoa thường)
     if (keyword) {
         whereClauses.push(`p.ten_san_pham ILIKE $${paramIndex}`);
         params.push(`%${keyword}%`);
         paramIndex++;
     }
 
-    // Lọc theo mảng ID Danh Mục
     if (Array.isArray(category_ids) && category_ids.length > 0) {
         whereClauses.push(`p.danh_muc_id = ANY($${paramIndex}::int[])`);
         params.push(category_ids);
         paramIndex++;
     }
 
-    // Lọc theo mảng ID Loại Sản Phẩm
     if (Array.isArray(type_ids) && type_ids.length > 0) {
         whereClauses.push(`p.loai_san_pham_id = ANY($${paramIndex}::int[])`);
         params.push(type_ids);
         paramIndex++;
     }
 
-    // Lọc theo trạng thái
     if (status) {
         whereClauses.push(`p.trang_thai_san_pham = $${paramIndex}`);
         params.push(status);
         paramIndex++;
     }
 
-    // Lọc theo Khoảng Giá (Kiểm tra xem có biến thể nào nằm trong khoảng giá không)
     if (min_price !== undefined || max_price !== undefined) {
         let priceClause = `EXISTS (SELECT 1 FROM bien_the_san_pham bt WHERE bt.san_pham_id = p.san_pham_id`;
         if (min_price !== undefined) {
@@ -882,7 +595,6 @@ const filterProducts = async (filters) => {
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // Đếm tổng số lượng
     const countQuery = `SELECT COUNT(*)::int AS total_items FROM san_pham p ${whereString}`;
     const countResult = await pool.query(countQuery, params);
     const totalItems = countResult.rows[0].total_items;
@@ -891,7 +603,6 @@ const filterProducts = async (filters) => {
         return { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
     }
 
-    // Truy vấn sản phẩm
     const fetchParams = [...params, limit, offset];
     const fetchQuery = `
         SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.trang_thai_san_pham AS product_status,
@@ -907,7 +618,6 @@ const filterProducts = async (filters) => {
     const productsResult = await pool.query(fetchQuery, fetchParams);
     const productIds = productsResult.rows.map((product) => product.product_id);
 
-    // Kế thừa nguyên vẹn logic móc nối Biến thể từ hàm buildProductsList
     const variantsResult = await pool.query(
         `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
                 COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
@@ -930,21 +640,11 @@ const filterProducts = async (filters) => {
     }
 
     return {
-        products: productsResult.rows.map((product) => ({
-            ...product,
-            variants: variantsByProductId.get(product.product_id) || [],
-        })),
+        products: productsResult.rows.map((product) => ({ ...product, variants: variantsByProductId.get(product.product_id) || [] })),
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
     };
 };
 
 module.exports = {
-    getAllProductTypes,
-    getAllProducts,
-    getProductDetail,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    parsePositiveInteger,
-    filterProducts,
+    getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, parsePositiveInteger, filterProducts,
 };

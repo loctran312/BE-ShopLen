@@ -16,6 +16,7 @@ const promotionRoutes = require('./routes/promotions');
 const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payment');
 const workshopRoutes = require('./routes/workshops');
+const wishlistRoutes = require('./routes/wishlist');
 
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -60,6 +61,7 @@ app.use('/api/promotions', promotionRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/workshops', workshopRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 app.get('/api/docs', (req, res) => {
     res.type('html').send(renderDocsPage());
