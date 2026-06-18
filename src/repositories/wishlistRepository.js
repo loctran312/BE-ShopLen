@@ -2,25 +2,22 @@ const pool = require('../config/db');
 const notificationService = require('../services/notificationService');
 
 // --- TÍNH NĂNG USER: CRUD WISHLIST ---
-const toggleWishlist = async (userId, variantId) => {
+const toggleWishlist = async (userId, productId) => { // Sửa tham số
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         
-        // Kiểm tra xem đã có trong wishlist chưa
         const checkRes = await client.query(
-            `SELECT danh_sach_yeu_thich_id FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND bien_the_id = $2`,
-            [userId, variantId]
+            `SELECT danh_sach_yeu_thich_id FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND san_pham_id = $2`,
+            [userId, productId] // Sửa điều kiện
         );
 
         let action = '';
         if (checkRes.rows.length > 0) {
-            // Nếu có rồi -> Bỏ thích
-            await client.query(`DELETE FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND bien_the_id = $2`, [userId, variantId]);
+            await client.query(`DELETE FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND san_pham_id = $2`, [userId, productId]);
             action = 'removed';
         } else {
-            // Nếu chưa có -> Thêm yêu thích
-            await client.query(`INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES ($1, $2)`, [userId, variantId]);
+            await client.query(`INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, san_pham_id) VALUES ($1, $2)`, [userId, productId]);
             action = 'added';
         }
 
@@ -43,13 +40,14 @@ const getMyWishlist = async (userId, { page, limit }) => {
     if (totalItems === 0) return { items: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
 
     const wishlistRes = await pool.query(
-        `SELECT w.bien_the_id AS variant_id, sp.ten_san_pham AS product_name, bt.mau_sac AS color, bt.gia AS price, bt.slug,
-                COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
-                (SELECT duong_dan_anh FROM hinh_anh_bien_the vi WHERE vi.bien_the_id = bt.bien_the_id ORDER BY thu_tu_hien_thi ASC LIMIT 1) AS image_url
+        `SELECT w.san_pham_id AS product_id, sp.ten_san_pham AS product_name, sp.trang_thai_san_pham AS status,
+                (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = sp.san_pham_id) AS min_price,
+                (SELECT duong_dan_anh FROM hinh_anh_bien_the vi 
+                 JOIN bien_the_san_pham bt ON vi.bien_the_id = bt.bien_the_id 
+                 WHERE bt.san_pham_id = sp.san_pham_id 
+                 ORDER BY bt.bien_the_id ASC, vi.thu_tu_hien_thi ASC LIMIT 1) AS image_url
          FROM danh_sach_yeu_thich w
-         JOIN bien_the_san_pham bt ON w.bien_the_id = bt.bien_the_id
-         JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
-         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+         JOIN san_pham sp ON w.san_pham_id = sp.san_pham_id
          WHERE w.nguoi_dung_id = $1
          ORDER BY w.danh_sach_yeu_thich_id DESC
          LIMIT $2 OFFSET $3`,
@@ -57,7 +55,7 @@ const getMyWishlist = async (userId, { page, limit }) => {
     );
 
     return {
-        items: wishlistRes.rows.map(item => ({...item, stock_quantity: Number(item.stock_quantity)})),
+        items: wishlistRes.rows,
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
     };
 };

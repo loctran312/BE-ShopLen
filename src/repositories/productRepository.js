@@ -319,7 +319,7 @@ const ensureProductDependenciesAreClear = async (client, productId) => {
     const [workshops, cartItems, wishlistItems, workshopVariants] = await Promise.all([
         client.query('SELECT 1 FROM hoi_thao WHERE san_pham_id = $1 LIMIT 1', [productId]),
         client.query(`SELECT 1 FROM gio_hang c INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = c.bien_the_id WHERE pv.san_pham_id = $1 LIMIT 1`, [productId]),
-        client.query(`SELECT 1 FROM danh_sach_yeu_thich w INNER JOIN bien_the_san_pham pv ON pv.bien_the_id = w.bien_the_id WHERE pv.san_pham_id = $1 LIMIT 1`, [productId]),
+        client.query(`SELECT 1 FROM danh_sach_yeu_thich WHERE san_pham_id = $1 LIMIT 1`, [productId]), 
         client.query(`SELECT 1 FROM hoi_thao_bien_the wv INNER JOIN hoi_thao ws ON ws.hoi_thao_id = wv.hoi_thao_id WHERE ws.san_pham_id = $1 LIMIT 1`, [productId]),
     ]);
 
@@ -362,8 +362,8 @@ const replaceVariantImages = async (client, variantId, images) => {
 // ==========================================
 const triggerWishlistEvent = async (client, variantId, productId, eventType) => {
     const usersRes = await client.query(
-        `SELECT nguoi_dung_id FROM danh_sach_yeu_thich WHERE bien_the_id = $1`, 
-        [variantId]
+        `SELECT nguoi_dung_id FROM danh_sach_yeu_thich WHERE san_pham_id = $1`, 
+        [productId]
     );
 
     for (const row of usersRes.rows) {

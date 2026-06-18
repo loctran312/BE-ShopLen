@@ -330,10 +330,10 @@ CREATE TABLE diem_tich_luy (
 CREATE TABLE danh_sach_yeu_thich (
   danh_sach_yeu_thich_id SERIAL PRIMARY KEY,
   nguoi_dung_id INT NOT NULL,
-  bien_the_id INT NOT NULL,
-  UNIQUE(nguoi_dung_id, bien_the_id),
+  san_pham_id INT NOT NULL,
+  UNIQUE(nguoi_dung_id, san_pham_id),
   FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
-  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
+  FOREIGN KEY (san_pham_id) REFERENCES san_pham(san_pham_id)
 );
 
 CREATE TABLE thong_bao_yeu_thich (
@@ -599,7 +599,7 @@ FROM diem_tich_luy;
 CREATE VIEW wishlist AS
 SELECT danh_sach_yeu_thich_id AS wishlist_id,
        nguoi_dung_id AS user_id,
-       bien_the_id AS variant_id
+       san_pham_id AS product_id
 FROM danh_sach_yeu_thich;
 
 CREATE VIEW wishlist_notifications AS
@@ -888,8 +888,8 @@ INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) VALUES
 (4, 150), (5, 240), (6, 95), (7, 0), (8, 450), (9, 30), (10, 620), (11, 10), (12, 105), (1, 0);
 
 -- Danh sách yêu thích cá nhân (10 dòng)
-INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, bien_the_id) VALUES 
-(4, 1), (4, 3), (5, 2), (5, 6), (6, 4), (7, 8), (8, 9), (9, 1), (10, 5), (11, 7);
+INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, san_pham_id) VALUES 
+(4, 1), (4, 3), (5, 2), (5, 4), (6, 1), (7, 2), (8, 3), (9, 1), (10, 4), (11, 2);
 
 -- Trạng thái thông báo thay đổi giá/kho của sản phẩm (10 dòng)
 INSERT INTO thong_bao_yeu_thich (nguoi_dung_id, san_pham_id, loai_thong_bao, da_gui) VALUES 

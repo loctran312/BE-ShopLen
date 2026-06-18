@@ -1987,7 +1987,7 @@ groups: [
           summary: "Thêm hoặc xóa sản phẩm khỏi danh sách yêu thích",
           auth: true,
           requestExample: {
-            variant_id: 2,
+            product_id: 2,
           },
           successStatus: 200,
           successExample: {
@@ -2014,13 +2014,11 @@ groups: [
             data: {
               items: [
                 {
-                  variant_id: 2,
+                  product_id: 2,
                   product_name: "Kim Móc Cán Dẻo Tulip",
-                  color: "Vàng Kim",
-                  price: "120000.00",
-                  slug: "kim-moc-tulip-20mm",
-                  stock_quantity: 150,
-                  image_url: null,
+                  status: "active",
+                  min_price: "120000.00",
+                  image_url: "https://i.ibb.co/abc/kim-moc-tulip.jpg",
                 },
               ],
               pagination: {
