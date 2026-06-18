@@ -106,6 +106,26 @@ CREATE TABLE ton_kho (
   FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id)
 );
 
+CREATE TABLE lich_su_ton_kho (
+  lich_su_id SERIAL PRIMARY KEY,
+  bien_the_id INT NOT NULL,
+  so_luong_thay_doi INT NOT NULL,
+  so_luong_sau_khi_doi INT NOT NULL CHECK (so_luong_sau_khi_doi >= 0),
+  loai_giao_dich VARCHAR(50) NOT NULL,
+  tham_chieu_id VARCHAR(100), 
+  ghi_chu TEXT,
+  nguoi_thuc_hien INT, 
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id) ON DELETE CASCADE,
+  FOREIGN KEY (nguoi_thuc_hien) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE SET NULL
+);
+
+ALTER TABLE lich_su_ton_kho ADD CONSTRAINT chk_loai_giao_dich CHECK (
+  loai_giao_dich IN ('nhap_kho', 'xuat_ban', 'hoan_tra', 'kiem_kho', 'khac')
+);
+
+CREATE INDEX idx_lich_su_ton_kho_bien_the ON lich_su_ton_kho (bien_the_id, ngay_tao DESC);
+
 CREATE TABLE hinh_anh_bien_the (
   hinh_anh_id SERIAL PRIMARY KEY,
   bien_the_id INT NOT NULL,
@@ -455,6 +475,18 @@ SELECT ton_kho_id AS inventory_id,
        so_luong_ton AS stock_quantity
 FROM ton_kho;
 
+CREATE VIEW inventory_history AS
+SELECT lich_su_id AS history_id,
+       bien_the_id AS variant_id,
+       so_luong_thay_doi AS quantity_changed,
+       so_luong_sau_khi_doi AS stock_after,
+       loai_giao_dich AS transaction_type,
+       tham_chieu_id AS reference_code,
+       ghi_chu AS note,
+       nguoi_thuc_hien AS performed_by,
+       ngay_tao AS created_at
+FROM lich_su_ton_kho;
+
 CREATE VIEW variant_images AS
 SELECT hinh_anh_id AS image_id,
        bien_the_id AS variant_id,
@@ -763,6 +795,19 @@ INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, 
 INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
 (10, 5, 'WS-KHAN-01', 've-workshop-dan-khan-hcm', 350000.00, 'Mặc định', '1 Buổi');
 INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES (10, 10, 30);
+
+-- Khởi tạo nhật ký tồn kho ban đầu cho 10 biến thể
+INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, ghi_chu, nguoi_thuc_hien) VALUES
+(1, 100, 100, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(2, 150, 150, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(3, 210, 210, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(4, 120, 120, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(5, 60, 60, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(6, 80, 80, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(7, 140, 140, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(8, 100, 100, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(9, 50, 50, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
+(10, 30, 30, 'nhap_kho', 'Khởi tạo kho ban đầu', 1);
 
 -- ----------------------------------------
 -- 4. BẢNG: GIO_HANG
