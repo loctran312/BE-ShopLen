@@ -214,7 +214,6 @@ CREATE TABLE khuyen_mai_san_pham (
   id SERIAL PRIMARY KEY,
   khuyen_mai_id INT NOT NULL,
   san_pham_id INT,
-  bien_the_id INT,
   FOREIGN KEY (khuyen_mai_id) REFERENCES khuyen_mai(khuyen_mai_id)
 );
 
@@ -531,8 +530,7 @@ FROM khuyen_mai;
 CREATE VIEW promotion_products AS
 SELECT id,
        khuyen_mai_id AS promotion_id,
-       san_pham_id AS product_id,
-       bien_the_id AS variant_id
+       san_pham_id AS product_id
 FROM khuyen_mai_san_pham;
 
 CREATE VIEW cities AS
@@ -812,8 +810,7 @@ INSERT INTO nguoi_dung_phieu_giam_gia (phieu_giam_gia_id, nguoi_dung_id, so_lan_
 INSERT INTO phieu_giam_gia_san_pham (phieu_giam_gia_id, san_pham_id, bien_the_id) VALUES
 (1, 1, 1), (3, 2, 2), (4, 3, 4), (7, 4, 6), (10, 1, 1), (2, NULL, NULL), (5, NULL, NULL), (6, NULL, NULL), (8, NULL, NULL), (9, NULL, NULL);
 
-INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id, bien_the_id) VALUES
-(1, 1, 1), (2, 2, 2), (2, 2, 3), (5, 4, 8), (7, 3, 4), (3, NULL, NULL), (4, NULL, NULL), (6, NULL, NULL), (8, NULL, NULL), (9, NULL, NULL);
+INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id) VALUES (1, 1), (2, 2), (5, 4), (7, 3), (3, NULL), (4, NULL), (6, NULL), (8, NULL), (9, NULL);
 
 -- ----------------------------------------
 -- 6. BẢNG: DON_HANG, CHI_TIET_DON_HANG & LICH_SU

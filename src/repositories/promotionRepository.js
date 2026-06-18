@@ -41,7 +41,7 @@ const getActivePromotions = async ({ page, limit }) => {
 // Lấy danh sách sản phẩm/biến thể thuộc về một khuyến mãi
 const getPromotionProducts = async (promotionId) => {
 	const result = await pool.query(
-		`SELECT san_pham_id AS product_id, bien_the_id AS variant_id
+		`SELECT san_pham_id AS product_id
          FROM khuyen_mai_san_pham
          WHERE khuyen_mai_id = $1`,
 		[promotionId]
@@ -114,11 +114,12 @@ const createPromotion = async (payload) => {
 
 		// Map sản phẩm vào khuyến mãi
 		if (Array.isArray(applicable_products) && applicable_products.length > 0) {
-			for (const item of applicable_products) {
+			const uniqueProductIds = [...new Set(applicable_products.map(item => item.product_id))];
+			for (const productId of uniqueProductIds) {
 				await client.query(
-					`INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id, bien_the_id)
-                     VALUES ($1, $2, $3)`,
-					[promotionId, item.product_id, item.variant_id || null]
+					`INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id)
+                     VALUES ($1, $2)`,
+					[promotionId, productId]
 				);
 			}
 		}
@@ -155,11 +156,12 @@ const updatePromotion = async (id, payload) => {
 		if (Array.isArray(applicable_products)) {
 			await client.query('DELETE FROM khuyen_mai_san_pham WHERE khuyen_mai_id = $1', [id]);
 			
-			for (const item of applicable_products) {
+			const uniqueProductIds = [...new Set(applicable_products.map(item => item.product_id))];
+			for (const productId of uniqueProductIds) {
 				await client.query(
-					`INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id, bien_the_id)
-                     VALUES ($1, $2, $3)`,
-					[id, item.product_id, item.variant_id || null]
+					`INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id)
+                     VALUES ($1, $2)`,
+					[id, productId]
 				);
 			}
 		}

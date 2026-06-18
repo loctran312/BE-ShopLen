@@ -199,11 +199,11 @@ const buildProductsList = async ({ page, limit }) => {
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
                     FROM khuyen_mai_san_pham kmsp
                     JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                    WHERE kmsp.san_pham_id = pv.san_pham_id
                       AND km.trang_thai = 'active'
                       AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
                       AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
-                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    ORDER BY km.khuyen_mai_id DESC
                     LIMIT 1
                 ) d) AS discount
          FROM bien_the_san_pham pv
@@ -267,11 +267,11 @@ const buildProductDetail = async (productId) => {
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
                     FROM khuyen_mai_san_pham kmsp
                     JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                    WHERE kmsp.san_pham_id = pv.san_pham_id
                       AND km.trang_thai = 'active'
                       AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
                       AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
-                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    ORDER BY km.khuyen_mai_id DESC
                     LIMIT 1
                 ) d) AS discount
          FROM bien_the_san_pham pv
@@ -582,12 +582,12 @@ const deleteProduct = async (productId) => {
             await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])', [variantIds]);
             await client.query('DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])', [variantIds]);
             await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE san_pham_id = $1 OR bien_the_id = ANY($2::int[])', [productId, variantIds]);
-            await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1 OR bien_the_id = ANY($2::int[])', [productId, variantIds]);
         } else {
             await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE san_pham_id = $1', [productId]);
-            await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1', [productId]);
         }
-
+        
+        await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1', [productId]);
+        await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM san_pham WHERE san_pham_id = $1', [productId]);
@@ -682,11 +682,11 @@ const filterProducts = async (filters) => {
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
                     FROM khuyen_mai_san_pham kmsp
                     JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE (kmsp.bien_the_id = pv.bien_the_id OR kmsp.san_pham_id = pv.san_pham_id)
+                    WHERE kmsp.san_pham_id = pv.san_pham_id
                       AND km.trang_thai = 'active'
                       AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
                       AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
-                    ORDER BY (CASE WHEN kmsp.bien_the_id IS NOT NULL THEN 1 ELSE 2 END) ASC, km.khuyen_mai_id DESC
+                    ORDER BY km.khuyen_mai_id DESC
                     LIMIT 1
                 ) d) AS discount
          FROM bien_the_san_pham pv

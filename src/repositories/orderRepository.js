@@ -49,7 +49,18 @@ const createOrder = async (userId, payload) => {
 
 		// Đọc giỏ hàng của user
 		const cartResult = await client.query(
-			`SELECT gh.bien_the_id, gh.so_luong, bt.gia, sp.ten_san_pham
+			`SELECT gh.bien_the_id, gh.so_luong, bt.gia, sp.ten_san_pham,
+                    (SELECT row_to_json(d) FROM (
+                        SELECT km.kieu_giam_gia AS type, km.gia_tri AS value
+                        FROM khuyen_mai_san_pham kmsp
+                        JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                        WHERE kmsp.san_pham_id = sp.san_pham_id
+                          AND km.trang_thai = 'active'
+                          AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                          AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                        ORDER BY km.khuyen_mai_id DESC
+                        LIMIT 1
+                    ) d) AS discount
              FROM gio_hang gh
              JOIN bien_the_san_pham bt ON gh.bien_the_id = bt.bien_the_id
              JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
@@ -65,7 +76,18 @@ const createOrder = async (userId, payload) => {
 		// Tính tổng tiền gốc
 		let subTotal = 0;
 		cartItems.forEach(item => {
-			subTotal += Number(item.gia) * Number(item.so_luong);
+			let finalPrice = Number(item.gia);
+			if (item.discount) {
+				const discountValue = Number(item.discount.value);
+				if (item.discount.type === 'percent') {
+					finalPrice = finalPrice - (finalPrice * discountValue / 100);
+				} else if (item.discount.type === 'fixed') {
+					finalPrice = finalPrice - discountValue;
+				}
+				if (finalPrice < 0) finalPrice = 0;
+			}
+			item.finalPrice = finalPrice;
+			subTotal += finalPrice * Number(item.so_luong);
 		});
 
 		// Khóa dòng và kiểm tra tồn kho (Tránh Race Condition)
@@ -81,14 +103,20 @@ const createOrder = async (userId, payload) => {
 
 		const stockMap = new Map(stockResult.rows.map(row => [row.bien_the_id, row.so_luong_ton]));
 
+		// Tạo Chi tiết Đơn hàng & Trừ tồn kho
 		for (const item of cartItems) {
-			const currentStock = stockMap.get(item.bien_the_id) || 0;
-			if (currentStock < item.so_luong) {
-				throw { 
-					statusCode: 400, 
-					message: `Sản phẩm "${item.ten_san_pham}" chỉ còn ${currentStock} sản phẩm trong kho, không đủ số lượng yêu cầu.` 
-				};
-			}
+			// Thêm vào chi tiết đơn
+			await client.query(
+				`INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
+                 VALUES ($1, $2, $3, $4, $5)`,
+				[orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
+			);
+
+			// Trừ kho
+			await client.query(
+				`UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2`,
+				[item.so_luong, item.bien_the_id]
+			);
 		}
 
 		// Khóa dòng và kiểm tra Voucher (Nếu có)
