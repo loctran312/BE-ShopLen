@@ -12,7 +12,7 @@ const apiDocs = {
   description:
     "Tài liệu API hiển thị ví dụ request và response cho các endpoint hiện tại. Tên bảng/cột nội bộ đã được Việt hóa, nhưng field API vẫn giữ nguyên để tương thích frontend.",
   baseUrl: "/api",
-groups: [
+  groups: [
     {
       name: "Xác thực",
       endpoints: [
@@ -502,17 +502,17 @@ groups: [
                       voucher_id: 1,
                       voucher_name: "Sale hè rực rỡ",
                       type: "fixed",
-                      value: 5000
+                      value: 5000,
                     },
                     final_price: 20000,
                     color: "Trắng",
                     size: "M",
                     stock_quantity: 100,
-                    images: []
-                  }
-                ]
-              }
-            }
+                    images: [],
+                  },
+                ],
+              },
+            },
           },
         },
         {
@@ -636,8 +636,10 @@ groups: [
                   variant_id: 1,
                   sku: "L-COTTON-001",
                   color: "Trắng",
-                  size: null,
-                  stock: 100,
+                  size: "M",
+                  available_stock: 100,
+                  reserved_stock: 0,
+                  physical_stock: 100,
                 },
               ],
               pagination: {
@@ -723,24 +725,24 @@ groups: [
                         voucher_id: 1,
                         voucher_name: "Sale hè rực rỡ",
                         type: "fixed",
-                        value: 5000
+                        value: 5000,
                       },
                       final_price: 20000,
                       color: "Trắng",
                       size: "M",
                       stock_quantity: 100,
-                      images: []
-                    }
-                  ]
-                }
+                      images: [],
+                    },
+                  ],
+                },
               ],
               pagination: {
                 total_items: 1,
                 total_pages: 1,
                 current_page: 1,
-                limit: 10
-              }
-            }
+                limit: 10,
+              },
+            },
           },
           notes:
             "Endpoint này hỗ trợ lọc sản phẩm theo nhiều tiêu chí khác nhau như từ khóa, danh mục, loại, khoảng giá và trạng thái. Hệ thống sẽ tự động tính toán final_price và thông tin discount (khuyến mãi) của từng biến thể.",
@@ -841,9 +843,7 @@ groups: [
               {
                 category_name: "Sợi len bông",
                 description: "Sợi len làm từ cotton",
-                children: [
-                  { category_name: "Sợi len bông - mịn" },
-                ],
+                children: [{ category_name: "Sợi len bông - mịn" }],
               },
             ],
           },
@@ -1088,9 +1088,7 @@ groups: [
           summary: "Đồng bộ giỏ hàng khi đăng nhập từ trạng thái khách",
           auth: true,
           requestExample: {
-            local_cart: [
-              { variant_id: 1, quantity: 2 },
-            ],
+            local_cart: [{ variant_id: 1, quantity: 2 }],
           },
           successStatus: 200,
           successExample: {
@@ -1433,10 +1431,7 @@ groups: [
             start_date: "2026-11-01T00:00:00Z",
             end_date: "2026-11-30T23:59:59Z",
             status: "active",
-            applicable_products: [
-              { product_id: 1 },
-              { product_id: 2 },
-            ],
+            applicable_products: [{ product_id: 1 }, { product_id: 2 }],
           },
           successStatus: 201,
           successExample: {
