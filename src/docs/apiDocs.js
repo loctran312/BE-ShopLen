@@ -618,76 +618,6 @@ const apiDocs = {
           },
         },
         {
-          method: "GET",
-          path: "/api/variants/stock",
-          summary: "Lấy danh sách tồn kho biến thể",
-          auth: true,
-          requestExample: {
-            page: 1,
-            limit: 10,
-          },
-          successStatus: 200,
-          successExample: {
-            success: true,
-            message: "Lấy tồn kho biến thể thành công",
-            data: {
-              variantsStock: [
-                {
-                  variant_id: 1,
-                  sku: "L-COTTON-001",
-                  color: "Trắng",
-                  size: "M",
-                  available_stock: 100,
-                  reserved_stock: 0,
-                  physical_stock: 100,
-                },
-              ],
-              pagination: {
-                total: 1,
-                totalPages: 1,
-                page: 1,
-                limit: 10,
-              },
-            },
-          },
-        },
-        {
-          method: "PATCH",
-          path: "/api/variants/:variant_id/stock",
-          summary: "Cập nhật số lượng tồn kho của biến thể",
-          auth: true,
-          requestExample: {
-            newStock: 100,
-          },
-          successStatus: 200,
-          successExample: {
-            success: true,
-            message: "Cập nhật tồn kho thành công",
-            data: {
-              variantId: 1,
-              stock_quantity: 100,
-            },
-          },
-        },
-        {
-          method: "PATCH",
-          path: "/api/variants/:variant_id/stock-change",
-          summary: "Điều chỉnh số lượng tồn kho của biến thể (tăng/giảm)",
-          auth: true,
-          requestExample: {
-            stock_quantity: "+100",
-          },
-          successStatus: 200,
-          successExample: {
-            success: true,
-            message: "Cập nhật thay đổi tồn kho thành công",
-            data: {
-              variantId: 1,
-              stock_quantity: 200,
-            },
-          },
-        },
-        {
           method: "POST",
           path: "/api/products/filter",
           summary: "Lọc sản phẩm theo nhiều tiêu chí",
@@ -961,6 +891,205 @@ const apiDocs = {
                 limit: 10,
               },
             },
+          },
+        },
+      ],
+    },
+    {
+      name: "Tồn kho",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/variants/stock",
+          summary: "Lấy danh sách tồn kho biến thể",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy tồn kho biến thể thành công",
+            data: {
+              variantsStock: [
+                {
+                  variant_id: 1,
+                  sku: "L-COTTON-001",
+                  color: "Trắng",
+                  size: "M",
+                  available_stock: 100,
+                  reserved_stock: 0,
+                  physical_stock: 100,
+                },
+              ],
+              pagination: {
+                total: 1,
+                totalPages: 1,
+                page: 1,
+                limit: 10,
+              },
+            },
+          },
+        },
+        {
+          method: "PATCH",
+          path: "/api/variants/:variant_id/stock",
+          summary: "Cập nhật số lượng tồn kho của biến thể - ĐANG SỬA",
+          auth: true,
+          requestExample: {
+            newStock: 100,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Cập nhật tồn kho thành công",
+            data: {
+              variantId: 1,
+              stock_quantity: 100,
+            },
+          },
+        },
+        {
+          method: "PATCH",
+          path: "/api/variants/:variant_id/stock-change - ĐANG SỬA",
+          summary: "Điều chỉnh số lượng tồn kho của biến thể (tăng/giảm)",
+          auth: true,
+          requestExample: {
+            stock_quantity: "+100",
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Cập nhật thay đổi tồn kho thành công",
+            data: {
+              variantId: 1,
+              stock_quantity: 200,
+            },
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/inventory/overview",
+          summary: "Tổng quan tồn kho với nhiều tiêu chí lọc",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+            keyword: "Cotton",
+            stock_status: "in_stock",
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy báo cáo tồn kho thành công",
+            data: {
+              inventory: [
+                {
+                  variant_id: 1,
+                  product_name: "Len Cotton Milk",
+                  sku: "L-COTTON-001",
+                  color: "Trắng",
+                  size: "M",
+                  available_stock: 100,
+                  reserved_stock: 0,
+                  physical_stock: 100,
+                },
+              ],
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/inventory/adjust",
+          summary: "Điều chỉnh tồn kho với nhiều biến thể trong một giao dịch",
+          auth: true,
+          requestExample: [
+            {
+              variant_id: 1,
+              quantity_change: -5,
+              transaction_type: "kiem_kho",
+              reference_code: "PXT-2026-06-03",
+              note: "Xuất hủy 5 cuộn do kho bị ngập ẩm mốc",
+            },
+            {
+              variant_id: 2,
+              quantity_change: 100,
+              transaction_type: "nhap_kho",
+              reference_code: "PN-2026-06-02",
+              note: "Nhập Len Cotton Milk màu Xanh",
+            },
+          ],
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Đã điều chỉnh thành công 2 bản ghi tồn kho",
+            data: [
+              {
+                variant_id: 1,
+                quantity_change: -5,
+                previous_stock: 100,
+                new_stock: 95,
+              },
+              {
+                variant_id: 2,
+                quantity_change: 100,
+                previous_stock: 150,
+                new_stock: 250,
+              },
+            ],
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/variants/:variant_id/history",
+          summary: "Lịch sử tồn kho của một biến thể",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Lấy lịch sử tồn kho thành công",
+            data: {
+              history: [
+                {
+                  history_id: 12,
+                  quantity_changed: 100,
+                  stock_after: 250,
+                  transaction_type: "nhap_kho",
+                  reference_code: "PN-2026-06-02",
+                  note: "Nhập Len Cotton Milk màu Xanh",
+                  created_at: "2026-06-19T08:03:54.662Z",
+                  performed_by: "admin2",
+                },
+                {
+                  history_id: 2,
+                  quantity_changed: 150,
+                  stock_after: 150,
+                  transaction_type: "nhap_kho",
+                  reference_code: null,
+                  note: "Khởi tạo kho ban đầu",
+                  created_at: "2026-06-18T13:09:57.676Z",
+                  performed_by: "admin",
+                },
+              ],
+              pagination: {
+                total_items: 3,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
+              },
+            },
+            notes: "Enum transaction_type: nhap_kho (nhập kho), xuat_ban (xuất bán), hoan_tra (hoàn trả), kiem_kho (kiểm kho), khac (khác)",
           },
         },
       ],
