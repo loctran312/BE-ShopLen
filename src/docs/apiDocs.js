@@ -692,39 +692,39 @@ const apiDocs = {
             limit: 10,
           },
           successStatus: 200,
-          successExample: [
-            {
-              success: true,
-              message: "Lấy danh sách danh mục thành công",
-              data: {
-                categories: [
-                  {
-                    id: 1,
-                    category_name: "Len đan",
-                    description: "",
-                    image_url: null,
-                    slug: "len-dan",
-                    children: [
-                      {
-                        id: 2,
-                        category_name: "Len Cotton",
-                        description: "",
-                        image_url: null,
-                        slug: "len-cotton",
-                        children: [],
-                      },
-                    ],
-                  },
-                ],
-                pagination: {
-                  total_items: 1,
-                  total_pages: 1,
-                  current_page: 1,
-                  limit: 10,
+          successExample: {
+            success: true,
+            message: "Lấy danh sách danh mục thành công",
+            data: {
+              categories: [
+                {
+                  id: 1,
+                  category_name: "Len đan",
+                  description: "",
+                  image_url: null,
+                  slug: "len-dan",
+                  parent_category_id: null,
+                  children: [
+                    {
+                      id: 2,
+                      category_name: "Len Cotton",
+                      description: "",
+                      image_url: null,
+                      slug: "len-cotton",
+                      parent_category_id: 1,
+                      children: [],
+                    },
+                  ],
                 },
+              ],
+              pagination: {
+                total_items: 1,
+                total_pages: 1,
+                current_page: 1,
+                limit: 10,
               },
             },
-          ],
+          },
         },
         {
           method: "GET",
@@ -739,6 +739,7 @@ const apiDocs = {
             description: "Danh mục chính cho sợi len",
             image_url: null,
             slug: "soi-len",
+            parent_category_id: null,
             children: [
               {
                 id: 2,
@@ -746,6 +747,7 @@ const apiDocs = {
                 description: "Sợi len làm từ cotton",
                 image_url: null,
                 slug: "soi-len-bong",
+                parent_category_id: 1,
                 children: [
                   {
                     id: 3,
@@ -753,6 +755,7 @@ const apiDocs = {
                     description: "Sợi len làm từ cotton mịn",
                     image_url: null,
                     slug: "soi-len-bong-min",
+                    parent_category_id: 2,
                     children: [],
                   },
                 ],
@@ -841,6 +844,7 @@ const apiDocs = {
               category_name: "Điện tử đã cập nhật",
               description: "Mô tả đã cập nhật",
               image_url: "https://i.ibb.co/example-updated.jpg",
+              parent_category_id: null,
               slug: "dien-tu-da-cap-nhat",
             },
           },

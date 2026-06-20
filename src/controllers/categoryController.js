@@ -285,6 +285,7 @@ const formatCategoryTreeNode = (node) => {
     description: node.description || '',
     image_url: node.image_url || null,
     slug: node.slug || '',
+    parent_category_id: node.parent_category_id || null,
     children: [],
   };
 

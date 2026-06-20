@@ -247,6 +247,7 @@ const getCategoriesTreePage = async ({ page, limit }) => {
       description: n.description === null ? '' : n.description,
       image_url: n.image_url || null,
       slug: n.slug || '',
+      parent_category_id: n.parent_category_id,
       children: n.children.map(buildOutputNode),
     });
 
@@ -319,8 +320,7 @@ const filterCategoriesAdmin = async (filters) => {
     const totalItems = countRes.rows[0].total;
 
     const fetchParams = [...params, limit, offset];
-    
-    // JOIN thêm chính bảng danh_muc (Self-Join) để lấy tên danh mục cha cho dễ nhìn
+
     const categoriesRes = await pool.query(
         `SELECT c.danh_muc_id AS category_id, c.ten_danh_muc AS category_name, c.mo_ta AS description,
                 c.hinh_anh AS image_url, c.danh_muc_cha_id AS parent_category_id, c.slug,
