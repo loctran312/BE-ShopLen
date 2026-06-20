@@ -109,8 +109,6 @@ const processRefund = async (req, res) => {
             paymentInfo.ma_tham_chieu
         );
 
-        console.log('--- [MOMO REFUND RESPONSE] ---', refundResult);
-
         if (refundResult.resultCode === 0) {
             // Đổi trạng thái thanh toán thành 'refunded'
             await paymentRepository.updatePaymentStatus(orderId, 'refunded');
@@ -131,7 +129,6 @@ const processRefund = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('[PAYMENT][REFUND] Error:', error);
         return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi hoàn tiền' });
     }
 };

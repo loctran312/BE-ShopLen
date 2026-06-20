@@ -165,10 +165,10 @@ const createOrder = async (userId, payload) => {
 
 		const totalAmount = subTotal - discountAmount;
         
-		// 5. TẠO MÃ ĐƠN HÀNG (BẮT BUỘC PHẢI Ở TRÊN CÁC LỆNH INSERT)
+		// TẠO MÃ ĐƠN HÀNG (BẮT BUỘC PHẢI Ở TRÊN CÁC LỆNH INSERT)
 		const orderId = await generateOrderId(client);
 
-		// 6. Tạo Đơn hàng chính
+		// Tạo Đơn hàng chính
 		await client.query(
 			`INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
@@ -179,7 +179,7 @@ const createOrder = async (userId, payload) => {
 			]
 		);
 
-		// 7. Tạo Chi tiết Đơn hàng, Trừ tồn kho & Ghi Nhật ký Tồn kho
+		// Tạo Chi tiết Đơn hàng, Trừ tồn kho & Ghi Nhật ký Tồn kho
 		for (const item of cartItems) {
 			// Chi tiết đơn
 			await client.query(
@@ -203,7 +203,7 @@ const createOrder = async (userId, payload) => {
 			);
 		}
 
-		// 8. Đánh dấu Voucher đã dùng
+		// Đánh dấu Voucher đã dùng
 		if (voucherId) {
 			await client.query(
 				`UPDATE phieu_giam_gia SET da_dung = da_dung + 1 WHERE phieu_giam_gia_id = $1`,
@@ -217,7 +217,7 @@ const createOrder = async (userId, payload) => {
 			);
 		}
 
-		// 9. Lưu Thanh toán
+		// Lưu Thanh toán
 		const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
 		await client.query(
 			`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`,
@@ -229,7 +229,7 @@ const createOrder = async (userId, payload) => {
 			[orderId]
 		);
 
-		// 10. Dọn dẹp giỏ hàng sau khi đặt thành công
+		// Dọn dẹp giỏ hàng sau khi đặt thành công
 		await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
 
 		await client.query('COMMIT');
