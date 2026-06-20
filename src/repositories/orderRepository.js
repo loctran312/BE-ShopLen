@@ -47,7 +47,7 @@ const createOrder = async (userId, payload) => {
 	try {
 		await client.query('BEGIN');
 
-		// Đọc giỏ hàng của user
+		// Đọc giỏ hàng của user VÀ LẤY GIÁ ĐÃ GIẢM (Khuyến mãi sản phẩm)
 		const cartResult = await client.query(
 			`SELECT gh.bien_the_id, gh.so_luong, bt.gia, sp.ten_san_pham,
                     (SELECT row_to_json(d) FROM (
@@ -73,7 +73,7 @@ const createOrder = async (userId, payload) => {
 		}
 		const cartItems = cartResult.rows;
 
-		// Tính tổng tiền gốc
+		// Tính tổng tiền gốc (Dựa trên giá sau khi áp dụng Sale)
 		let subTotal = 0;
 		cartItems.forEach(item => {
 			let finalPrice = Number(item.gia);
@@ -91,7 +91,6 @@ const createOrder = async (userId, payload) => {
 		});
 
 		// Khóa dòng và kiểm tra tồn kho (Tránh Race Condition)
-		// Sắp xếp bien_the_id để tránh Deadlock nếu nhiều giao dịch chạy cùng lúc
 		const variantIds = cartItems.map(item => item.bien_the_id).sort((a, b) => a - b);
 		const stockResult = await client.query(
 			`SELECT bien_the_id, so_luong_ton 
@@ -103,23 +102,17 @@ const createOrder = async (userId, payload) => {
 
 		const stockMap = new Map(stockResult.rows.map(row => [row.bien_the_id, row.so_luong_ton]));
 
-		// Tạo Chi tiết Đơn hàng & Trừ tồn kho
 		for (const item of cartItems) {
-			// Thêm vào chi tiết đơn
-			await client.query(
-				`INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
-                 VALUES ($1, $2, $3, $4, $5)`,
-				[orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
-			);
-
-			// Trừ kho
-			await client.query(
-				`UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2`,
-				[item.so_luong, item.bien_the_id]
-			);
+			const currentStock = stockMap.get(item.bien_the_id) || 0;
+			if (currentStock < item.so_luong) {
+				throw { 
+					statusCode: 400, 
+					message: `Sản phẩm "${item.ten_san_pham}" chỉ còn ${currentStock} sản phẩm trong kho, không đủ số lượng yêu cầu.` 
+				};
+			}
 		}
 
-		// Khóa dòng và kiểm tra Voucher (Nếu có)
+		// Xử lý Voucher (Khuyến mãi đơn hàng)
 		let voucherId = null;
 		let discountAmount = 0;
 
@@ -135,7 +128,6 @@ const createOrder = async (userId, payload) => {
 
 			const voucher = voucherRes.rows[0];
 
-			// Kiểm tra điều kiện voucher
 			if (voucher.so_luong !== null && voucher.da_dung >= voucher.so_luong) {
 				throw { statusCode: 400, message: 'Mã giảm giá đã hết lượt sử dụng' };
 			}
@@ -150,7 +142,6 @@ const createOrder = async (userId, payload) => {
 				throw { statusCode: 400, message: `Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này` };
 			}
 
-			// Kiểm tra user đã dùng chưa
 			const usageRes = await client.query(
 				`SELECT so_lan_su_dung FROM nguoi_dung_phieu_giam_gia WHERE nguoi_dung_id = $1 AND phieu_giam_gia_id = $2`,
 				[userId, voucher.phieu_giam_gia_id]
@@ -159,7 +150,6 @@ const createOrder = async (userId, payload) => {
 				throw { statusCode: 400, message: 'Bạn đã sử dụng mã giảm giá này rồi' };
 			}
 
-			// Tính tiền giảm
 			if (voucher.kieu_giam_gia === 'fixed') {
 				discountAmount = Number(voucher.gia_tri);
 			} else if (voucher.kieu_giam_gia === 'percent') {
@@ -174,9 +164,11 @@ const createOrder = async (userId, payload) => {
 		}
 
 		const totalAmount = subTotal - discountAmount;
+        
+		// 5. TẠO MÃ ĐƠN HÀNG (BẮT BUỘC PHẢI Ở TRÊN CÁC LỆNH INSERT)
 		const orderId = await generateOrderId(client);
 
-		// Tạo Đơn hàng chính
+		// 6. Tạo Đơn hàng chính
 		await client.query(
 			`INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
@@ -187,23 +179,31 @@ const createOrder = async (userId, payload) => {
 			]
 		);
 
-		// Tạo Chi tiết Đơn hàng & Trừ tồn kho
+		// 7. Tạo Chi tiết Đơn hàng, Trừ tồn kho & Ghi Nhật ký Tồn kho
 		for (const item of cartItems) {
-			// Thêm vào chi tiết đơn
+			// Chi tiết đơn
 			await client.query(
 				`INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
                  VALUES ($1, $2, $3, $4, $5)`,
-				[orderId, item.bien_the_id, item.ten_san_pham, item.gia, item.so_luong]
+				[orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
 			);
 
-			// Trừ kho
-			await client.query(
-				`UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2`,
+			// Trừ kho và lấy số lượng tồn còn lại ngay lập tức
+			const stockUpdateRes = await client.query(
+				`UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
 				[item.so_luong, item.bien_the_id]
+			);
+			const soLuongSauKhiDoi = stockUpdateRes.rows[0].so_luong_ton;
+
+			// Tự động Ghi lịch sử quản lý kho
+			await client.query(
+				`INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
+                 VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho khi khách đặt hàng', $5)`,
+				[item.bien_the_id, -item.so_luong, soLuongSauKhiDoi, orderId, userId]
 			);
 		}
 
-		// Xử lý Voucher (Cộng lượt dùng)
+		// 8. Đánh dấu Voucher đã dùng
 		if (voucherId) {
 			await client.query(
 				`UPDATE phieu_giam_gia SET da_dung = da_dung + 1 WHERE phieu_giam_gia_id = $1`,
@@ -217,7 +217,7 @@ const createOrder = async (userId, payload) => {
 			);
 		}
 
-		// Tạo record Thanh toán & Lịch sử
+		// 9. Lưu Thanh toán
 		const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
 		await client.query(
 			`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`,
@@ -229,7 +229,7 @@ const createOrder = async (userId, payload) => {
 			[orderId]
 		);
 
-		// Xóa giỏ hàng
+		// 10. Dọn dẹp giỏ hàng sau khi đặt thành công
 		await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
 
 		await client.query('COMMIT');

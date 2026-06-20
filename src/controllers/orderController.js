@@ -49,7 +49,7 @@ const createOrder = async (req, res) => {
 			return res.status(error.statusCode).json({ success: false, message: error.message });
 		}
 		console.error('[ORDER][CREATE] Error:', error);
-		return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi đặt hàng' });
+		return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ khi tạo đơn hàng' });
 	}
 };
 
