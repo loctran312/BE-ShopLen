@@ -933,42 +933,6 @@ const apiDocs = {
           },
         },
         {
-          method: "PATCH",
-          path: "/api/variants/:variant_id/stock",
-          summary: "Cập nhật số lượng tồn kho của biến thể - ĐANG SỬA",
-          auth: true,
-          requestExample: {
-            newStock: 100,
-          },
-          successStatus: 200,
-          successExample: {
-            success: true,
-            message: "Cập nhật tồn kho thành công",
-            data: {
-              variantId: 1,
-              stock_quantity: 100,
-            },
-          },
-        },
-        {
-          method: "PATCH",
-          path: "/api/variants/:variant_id/stock-change - ĐANG SỬA",
-          summary: "Điều chỉnh số lượng tồn kho của biến thể (tăng/giảm)",
-          auth: true,
-          requestExample: {
-            stock_quantity: "+100",
-          },
-          successStatus: 200,
-          successExample: {
-            success: true,
-            message: "Cập nhật thay đổi tồn kho thành công",
-            data: {
-              variantId: 1,
-              stock_quantity: 200,
-            },
-          },
-        },
-        {
           method: "POST",
           path: "/api/inventory/overview",
           summary: "Tổng quan tồn kho với nhiều tiêu chí lọc",
