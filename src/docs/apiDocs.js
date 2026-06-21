@@ -867,7 +867,7 @@ const apiDocs = {
           auth: true,
           requestExample: {
             keyword: "len cotton",
-            parent_category_id: 1,
+            parent_category_id: 3,
             page: 1,
             limit: 10,
           },
@@ -876,24 +876,46 @@ const apiDocs = {
             success: true,
             message: "Lọc danh mục thành công",
             data: {
-              categories: [
-                {
-                  category_id: 2,
-                  category_name: "Len Cotton",
-                  description:
-                    "Các dòng len thành phần cotton mềm, mịn, ít xù sợi",
-                  image_url: null,
-                  parent_category_id: 1,
-                  slug: "len-cotton",
-                  parent_category_name: "Len đan",
-                },
-              ],
-              pagination: {
-                total_items: 1,
-                total_pages: 1,
-                current_page: 1,
-                limit: 10,
-              },
+              "success": true,
+              "message": "Lọc danh mục thành công",
+              "data": {
+                "categories": [
+                  {
+                    "id": 3,
+                    "category_name": "Dụng cụ đan móc",
+                    "description": "",
+                    "image_url": null,
+                    "slug": "",
+                    "parent_category_id": null,
+                    "children": [
+                      {
+                        "id": 4,
+                        "category_name": "Kim đan len",
+                        "description": "Kim đan thẳng, kim đan vòng các chất liệu gỗ, kim loại",
+                        "image_url": null,
+                        "slug": "kim-dan-len",
+                        "parent_category_id": 3,
+                        "children": []
+                      },
+                      {
+                        "id": 5,
+                        "category_name": "Kim móc len",
+                        "description": "Kim móc cán dẻo cao cấp bảo vệ khớp ngón tay",
+                        "image_url": null,
+                        "slug": "kim-moc-len",
+                        "parent_category_id": 3,
+                        "children": []
+                      }
+                    ]
+                  }
+                ],
+                "pagination": {
+                  "total_items": 2,
+                  "total_pages": 1,
+                  "current_page": 1,
+                  "limit": 10
+                }
+              }
             },
           },
         },

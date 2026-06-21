@@ -7,7 +7,6 @@ const { parsePositiveInteger } = require('../utils/pagination');
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 const ALLOWED_ROLES = new Set(['customer', 'admin']);
 
-// Shared utility to extract and verify Bearer token
 const extractAndVerifyToken = (authHeader) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new Error('Invalid token format');

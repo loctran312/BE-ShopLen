@@ -44,7 +44,6 @@ const createOrder = async (req, res) => {
         });
 
 	} catch (error) {
-		// Bắt lỗi do kho hết hàng, mã giảm giá sai... ném ra từ Repository
 		if (error.statusCode) {
 			return res.status(error.statusCode).json({ success: false, message: error.message });
 		}
@@ -175,7 +174,6 @@ const repurchaseOrder = async (req, res) => {
 
 const getAllOrdersAdmin = async (req, res) => {
 	try {
-		// Lấy từ Query URL trước, nếu không có thì tìm trong Body, nếu vẫn không có thì mặc định là 1
 		const rawPage = req.query.page !== undefined 
             ? req.query.page 
             : (req.body && req.body.page !== undefined ? req.body.page : 1);
@@ -202,7 +200,7 @@ const getAllOrdersAdmin = async (req, res) => {
 const getOrderDetailAdmin = async (req, res) => {
 	try {
 		const orderId = req.params.id;
-		const order = await orderRepository.getOrderDetail(orderId); // Không truyền userId để Admin xem tất cả
+		const order = await orderRepository.getOrderDetail(orderId);
 
 		if (!order) {
 			return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });

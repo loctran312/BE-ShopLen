@@ -22,7 +22,6 @@ const getWardsByCityCode = async (req, res) => {
     try {
 		const cityCode = req.params.city_code;
 
-        // Kiểm tra xem user có truyền city_code hay không (dù route đã định nghĩa nhưng vẫn nên check an toàn)
 		if (!cityCode || cityCode.trim() === '') {
 			return res.status(400).json({
 				success: false,

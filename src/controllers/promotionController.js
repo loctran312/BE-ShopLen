@@ -83,7 +83,6 @@ const updatePromotion = async (req, res) => {
                 message: "Không thể chỉnh sửa chương trình khuyến mãi đang hoạt động hoặc đã kết thúc." 
             });
         }
-        // ---------------------------
 
         const promotion = await promotionRepository.updatePromotion(id, req.body);
         return res.json({ success: true, message: 'Cập nhật khuyến mãi thành công', data: { promotion } });

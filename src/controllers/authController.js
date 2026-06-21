@@ -30,7 +30,6 @@ const parseDuration = (value, fallback) => {
   return Number.isFinite(numeric) ? numeric : value;
 };
 
-// Shared utility to extract and verify Bearer token
 const extractAndVerifyToken = (authHeader) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     throw new Error('Invalid token format');
@@ -549,7 +548,6 @@ const forgotPassword = async (req, res) => {
       message: 'Mã OTP đã được gửi',
       reset_token_id: resetToken.id,
       expires_at: resetToken.expires_at,
-      // ...(process.env.NODE_ENV !== 'production' ? { otp } : {}),
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});

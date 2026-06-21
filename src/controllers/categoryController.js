@@ -908,7 +908,6 @@ const filterCategoriesAdmin = async (req, res) => {
         const page = parsePositiveInteger(req.body.page || 1, 'page');
         const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
         
-        // Xử lý riêng parent_category_id vì nó có thể là null (danh mục gốc)
         let parentCategoryId = req.body.parent_category_id;
         if (parentCategoryId !== undefined && parentCategoryId !== null) {
             parentCategoryId = Number(parentCategoryId);
@@ -919,6 +918,46 @@ const filterCategoriesAdmin = async (req, res) => {
             keyword: req.body.keyword,
             parent_category_id: parentCategoryId
         });
+
+        const flatCategories = result.categories;
+        const categoryMap = {};
+        const tree = [];
+
+        flatCategories.forEach(cat => {
+            categoryMap[cat.category_id] = {
+                id: cat.category_id,
+                category_name: cat.category_name,
+                description: cat.description || '',
+                image_url: cat.image_url || null,
+                slug: cat.slug || '',
+                parent_category_id: cat.parent_category_id,
+                children: []
+            };
+        });
+
+        flatCategories.forEach(cat => {
+            if (cat.parent_category_id && !categoryMap[cat.parent_category_id]) {
+                categoryMap[cat.parent_category_id] = {
+                    id: cat.parent_category_id,
+                    category_name: cat.parent_category_name || 'Danh mục cha',
+                    description: '',
+                    image_url: null,
+                    slug: '',
+                    parent_category_id: null,
+                    children: []
+                };
+            }
+        });
+
+        Object.values(categoryMap).forEach(node => {
+            if (node.parent_category_id && categoryMap[node.parent_category_id]) {
+                categoryMap[node.parent_category_id].children.push(node);
+            } else {
+                tree.push(node);
+            }
+        });
+
+        result.categories = tree;
 
         return res.json({ success: true, message: 'Lọc danh mục thành công', data: result });
     } catch (error) {

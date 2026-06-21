@@ -10,7 +10,7 @@ const toggleWishlist = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Thiếu product_id' });
         }
 
-        const action = await wishlistRepository.toggleWishlist(userId, product_id); // Đổi biến
+        const action = await wishlistRepository.toggleWishlist(userId, product_id);
         const message = action === 'added' ? 'Đã thêm vào danh sách yêu thích' : 'Đã gỡ khỏi danh sách yêu thích';
 
         return res.json({ success: true, message: message, action: action });

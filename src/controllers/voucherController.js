@@ -1,5 +1,5 @@
 const voucherRepository = require('../repositories/voucherRepository');
-const { parsePositiveInteger } = require('../utils/pagination'); // Import util phân trang
+const { parsePositiveInteger } = require('../utils/pagination');
 
 // --- PUBLIC API ---
 const getAvailableVouchers = async (req, res) => {
@@ -21,7 +21,7 @@ const getAvailableVouchers = async (req, res) => {
 
 const applyVoucher = async (req, res) => {
 	try {
-		const userId = req.user.user_id; // Lấy từ middleware verify token
+		const userId = req.user.user_id;
 		const code = req.body.code ? req.body.code.trim() : null;
 		const orderValue = Number(req.body.order_value);
 
@@ -182,9 +182,7 @@ const updateVoucher = async (req, res) => {
                 message: "Không thể chỉnh sửa mã giảm giá đang trong thời gian hoạt động hoặc đã hết hạn." 
             });
         }
-        // ---------------------------
 
-        // Thực hiện cập nhật nếu vượt qua chốt chặn
         const voucher = await voucherRepository.updateVoucher(id, req.body);
         return res.json({ success: true, message: 'Cập nhật voucher thành công', data: { voucher } });
         
