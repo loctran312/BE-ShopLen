@@ -56,12 +56,13 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 | **Workshop** | Quản lý lớp học đan móc trực tiếp |
 | **Thanh toán** | Tích hợp COD và MoMo payment gateway |
 | **Hoàn tiền** | Xử lý yêu cầu hoàn tiền |
+| **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
+| **Thông báo** | Push notification cho các sự kiện |
 
 ### Đang phát triển
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
 
 ### Kế hoạch phát triển
 
@@ -69,7 +70,6 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 |-----------|-------|
 | **Điểm tích lũy** | Hệ thống loyalty points cho khách hàng thân thiết |
 | **Vòng quay may mắn** | Minigame spin to win voucher/điểm thưởng |
-| **Thông báo** | Push notification cho các sự kiện |
 
 ---
 

@@ -5,12 +5,54 @@ const { momoIpn, processRefund, momoReturn } = require('../controllers/paymentCo
 const router = express.Router();
 
 // Route IPN ngầm của MoMo (cứ để đó)
+// Route IPN (MoMo)
+/**
+ * @swagger
+ * /payment/momo/ipn:
+ *   post:
+ *     summary: Endpoint IPN của MoMo (nội bộ)
+ *     tags:
+ *       - Payment
+ *     responses:
+ *       200:
+ *         description: OK
+ */
 router.post('/momo/ipn', momoIpn);
 
-// Route xử lý Redirect khi khách hàng thanh toán xong
+// MoMo return (redirect)
+/**
+ * @swagger
+ * /payment/momo/return:
+ *   get:
+ *     summary: URL trả về sau khi thanh toán MoMo
+ *     tags:
+ *       - Payment
+ *     responses:
+ *       302:
+ *         description: Redirect
+ */
 router.get('/momo/return', momoReturn);
 
-// Route Hoàn tiền
+// Refund
+/**
+ * @swagger
+ * /payment/refund/{orderId}:
+ *   post:
+ *     summary: Xử lý hoàn tiền cho đơn hàng (Admin)
+ *     tags:
+ *       - Payment
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Refund processed
+ */
 router.post('/refund/:orderId', requireAdmin, processRefund);
 
 module.exports = router;
