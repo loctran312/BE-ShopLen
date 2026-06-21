@@ -67,19 +67,29 @@ const createPromotion = async (req, res) => {
 };
 
 const updatePromotion = async (req, res) => {
-	try {
-		const id = parsePositiveInteger(req.params.id, 'id');
-		const current = await promotionRepository.getPromotionById(id);
-		
-		if (!current) {
-			return res.status(404).json({ success: false, message: 'Khuyến mãi không tồn tại' });
-		}
+    try {
+        const id = parsePositiveInteger(req.params.id, 'id');
+        const current = await promotionRepository.getPromotionById(id);
+        
+        if (!current) {
+            return res.status(404).json({ success: false, message: 'Khuyến mãi không tồn tại' });
+        }
 
-		const promotion = await promotionRepository.updatePromotion(id, req.body);
-		return res.json({ success: true, message: 'Cập nhật khuyến mãi thành công', data: { promotion } });
-	} catch (error) {
-		return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
-	}
+        const now = new Date();
+
+        if (!current.ngay_bat_dau || new Date(current.ngay_bat_dau) <= now) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Không thể chỉnh sửa chương trình khuyến mãi đang hoạt động hoặc đã kết thúc." 
+            });
+        }
+        // ---------------------------
+
+        const promotion = await promotionRepository.updatePromotion(id, req.body);
+        return res.json({ success: true, message: 'Cập nhật khuyến mãi thành công', data: { promotion } });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
 };
 
 const deletePromotion = async (req, res) => {

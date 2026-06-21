@@ -164,22 +164,36 @@ const createVoucher = async (req, res) => {
 };
 
 const updateVoucher = async (req, res) => {
-	try {
-		const id = parsePositiveInteger(req.params.id, 'id');
-		const current = await voucherRepository.getVoucherById(id);
-		
-		if (current.rows.length === 0) {
-			return res.status(404).json({ success: false, message: 'Voucher không tồn tại' });
-		}
+    try {
+        const id = parsePositiveInteger(req.params.id, 'id');
 
-		const voucher = await voucherRepository.updateVoucher(id, req.body);
-		return res.json({ success: true, message: 'Cập nhật voucher thành công', data: { voucher } });
-	} catch (error) {
-		if (error.code === '23505') {
-			return res.status(400).json({ success: false, message: 'Mã code này đã tồn tại' });
-		}
-		return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
-	}
+        const current = await voucherRepository.getVoucherById(id);
+        
+        if (current.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Voucher không tồn tại' });
+        }
+
+        const currentVoucher = current.rows[0];
+        const now = new Date();
+
+        if (!currentVoucher.ngay_bat_dau || new Date(currentVoucher.ngay_bat_dau) <= now) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Không thể chỉnh sửa mã giảm giá đang trong thời gian hoạt động hoặc đã hết hạn." 
+            });
+        }
+        // ---------------------------
+
+        // Thực hiện cập nhật nếu vượt qua chốt chặn
+        const voucher = await voucherRepository.updateVoucher(id, req.body);
+        return res.json({ success: true, message: 'Cập nhật voucher thành công', data: { voucher } });
+        
+    } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({ success: false, message: 'Mã code này đã tồn tại' });
+        }
+        return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
 };
 
 const deleteVoucher = async (req, res) => {
