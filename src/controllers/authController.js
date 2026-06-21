@@ -210,44 +210,37 @@ const createOrLinkGoogleUser = async (client, googleProfile) => {
   return newUser;
 };
 
-// Đăng ký người dùng mới
 const register = async (req, res) => {
   try {
     const { username, email, password, phone_number, role } = req.body;
 
-    // Kiểm tra username hoặc email đã tồn tại chưa
     const existingUser = await authRepository.getUserByUsernameOrEmail(username, email);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ message: 'Username hoặc email đã tồn tại' });
     }
 
-    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Email không hợp lệ' });
     }
 
-    // Validate usernaame (ít nhất 3 ký tự, nhỏ hơn 20 ký tự)
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     if (!usernameRegex.test(username)) {
       return res.status(400).json({ message: 'Username phải có ít nhất 3 ký tự, nhỏ hơn 20 ký tự' });
     }
 
-    // Validate phone number (10 số, bắt đầu bằng 0)
     const phoneRegex = /^0\d{9}$/;
     if (!phoneRegex.test(phone_number)) {
       return res.status(400).json({ message: 'Số điện thoại không hợp lệ' });
     }
 
-    // Validate password (ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt)
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     if (!passwordRegex.test(password)) {
       return res.status(400).json({ message: 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt' });
     }
-    // Mã hóa mật khẩu
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Thêm người dùng mới vào cơ sở dữ liệu
     await authRepository.createUser(pool, {
       userId: await authRepository.getNextUserId(pool),
       username,
@@ -353,12 +346,10 @@ await client.query('BEGIN');
   }
 };
 
-// Đăng nhập người dùng
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Kiểm tra email có tồn tại không (select and alias password and id)
     const userResult = await authRepository.getUserWithPassword(email);
 
     if (userResult.rows.length === 0) {
@@ -367,7 +358,6 @@ const login = async (req, res) => {
 
     const user = userResult.rows[0];
 
-    // So sánh mật khẩu
     const isPasswordValid = await bcrypt.compare(password, user.password || '');
     if (!isPasswordValid) {
       return res.status(400).json({ message: 'Email hoặc mật khẩu không đúng' });
@@ -375,7 +365,6 @@ const login = async (req, res) => {
 
     await authRepository.updateUserStatus(user.user_id, 'active');
 
-    // Tạo token JWT
     const accessToken = jwt.sign(
       { user_id: user.user_id, role: user.role },
       process.env.JWT_SECRET,
@@ -404,7 +393,6 @@ const login = async (req, res) => {
   }
 }
 
-// Lấy access token mới bằng refresh token
 const refreshToken = async (req, res) => {
   try {
     const { refresh_token: refreshTokenValue } = req.body;
@@ -455,7 +443,6 @@ const refreshToken = async (req, res) => {
   }
 }
 
-// Đăng xuất người dùng
 const logout = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -479,7 +466,6 @@ const logout = async (req, res) => {
   }
 }
 
-// Lấy thông tin người dùng hiện tại
 const getCurrentUser = async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -504,7 +490,6 @@ const getCurrentUser = async (req, res) => {
     }
 }
 
-// Quên mật khẩu qua email
 const forgotPassword = async (req, res) => {
   const client = await pool.connect();
 

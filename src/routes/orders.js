@@ -14,7 +14,6 @@ const {
 const router = express.Router();
 
 // --- PUBLIC ROUTES (USER) ---
-// Yêu cầu user phải đăng nhập mới được đặt hàng và xem lịch sử
 router.post('/', requireAuth, createOrder);
 router.get('/my-orders', requireAuth, getMyOrders);
 router.get('/my-orders/:id', requireAuth, getMyOrderDetail);

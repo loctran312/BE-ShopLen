@@ -10,7 +10,6 @@ const createOrder = async (req, res) => {
 		const userId = req.user.user_id;
 		const { phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan } = req.body;
 
-		// Validate cơ bản
 		if (!phuong_xa_id || !dia_chi_giao_hang || !ten_nguoi_nhan || !sdt_nguoi_nhan) {
 			return res.status(400).json({ 
 				success: false, 
@@ -18,12 +17,10 @@ const createOrder = async (req, res) => {
 			});
 		}
 
-		// Gọi hàm tạo order phức tạp ở Repository
 		const result = await orderRepository.createOrder(userId, req.body);
 
 		let payUrl = null;
 
-        // Nếu khách chọn thanh toán MOMO, tiến hành tạo link thanh toán
         if (result.payment_method === 'MOMO') {
             const momoResponse = await momoService.createPaymentUrl(
                 result.order_id, 
@@ -31,7 +28,6 @@ const createOrder = async (req, res) => {
                 `Thanh toan don hang ${result.order_id} tai ShopLen`
             );
             payUrl = momoResponse.payUrl;
-			console.log('--- [MOMO RESPONSE] ---', momoResponse);
         }
 
         return res.status(201).json({
@@ -92,7 +88,6 @@ const repurchaseOrder = async (req, res) => {
 		const userId = req.user.user_id;
 		const orderId = req.params.id;
 
-		// Lấy chi tiết đơn hàng cũ
 		const order = await orderRepository.getOrderDetail(orderId, userId);
 
 		if (!order) {
@@ -107,18 +102,15 @@ const repurchaseOrder = async (req, res) => {
 		let addedCount = 0;
 		let skippedCount = 0;
 
-		// Lặp qua từng sản phẩm để thêm vào giỏ hàng
 		for (const item of itemsToAdd) {
 			const variantId = item.bien_the_id;
 			const quantity = item.so_luong;
 
-			// Bỏ qua nếu sản phẩm đã bị xóa khỏi hệ thống (do set null khóa ngoại)
 			if (!variantId) {
 				skippedCount++;
 				continue;
 			}
 
-			// Kiểm tra tồn kho thực tế của biến thể đó
 			const stockResult = await cartRepository.getVariantStock(variantId);
 			if (stockResult.rows.length === 0) {
 				skippedCount++;
@@ -127,18 +119,15 @@ const repurchaseOrder = async (req, res) => {
 
 			const stockQuantity = Number(stockResult.rows[0].stock_quantity);
 
-			// Kiểm tra số lượng đã có sẵn trong giỏ hàng
 			const currentCartItem = await cartRepository.getCartItem(userId, variantId);
 			const currentQuantityInCart = currentCartItem.rows.length > 0 ? Number(currentCartItem.rows[0].so_luong) : 0;
 
 			let qtyToAdd = quantity;
-			// Nếu thêm số lượng cũ vào mà vượt quá tồn kho thì chỉ lấy số lượng tối đa có thể thêm
 			if (currentQuantityInCart + qtyToAdd > stockQuantity) {
 				qtyToAdd = Math.max(0, stockQuantity - currentQuantityInCart);
 			}
 
 			if (qtyToAdd > 0) {
-				// Dùng lại hàm thêm vào giỏ hàng bạn đã viết trước đó
 				await cartRepository.addItemToCart(userId, variantId, qtyToAdd);
 				addedCount++;
 			} else {
@@ -146,7 +135,6 @@ const repurchaseOrder = async (req, res) => {
 			}
 		}
 
-		// Xử lý câu phản hồi cho Client
 		if (addedCount === 0) {
 			return res.status(400).json({ 
 				success: false, 

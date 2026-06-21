@@ -396,6 +396,32 @@ CREATE TABLE lich_su_quay (
   FOREIGN KEY (cau_hinh_qua_quay_id) REFERENCES cau_hinh_qua_quay(cau_hinh_qua_quay_id)
 );
 
+CREATE TABLE thong_tin_shipper (
+  nguoi_dung_id INT PRIMARY KEY,
+  ma_shipper VARCHAR(20) UNIQUE NOT NULL,
+  cccd VARCHAR(20) UNIQUE,
+  bien_so_xe VARCHAR(20),
+  dia_chi_ca_nhan TEXT,
+  tien_cod_dang_giu NUMERIC(10,2) DEFAULT 0,
+  ma_tinh_hoat_dong VARCHAR(10), -- Tương đương working_city_id
+  FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE CASCADE,
+  FOREIGN KEY (ma_tinh_hoat_dong) REFERENCES tinh_thanh(ma_tinh)
+);
+
+CREATE TABLE phan_cong_giao_hang (
+  phan_cong_id SERIAL PRIMARY KEY,
+  don_hang_id VARCHAR(25) UNIQUE NOT NULL,
+  shipper_id INT NOT NULL,
+  trang_thai_giao VARCHAR(20) DEFAULT 'accepted',
+  tien_thu_ho NUMERIC(10,2) DEFAULT 0,
+  hinh_anh_bang_chung VARCHAR(255),
+  ly_do_that_bai TEXT,
+  ngay_nhan_don TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  ngay_hoan_thanh TIMESTAMP,
+  FOREIGN KEY (don_hang_id) REFERENCES don_hang(don_hang_id),
+  FOREIGN KEY (shipper_id) REFERENCES nguoi_dung(nguoi_dung_id)
+);
+
 -- =========================
 -- COMPATIBILITY VIEWS
 -- =========================
@@ -990,6 +1016,32 @@ INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_
 (8, 7, '2026-08-01 08:00:00', '2026-08-01 12:00:00', 'open'),
 (9, 1, '2026-08-15 09:00:00', '2026-08-15 17:00:00', 'open'),
 (10, 10, '2026-06-25 14:00:00', '2026-06-25 17:00:00', 'open');
+
+-- Tài khoản Shipper (Mật khẩu mặc định: Password@123)
+INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro, trang_thai) VALUES 
+(13, 'shipperhcm@gmail.com', 'shipperhcm', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Nguyễn', 'Văn Giao', '0988888881', 'shipper', 'active'),
+(14, 'shipperhn@gmail.com', 'shipperhn', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Trần', 'Giao Hàng', '0988888882', 'shipper', 'active');
+
+-- Thông tin hồ sơ Shipper
+INSERT INTO thong_tin_shipper (nguoi_dung_id, ma_shipper, cccd, bien_so_xe, dia_chi_ca_nhan, ma_tinh_hoat_dong) VALUES 
+(13, 'SHP013', '079090000001', '59A1-12345', '123 Phạm Văn Đồng, TP.HCM', 'HCM'),
+(14, 'SHP014', '001090000002', '29B1-67890', '456 Giảng Võ, Hà Nội', 'HN');
+
+-- Đơn hàng mới đang ở trạng thái 'processing'
+INSERT INTO don_hang (don_hang_id, nguoi_dung_id, trang_thai, tong_tien, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) VALUES 
+('DH000014', 4, 'processing', 150000.00, 1, '123 Đồng Khởi', 'Nguyễn Văn A', '0911111111'),
+('DH000015', 5, 'processing', 320000.00, 2, '456 Lê Lợi', 'Trần Thị B', '0922222222'),
+('DH000016', 6, 'processing', 210000.00, 6, '789 Tràng Tiền', 'Lê Văn C', '0933333333');
+
+INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) VALUES 
+('DH000014', 1, 'Len Cotton Milk', 25000.00, 6),
+('DH000015', 2, 'Kim Móc Cán Dẻo Tulip - 2.0mm', 160000.00, 2),
+('DH000016', 4, 'Len Sợi Nhung Đũa - Đỏ Đô', 52500.00, 4);
+
+INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES 
+('DH000014', 'COD', 'pending'),
+('DH000015', 'COD', 'pending'),
+('DH000016', 'COD', 'pending');
 
 DO $$
 DECLARE

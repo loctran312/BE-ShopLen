@@ -18,6 +18,7 @@ const paymentRoutes = require('./routes/payment');
 const workshopRoutes = require('./routes/workshops');
 const wishlistRoutes = require('./routes/wishlist');
 const inventoryRoutes = require('./routes/inventory');
+const shipperRoutes = require('./routes/shippers');
 
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -64,6 +65,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/workshops', workshopRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api', shipperRoutes);
 
 app.get('/api/docs', (req, res) => {
     res.type('html').send(renderDocsPage());
@@ -76,6 +78,9 @@ app.get('/api/docs.json', (req, res) => {
         ...apiDocs,
     });
 });
+
+const swaggerDocs = require('./config/swagger');
+swaggerDocs(app);
 
 app.use((req, res) => {
     res.status(404).json({

@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// Lấy toàn bộ sản phẩm trong giỏ hàng kèm thông tin chi tiết sản phẩm và ảnh đại diện
 const getCartByUserId = async (userId) => {
 	return pool.query(
 		`SELECT 
@@ -32,7 +31,6 @@ const getCartByUserId = async (userId) => {
 	);
 };
 
-// Kiểm tra xem sản phẩm đã tồn tại trong giỏ hàng của user chưa
 const getCartItem = async (userId, variantId) => {
 	return pool.query(
 		'SELECT gio_hang_id, so_luong FROM gio_hang WHERE nguoi_dung_id = $1 AND bien_the_id = $2',
@@ -40,7 +38,6 @@ const getCartItem = async (userId, variantId) => {
 	);
 };
 
-// Lấy số lượng tồn kho hiện tại của một biến thể
 const getVariantStock = async (variantId) => {
 	return pool.query(
 		`SELECT bt.bien_the_id, COALESCE(tk.so_luong_ton, 0) AS stock_quantity 
@@ -51,7 +48,6 @@ const getVariantStock = async (variantId) => {
 	);
 };
 
-// Thêm sản phẩm mới hoặc cộng dồn số lượng nếu đã tồn tại (ON CONFLICT)
 const addItemToCart = async (userId, variantId, quantity) => {
 	return pool.query(
 		`INSERT INTO gio_hang (nguoi_dung_id, bien_the_id, so_luong)
@@ -63,7 +59,6 @@ const addItemToCart = async (userId, variantId, quantity) => {
 	);
 };
 
-// Cập nhật đè số lượng (Sử dụng cho trường hợp thay đổi ở ô Input số lượng)
 const updateItemQuantity = async (userId, variantId, quantity) => {
 	return pool.query(
 		`UPDATE gio_hang 
@@ -74,7 +69,6 @@ const updateItemQuantity = async (userId, variantId, quantity) => {
 	);
 };
 
-// Xóa sản phẩm khỏi giỏ hàng
 const removeItemFromCart = async (userId, variantId) => {
 	return pool.query(
 		'DELETE FROM gio_hang WHERE nguoi_dung_id = $1 AND bien_the_id = $2',
@@ -89,7 +83,6 @@ const syncLocalCart = async (userId, localCartItems) => {
 		await client.query('BEGIN');
 
 		for (const item of localCartItems) {
-			// Lấy tồn kho hiện tại của biến thể
 			const stockRes = await client.query(
 				`SELECT COALESCE(tk.so_luong_ton, 0) AS stock_quantity
 				 FROM bien_the_san_pham bt
@@ -98,26 +91,21 @@ const syncLocalCart = async (userId, localCartItems) => {
 				[item.variant_id]
 			);
 
-			// Nếu biến thể không tồn tại, bỏ qua món này và tiếp tục vòng lặp
 			if (stockRes.rows.length === 0) continue;
 
 			const stock = Number(stockRes.rows[0].stock_quantity);
 
-			// Lấy số lượng đã có sẵn trong giỏ hàng DB của user
 			const cartRes = await client.query(
 				`SELECT so_luong FROM gio_hang WHERE nguoi_dung_id = $1 AND bien_the_id = $2`,
 				[userId, item.variant_id]
 			);
 			const currentQtyInDb = cartRes.rows.length > 0 ? Number(cartRes.rows[0].so_luong) : 0;
 
-			// Tính toán số lượng tối đa được phép thêm
 			let qtyToAdd = item.quantity;
 			if (currentQtyInDb + qtyToAdd > stock) {
-				// Chỉ thêm đúng phần còn thiếu cho tới khi đạt mốc tồn kho tối đa
 				qtyToAdd = Math.max(0, stock - currentQtyInDb);
 			}
 
-			// Thực hiện UPSERT (Insert hoặc Update)
 			if (qtyToAdd > 0) {
 				await client.query(
 					`INSERT INTO gio_hang (nguoi_dung_id, bien_the_id, so_luong)

@@ -56,10 +56,8 @@ const createPaymentUrl = async (orderId, amount, orderInfo = 'Thanh toan don han
 
 // TẠO YÊU CẦU HOÀN TIỀN (REFUND)
 const refundPayment = async (orderId, amount, transId) => {
-    // 1. Ép kiểu số tiền về số nguyên (tránh lỗi chuỗi hoặc số thập phân)
     const cleanAmount = Math.round(Number(amount));
-
-    // 2. Tạo ID DUY NHẤT cho riêng giao dịch hoàn tiền này (MoMo bắt buộc)
+    
     const refundOrderId = `RF-${orderId}-${Date.now()}`;
     const requestId = `REQ-${refundOrderId}`;
     const description = `Hoan tien don hang ${orderId}`;
@@ -71,9 +69,9 @@ const refundPayment = async (orderId, amount, transId) => {
 
     const requestBody = {
         partnerCode: MOMO_CONFIG.partnerCode,
-        orderId: refundOrderId, // Phải dùng mã hoàn tiền duy nhất
+        orderId: refundOrderId,
         requestId: requestId,
-        amount: cleanAmount,    // Phải là số nguyên
+        amount: cleanAmount,
         transId: Number(transId),
         lang: "vi",
         description: description,

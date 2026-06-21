@@ -34,7 +34,6 @@ const addToCart = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Số lượng thêm phải là số nguyên dương' });
 		}
 
-		// Kiểm tra sản phẩm tồn tại và lấy số lượng tồn kho
 		const stockResult = await cartRepository.getVariantStock(variantId);
 		if (stockResult.rows.length === 0) {
 			return res.status(404).json({ success: false, message: 'Biến thể sản phẩm không tồn tại' });
@@ -42,7 +41,6 @@ const addToCart = async (req, res) => {
 
 		const stockQuantity = Number(stockResult.rows[0].stock_quantity);
 
-		// Tính toán tổng số lượng nếu sản phẩm đã có sẵn trong giỏ
 		const currentCartItem = await cartRepository.getCartItem(userId, variantId);
 		const currentQuantityInCart = currentCartItem.rows.length > 0 ? Number(currentCartItem.rows[0].so_luong) : 0;
 
@@ -53,7 +51,6 @@ const addToCart = async (req, res) => {
 			});
 		}
 
-		// Thực hiện thêm vào giỏ hàng
 		const result = await cartRepository.addItemToCart(userId, variantId, quantity);
 
 		return res.status(200).json({
@@ -85,7 +82,6 @@ const updateCartItem = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Số lượng phải là số nguyên dương' });
 		}
 
-		// Kiểm tra số lượng tồn kho thực tế
 		const stockResult = await cartRepository.getVariantStock(variantId);
 		if (stockResult.rows.length === 0) {
 			return res.status(404).json({ success: false, message: 'Biến thể sản phẩm không tồn tại' });
@@ -100,13 +96,11 @@ const updateCartItem = async (req, res) => {
 			});
 		}
 
-		// Kiểm tra xem sản phẩm thực sự có trong giỏ hàng chưa
 		const currentCartItem = await cartRepository.getCartItem(userId, variantId);
 		if (currentCartItem.rows.length === 0) {
 			return res.status(404).json({ success: false, message: 'Sản phẩm không tồn tại trong giỏ hàng' });
 		}
 
-		// Cập nhật số lượng mới ghi đè
 		const result = await cartRepository.updateItemQuantity(userId, variantId, quantity);
 
 		return res.json({
@@ -157,7 +151,6 @@ const syncCart = async (req, res) => {
 		const userId = req.user.user_id;
 		const { local_cart } = req.body;
 
-		// Kiểm tra payload đầu vào
 		if (!Array.isArray(local_cart) || local_cart.length === 0) {
 			return res.status(400).json({ 
                 success: false, 
@@ -165,7 +158,6 @@ const syncCart = async (req, res) => {
             });
 		}
 
-		// Lọc và ép kiểu dữ liệu để chống lỗi NaN hoặc âm
 		const validItems = local_cart
 			.filter(item => 
 				Number.isInteger(Number(item.variant_id)) && Number(item.variant_id) > 0 &&
@@ -176,12 +168,10 @@ const syncCart = async (req, res) => {
 				quantity: Number(item.quantity)
 			}));
 
-		// Thực thi đồng bộ nếu có dữ liệu hợp lệ
 		if (validItems.length > 0) {
 			await cartRepository.syncLocalCart(userId, validItems);
 		}
 
-		// Lấy lại giỏ hàng mới nhất từ Database sau khi đã gộp xong
 		const result = await cartRepository.getCartByUserId(userId);
 
 		return res.status(200).json({

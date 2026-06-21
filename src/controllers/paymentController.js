@@ -1,12 +1,11 @@
 const momoService = require('../services/momoService');
 const paymentRepository = require('../repositories/paymentRepository');
-const orderRepository = require('../repositories/orderRepository'); // Dùng lại orderRepository để đổi trạng thái đơn nếu hoàn tiền
+const orderRepository = require('../repositories/orderRepository');
 
 const momoIpn = async (req, res) => {
     try {
         const ipnData = req.body;
 
-        // Xác thực chữ ký để đảm bảo request này thực sự từ MoMo gửi tới
         const isValidSignature = momoService.verifyIpnSignature(ipnData);
         if (!isValidSignature) {
             console.error('[MOMO IPN] Lỗi chữ ký không hợp lệ');
@@ -17,18 +16,14 @@ const momoIpn = async (req, res) => {
 
         const originalOrderId = orderId.substring(0, orderId.lastIndexOf('-'));
 
-        // Xử lý kết quả giao dịch
         if (resultCode === 0) {
-            // resultCode = 0 nghĩa là Thanh toán thành công
             await paymentRepository.updatePaymentStatus(originalOrderId, 'paid', transId);
             console.log(`[MOMO IPN] Đơn hàng ${orderId} đã thanh toán thành công.`);
         } else {
-            // Các mã khác là thất bại/hủy
             await paymentRepository.updatePaymentStatus(originalOderId, 'failed');
             console.log(`[MOMO IPN] Đơn hàng ${orderId} thanh toán thất bại (Mã lỗi: ${resultCode}).`);
         }
 
-        // Trả về 204 No Content cho MoMo biết là Server đã nhận và xử lý xong
         return res.status(204).send();
 
     } catch (error) {
@@ -39,10 +34,8 @@ const momoIpn = async (req, res) => {
 
 const momoReturn = async (req, res) => {
     try {
-        // Với Redirect, dữ liệu MoMo gửi sẽ nằm ở req.query (trên thanh URL)
         const queryData = req.query;
 
-        // Xác thực chữ ký (Signature)
         const isValidSignature = momoService.verifyIpnSignature(queryData);
         if (!isValidSignature) {
             console.error('[MOMO RETURN] Lỗi chữ ký không hợp lệ');
@@ -53,10 +46,8 @@ const momoReturn = async (req, res) => {
 
         const originalOrderId = orderId.substring(0, orderId.lastIndexOf('-'));
 
-        // Lấy thông tin thanh toán hiện tại từ DB để check tránh cập nhật trùng lặp
         const paymentInfo = await paymentRepository.getPaymentInfo(originalOrderId);
-        
-        // Chỉ cập nhật nếu đơn hàng chưa được xử lý (trạng thái vẫn là pending)
+
         if (paymentInfo && paymentInfo.trang_thai === 'pending') {
             if (Number(resultCode) === 0) {
                 await paymentRepository.updatePaymentStatus(originalOrderId, 'paid', transId);
@@ -67,11 +58,10 @@ const momoReturn = async (req, res) => {
             }
         }
 
-        // Sau khi xử lý DB xong, điều hướng (Redirect) người dùng về giao diện Frontend
         if (Number(resultCode) === 0) {
-            return res.redirect(`http://localhost:5173/payment/success?orderId=${orderId}`);
+            return res.redirect(process.env.MOMO_SUCCESS_REDIRECT_URI + `?orderId=${orderId}`);
         } else {
-            return res.redirect(`http://localhost:5173/payment/failed?orderId=${orderId}`);
+            return res.redirect(process.env.MOMO_FAILED_REDIRECT_URI + `?orderId=${orderId}`);
         }
 
     } catch (error) {
@@ -84,7 +74,6 @@ const processRefund = async (req, res) => {
     try {
         const orderId = req.params.orderId;
 
-        // Lấy thông tin thanh toán của đơn hàng
         const paymentInfo = await paymentRepository.getPaymentInfo(orderId);
 
         if (!paymentInfo) {
@@ -99,10 +88,8 @@ const processRefund = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Đơn hàng này chưa thanh toán hoặc đã được hoàn tiền' });
         }
 
-        // Ép kiểu tổng tiền thành số trước khi gửi qua Service
         const amountToRefund = Math.round(Number(paymentInfo.tong_tien));
 
-        // Gọi API MoMo để thực hiện hoàn tiền
         const refundResult = await momoService.refundPayment(
             orderId, 
             amountToRefund, 
@@ -110,10 +97,8 @@ const processRefund = async (req, res) => {
         );
 
         if (refundResult.resultCode === 0) {
-            // Đổi trạng thái thanh toán thành 'refunded'
             await paymentRepository.updatePaymentStatus(orderId, 'refunded');
-            
-            // Đổi trạng thái đơn hàng thành 'cancelled'
+
             await orderRepository.updateOrderStatus(orderId, 'cancelled');
 
             return res.json({

@@ -876,46 +876,48 @@ const apiDocs = {
             success: true,
             message: "Lọc danh mục thành công",
             data: {
-              "success": true,
-              "message": "Lọc danh mục thành công",
-              "data": {
-                "categories": [
+              success: true,
+              message: "Lọc danh mục thành công",
+              data: {
+                categories: [
                   {
-                    "id": 3,
-                    "category_name": "Dụng cụ đan móc",
-                    "description": "",
-                    "image_url": null,
-                    "slug": "",
-                    "parent_category_id": null,
-                    "children": [
+                    id: 3,
+                    category_name: "Dụng cụ đan móc",
+                    description: "",
+                    image_url: null,
+                    slug: "",
+                    parent_category_id: null,
+                    children: [
                       {
-                        "id": 4,
-                        "category_name": "Kim đan len",
-                        "description": "Kim đan thẳng, kim đan vòng các chất liệu gỗ, kim loại",
-                        "image_url": null,
-                        "slug": "kim-dan-len",
-                        "parent_category_id": 3,
-                        "children": []
+                        id: 4,
+                        category_name: "Kim đan len",
+                        description:
+                          "Kim đan thẳng, kim đan vòng các chất liệu gỗ, kim loại",
+                        image_url: null,
+                        slug: "kim-dan-len",
+                        parent_category_id: 3,
+                        children: [],
                       },
                       {
-                        "id": 5,
-                        "category_name": "Kim móc len",
-                        "description": "Kim móc cán dẻo cao cấp bảo vệ khớp ngón tay",
-                        "image_url": null,
-                        "slug": "kim-moc-len",
-                        "parent_category_id": 3,
-                        "children": []
-                      }
-                    ]
-                  }
+                        id: 5,
+                        category_name: "Kim móc len",
+                        description:
+                          "Kim móc cán dẻo cao cấp bảo vệ khớp ngón tay",
+                        image_url: null,
+                        slug: "kim-moc-len",
+                        parent_category_id: 3,
+                        children: [],
+                      },
+                    ],
+                  },
                 ],
-                "pagination": {
-                  "total_items": 2,
-                  "total_pages": 1,
-                  "current_page": 1,
-                  "limit": 10
-                }
-              }
+                pagination: {
+                  total_items: 2,
+                  total_pages: 1,
+                  current_page: 1,
+                  limit: 10,
+                },
+              },
             },
           },
         },
@@ -1079,7 +1081,8 @@ const apiDocs = {
                 limit: 10,
               },
             },
-            notes: "Enum transaction_type: nhap_kho (nhập kho), xuat_ban (xuất bán), hoan_tra (hoàn trả), kiem_kho (kiểm kho), khac (khác)",
+            notes:
+              "Enum transaction_type: nhap_kho (nhập kho), xuat_ban (xuất bán), hoan_tra (hoàn trả), kiem_kho (kiểm kho), khac (khác)",
           },
         },
       ],
@@ -2158,6 +2161,131 @@ const apiDocs = {
           notes:
             "API này sẽ quét bảng thong_bao_yeu_thich và gửi hàng loạt email nhắc nhở về giá hoặc tồn kho. Nên được lên lịch chạy ngầm bằng Cronjob (VD: node-cron).",
         },
+      ],
+    },
+    {
+      name: "Giao hàng",
+      endpoints: [
+        {
+          method: "GET",
+          path: "/api/admin/shippers",
+          summary: "Lấy danh sách Shipper có filter - ADMIN",
+          auth: true,
+          requestExample: {
+            page: 1,
+            limit: 10,
+            working_city_id: "HCM",
+          },
+          successStatus: 200,
+          successExample: {
+            success: true,
+            message: "Danh sách Shipper",
+            data: {
+              success: true,
+              message: "Lấy danh sách shipper thành công",
+              data: [
+                {
+                  shipper_id: "SHP013",
+                  full_name: "Nguyễn Văn Giao",
+                  phone: "0988888881",
+                  status: "active",
+                  created_at: "2026-06-21T12:11:32.875Z",
+                  working_city_id: "HCM",
+                }
+              ],
+              pagination: {
+                current_page: 1,
+                limit: 10,
+                total_pages: 1,
+                total_records: 2,
+              },
+            },
+          },
+        },
+        {
+          method: "POST",
+          path: "/api/admin/shippers",
+          summary: "Tạo Shipper mới - ADMIN",
+          auth: true,
+          requestExample: {
+            "full_name": "Lê Phân Phối",
+            "phone": "0999888777",
+            "email": "lephanphoi@gmail.com",
+            "working_city_id": "DN" 
+          },
+          successStatus: 201,
+          successExample: {
+            "success": true,
+            "message": "Tạo tài khoản shipper thành công. Mật khẩu mặc định là: Password@123",
+            "data": {
+              "shipper_id": "SHP015",
+              "full_name": "Lê Phân Phối",
+              "working_city_id": "DN",
+              "status": "ACTIVE"
+            }
+          },
+        },
+        {
+          method: "PATCH",
+          path: "/api/admin/shippers/:shipper_id/status",
+          summary: "Cập nhật trạng thái hoạt động của Shipper - ADMIN",
+          auth: true,
+          requestExample: {
+            "status": "INACTIVE"
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật trạng thái tài khoản thành công"
+          },
+        },
+        {
+          method: "GET",
+          path: "/api/shipper/available-orders",
+          summary: "Lấy danh sách đơn hàng đang chờ giao mà Shipper có thể nhận - SHIPPER",
+          auth: true,
+          requestExample: null,
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Lấy danh sách đơn hàng phù hợp thành công",
+            "data": [
+              {
+                "order_id": "DH000014",
+                "pickup_address": "Kho tổng ShopLen, Quận 1",
+                "delivery_address": "123 Đồng Khởi, Phường Bến Nghé, Hồ Chí Minh",
+                "shipping_fee": 0,
+                "cod_amount": "150000.00",
+                "status": "READY_FOR_PICKUP"
+              },
+              {
+                "order_id": "DH000015",
+                "pickup_address": "Kho tổng ShopLen, Quận 1",
+                "delivery_address": "456 Lê Lợi, Phường Bến Thành, Hồ Chí Minh",
+                "shipping_fee": 0,
+                "cod_amount": "320000.00",
+                "status": "READY_FOR_PICKUP"
+              }
+            ]
+          },
+          notes: "API này sẽ trả về các đơn hàng có trạng thái 'READY_FOR_PICKUP' trong khu vực mà Shipper đang làm việc.",
+        },
+        {
+          method: "PUT",
+          path: "/api/shipper/profile",
+          summary: "Cập nhật thông tin cá nhân của Shipper - SHIPPER",
+          auth: true,
+          requestExample: {
+            "full_name": "Nguyễn Văn Giao Nhanh",
+            "phone": "0988888881",
+            "personal_address": "888 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+          },
+          successStatus: 200,
+          successExample: {
+            "success": true,
+            "message": "Cập nhật thông tin cá nhân thành công"
+          },
+        }
       ],
     },
   ],

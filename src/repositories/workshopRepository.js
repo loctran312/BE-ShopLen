@@ -1,7 +1,6 @@
 const pool = require('../config/db');
 const { uploadImageToImgBB } = require('../utils/imgbb');
 
-// Hàm hỗ trợ tạo SKU
 const generateSKU = (prefix, id) => {
     const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `${prefix}${id}-${randomStr}`;
@@ -94,7 +93,6 @@ const createWorkshop = async (payload) => {
     try {
         await client.query('BEGIN');
 
-        // Tạo Sản phẩm
         const productRes = await client.query(
             `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham)
              VALUES (3, $1, $2, $3, $4) RETURNING san_pham_id`,
@@ -102,7 +100,6 @@ const createWorkshop = async (payload) => {
         );
         const productId = productRes.rows[0].san_pham_id;
 
-        // Tạo Workshop
         const workshopRes = await client.query(
             `INSERT INTO hoi_thao (san_pham_id, tieu_de, mo_ta, dia_diem)
              VALUES ($1, $2, $3, $4) RETURNING hoi_thao_id`,
@@ -110,7 +107,6 @@ const createWorkshop = async (payload) => {
         );
         const workshopId = workshopRes.rows[0].hoi_thao_id;
 
-        // Xử lý các Ca học
         for (const session of sessions) {
             const sku = generateSKU('WS', productId);
             const baseSlug = slugifyText(`${title} ${session.session_name}`);
@@ -154,25 +150,20 @@ const updateWorkshop = async (workshopId, payload) => {
 
     try {
         await client.query('BEGIN');
-        
-        // Cập nhật Thông tin Workshop
+
         const wsRes = await client.query(`UPDATE hoi_thao SET tieu_de = $1, mo_ta = $2, dia_diem = $3 WHERE hoi_thao_id = $4 RETURNING san_pham_id`, [title, description, location, workshopId]);
         if (wsRes.rows.length === 0) throw new Error('Workshop không tồn tại');
         const productId = wsRes.rows[0].san_pham_id;
 
-        // Cập nhật Sản phẩm
         await client.query(`UPDATE san_pham SET danh_muc_id = $1, ten_san_pham = $2, mo_ta = $3, trang_thai_san_pham = $4 WHERE san_pham_id = $5`, [category_id, title, description, status, productId]);
 
-        // Cập nhật Ca học (UPSERT)
         if (Array.isArray(sessions)) {
             for (const session of sessions) {
                 if (session.variant_id) {
-                    // Update ca cũ
                     await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
                     await client.query(`UPDATE ton_kho SET so_luong_ton = $1 WHERE bien_the_id = $2`, [session.capacity, session.variant_id]);
                     await client.query(`UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, ngay_ket_thuc = $2, trang_thai = $3 WHERE bien_the_id = $4`, [session.start_date, session.end_date, session.status, session.variant_id]);
-                    
-                    // Cập nhật ảnh (Xóa hết thêm lại cho an toàn)
+
                     if (Array.isArray(session.images)) {
                         await client.query(`DELETE FROM hinh_anh_bien_the WHERE bien_the_id = $1`, [session.variant_id]);
                         for (let i = 0; i < session.images.length; i++) {
@@ -182,7 +173,6 @@ const updateWorkshop = async (workshopId, payload) => {
                         }
                     }
                 } else {
-                    // Thêm ca mới hoàn toàn
                     const sku = generateSKU('WS', productId);
                     const baseSlug = slugifyText(`${title} ${session.session_name}`);
                     const slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
@@ -221,7 +211,6 @@ const deleteWorkshop = async (workshopId) => {
     try {
         await client.query('BEGIN');
 
-        // Lấy danh sách variant_id để check ràng buộc
         const wsRes = await client.query(`SELECT san_pham_id FROM hoi_thao WHERE hoi_thao_id = $1`, [workshopId]);
         if (wsRes.rows.length === 0) throw { statusCode: 404, message: 'Workshop không tồn tại' };
         const productId = wsRes.rows[0].san_pham_id;
@@ -229,12 +218,10 @@ const deleteWorkshop = async (workshopId) => {
         const variantRes = await client.query(`SELECT bien_the_id FROM hoi_thao_bien_the WHERE hoi_thao_id = $1`, [workshopId]);
         const variantIds = variantRes.rows.map(row => row.bien_the_id);
 
-        // Kiểm tra xem đã có ai mua vé chưa
         if (variantIds.length > 0) {
             const checkOrders = await client.query(`SELECT 1 FROM chi_tiet_don_hang WHERE bien_the_id = ANY($1::int[]) LIMIT 1`, [variantIds]);
             if (checkOrders.rows.length > 0) throw { statusCode: 400, message: 'Không thể xóa Workshop đã có học viên đăng ký/mua vé.' };
-            
-            // Xóa rác
+
             await client.query(`DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
             await client.query(`DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
             await client.query(`DELETE FROM hoi_thao_bien_the WHERE hoi_thao_id = $1`, [workshopId]);

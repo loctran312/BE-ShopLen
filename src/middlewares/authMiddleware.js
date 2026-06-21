@@ -39,8 +39,24 @@ const requireAdmin = (req, res, next) => {
   }
 };
 
+const requireShipper = (req, res, next) => {
+  try {
+    const decoded = extractAndVerifyToken(req.headers.authorization);
+
+    if (decoded.role !== 'shipper') {
+      return res.status(403).json({ message: 'Quyền truy cập bị từ chối. API này chỉ dành cho Shipper.' });
+    }
+
+    req.user = decoded;
+    return next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Token không hợp lệ hoặc hết hạn' });
+  }
+};
+
 module.exports = {
   extractAndVerifyToken,
   requireAuth,
   requireAdmin,
+  requireShipper,
 };

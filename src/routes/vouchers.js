@@ -14,13 +14,10 @@ const {
 const router = express.Router();
 
 // --- PUBLIC ROUTES ---
-// Khách vãng lai cũng có thể xem danh sách voucher khả dụng
 router.get('/', getAvailableVouchers); 
-// Áp dụng voucher phải đăng nhập (để check lịch sử sử dụng)
 router.post('/apply', requireAuth, applyVoucher); 
 
 // --- ADMIN ROUTES ---
-// Quản lý CRUD dành cho Admin
 router.get('/vouchers', requireAdmin, getAllVouchersAdmin);
 router.get('/vouchers/:id', requireAdmin, getVoucherDetail);
 router.post('/vouchers', requireAdmin, createVoucher);

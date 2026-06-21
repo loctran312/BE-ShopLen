@@ -33,7 +33,6 @@ const applyVoucher = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Giá trị đơn hàng không hợp lệ' });
 		}
 
-		// Tìm mã giảm giá
 		const voucherResult = await voucherRepository.getVoucherByCode(code);
 		if (voucherResult.rows.length === 0) {
 			return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
@@ -41,7 +40,6 @@ const applyVoucher = async (req, res) => {
 
 		const voucher = voucherResult.rows[0];
 
-		// Kiểm tra các điều kiện (Số lượng, Thời gian)
 		if (voucher.quantity !== null && voucher.used_count >= voucher.quantity) {
 			return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết lượt sử dụng' });
 		}
@@ -55,7 +53,6 @@ const applyVoucher = async (req, res) => {
 			return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết hạn' });
 		}
 
-		// Kiểm tra điều kiện đơn hàng tối thiểu
 		if (voucher.minimum_value !== null && orderValue < Number(voucher.minimum_value)) {
 			return res.status(400).json({ 
 				success: false, 
@@ -63,27 +60,23 @@ const applyVoucher = async (req, res) => {
 			});
 		}
 
-		// Kiểm tra xem user này đã dùng mã này chưa (Giả sử quy định mỗi người chỉ dùng 1 lần)
 		const usageResult = await voucherRepository.getUserVoucherUsage(userId, voucher.voucher_id);
 		if (usageResult.rows.length > 0 && usageResult.rows[0].so_lan_su_dung > 0) {
 			return res.status(400).json({ success: false, message: 'Bạn đã sử dụng mã giảm giá này rồi' });
 		}
 
-		// Tính toán số tiền được giảm
 		let discountAmount = 0;
 
 		if (voucher.discount_type === 'fixed') {
 			discountAmount = Number(voucher.value);
 		} else if (voucher.discount_type === 'percent') {
 			discountAmount = (orderValue * Number(voucher.value)) / 100;
-			
-			// Giới hạn số tiền giảm tối đa
+
 			if (voucher.max_discount !== null && discountAmount > Number(voucher.max_discount)) {
 				discountAmount = Number(voucher.max_discount);
 			}
 		}
 
-		// Đảm bảo tiền giảm không lớn hơn tổng tiền đơn hàng
 		if (discountAmount > orderValue) {
 			discountAmount = orderValue;
 		}
