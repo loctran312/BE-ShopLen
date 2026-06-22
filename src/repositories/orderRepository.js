@@ -1,7 +1,6 @@
 const pool = require('../config/db');
 
 const generateOrderId = async (client) => {
-	// Lấy ngày hiện tại
 	const now = new Date();
 	const yyyy = now.getFullYear();
 	const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -10,7 +9,6 @@ const generateOrderId = async (client) => {
 	const dateStr = `${yyyy}${mm}${dd}`; // YYYYMMDD
 	const prefix = `DH-${dateStr}-`; // DH-YYYYMMDD-
 
-	// Tìm mã đơn hàng lớn nhất trong ngày hôm nay
 	const result = await client.query(
 		`SELECT don_hang_id 
          FROM don_hang 
@@ -22,10 +20,9 @@ const generateOrderId = async (client) => {
 
 	let nextSequence = 1;
 
-	// Nếu đã có đơn hàng trong ngày, lấy số thứ tự cuối cùng cộng thêm 1
 	if (result.rows.length > 0) {
-		const lastOrderId = result.rows[0].don_hang_id; // VD: DH-20260616-0005
-		const sequencePart = lastOrderId.split('-')[2]; // Lấy phần '0005'
+		const lastOrderId = result.rows[0].don_hang_id;
+		const sequencePart = lastOrderId.split('-')[2];
 		const lastSequence = parseInt(sequencePart, 10);
 		
 		if (!isNaN(lastSequence)) {
@@ -33,7 +30,6 @@ const generateOrderId = async (client) => {
 		}
 	}
 
-	// Format lại số thứ tự thành 4 chữ số (VD: 0001, 0015, 0123)
 	const sequenceStr = String(nextSequence).padStart(4, '0');
 
 	return `${prefix}${sequenceStr}`;
@@ -164,8 +160,7 @@ const createOrder = async (userId, payload) => {
 		}
 
 		const totalAmount = subTotal - discountAmount;
-        
-		// TẠO MÃ ĐƠN HÀNG (BẮT BUỘC PHẢI Ở TRÊN CÁC LỆNH INSERT)
+
 		const orderId = await generateOrderId(client);
 
 		// Tạo Đơn hàng chính
@@ -250,7 +245,12 @@ const getUserOrders = async (userId, { page, limit }) => {
 	const totalItems = countRes.rows[0].total;
 
 	const ordersRes = await pool.query(
-		`SELECT don_hang_id, trang_thai, tong_tien, so_tien_giam, ten_nguoi_nhan, dia_chi_giao_hang
+		`SELECT don_hang_id AS order_id, 
+                trang_thai AS status, 
+                tong_tien AS total_amount, 
+                so_tien_giam AS discount_amount, 
+                ten_nguoi_nhan AS customer_name, 
+                dia_chi_giao_hang AS shipping_address
          FROM don_hang
          WHERE nguoi_dung_id = $1
          ORDER BY don_hang_id DESC
@@ -272,8 +272,8 @@ const getUserOrders = async (userId, { page, limit }) => {
 const getOrderDetail = async (orderId, userId = null) => {
 	// Lấy thông tin chung của đơn hàng
 	const orderQuery = userId 
-		? `SELECT * FROM don_hang WHERE don_hang_id = $1 AND nguoi_dung_id = $2`
-		: `SELECT * FROM don_hang WHERE don_hang_id = $1`;
+		? `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1 AND nguoi_dung_id = $2`
+		: `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1`;
 	const params = userId ? [orderId, userId] : [orderId];
 
 	const orderRes = await pool.query(orderQuery, params);
@@ -283,7 +283,7 @@ const getOrderDetail = async (orderId, userId = null) => {
 
 	// Lấy danh sách sản phẩm trong đơn
 	const detailRes = await pool.query(
-		`SELECT chi_tiet_don_hang_id, bien_the_id, ten_san_pham, gia, so_luong 
+		`SELECT chi_tiet_don_hang_id AS item_id, bien_the_id AS variant_id, ten_san_pham AS product_name, gia AS price, so_luong AS quantity 
          FROM chi_tiet_don_hang 
          WHERE don_hang_id = $1`,
 		[orderId]
@@ -291,7 +291,7 @@ const getOrderDetail = async (orderId, userId = null) => {
 
 	// Lấy thông tin thanh toán
 	const paymentRes = await pool.query(
-		`SELECT phuong_thuc, trang_thai, ma_tham_chieu FROM thanh_toan WHERE don_hang_id = $1`,
+		`SELECT phuong_thuc AS payment_method, trang_thai AS payment_status, ma_tham_chieu AS reference_code FROM thanh_toan WHERE don_hang_id = $1`,
 		[orderId]
 	);
 
@@ -310,7 +310,12 @@ const getAllOrdersAdmin = async ({ page, limit }) => {
 	const totalItems = countRes.rows[0].total;
 
 	const ordersRes = await pool.query(
-		`SELECT don_hang_id, nguoi_dung_id, trang_thai, tong_tien, ten_nguoi_nhan, sdt_nguoi_nhan
+		`SELECT don_hang_id AS order_id, 
+                nguoi_dung_id AS user_id, 
+                trang_thai AS status, 
+                tong_tien AS total_amount, 
+                ten_nguoi_nhan AS customer_name, 
+                sdt_nguoi_nhan AS phone_number
          FROM don_hang
          ORDER BY don_hang_id DESC
          LIMIT $1 OFFSET $2`,
@@ -381,7 +386,12 @@ const filterOrdersAdmin = async (filters) => {
 
     const fetchParams = [...params, limit, offset];
     const ordersRes = await pool.query(
-        `SELECT don_hang_id, nguoi_dung_id, trang_thai, tong_tien, ten_nguoi_nhan, sdt_nguoi_nhan
+        `SELECT don_hang_id AS order_id, 
+                nguoi_dung_id AS user_id, 
+                trang_thai AS status, 
+                tong_tien AS total_amount, 
+                ten_nguoi_nhan AS customer_name, 
+                sdt_nguoi_nhan AS phone_number
          FROM don_hang ${whereString}
          ORDER BY don_hang_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         fetchParams
