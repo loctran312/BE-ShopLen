@@ -602,7 +602,7 @@ const deleteProduct = async (productId) => {
 };
 
 const filterProducts = async (filters) => {
-    const { page = 1, limit = 10, keyword, category_ids, type_ids, min_price, max_price, status } = filters;
+    const { page = 1, limit = 10, keyword, category_ids, type_ids, min_price, max_price, status, sort_price } = filters;
     const offset = (page - 1) * limit;
 
     const params = [];
@@ -659,6 +659,13 @@ const filterProducts = async (filters) => {
         return { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
     }
 
+    let orderByClause = 'ORDER BY p.san_pham_id DESC';
+    if (sort_price === 'asc') {
+        orderByClause = 'ORDER BY (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id) ASC';
+    } else if (sort_price === 'desc') {
+        orderByClause = 'ORDER BY (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id) DESC';
+    }
+
     const fetchParams = [...params, limit, offset];
     const fetchQuery = `
         SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
@@ -667,7 +674,7 @@ const filterProducts = async (filters) => {
         LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
         LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
         ${whereString}
-        ORDER BY p.san_pham_id DESC
+        ${orderByClause}
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 

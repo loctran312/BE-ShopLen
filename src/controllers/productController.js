@@ -149,7 +149,8 @@ const filterProducts = async (req, res) => {
             type_ids: req.body.type_ids,
             min_price: req.body.min_price,
             max_price: req.body.max_price,
-            status: req.body.status
+            status: req.body.status,
+            sort_price: req.body.sort_price
         });
 
         return res.json({ success: true, message: 'Lọc sản phẩm thành công', data: result });

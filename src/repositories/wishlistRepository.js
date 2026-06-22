@@ -45,7 +45,18 @@ const getMyWishlist = async (userId, { page, limit }) => {
                 (SELECT duong_dan_anh FROM hinh_anh_bien_the vi 
                  JOIN bien_the_san_pham bt ON vi.bien_the_id = bt.bien_the_id 
                  WHERE bt.san_pham_id = sp.san_pham_id 
-                 ORDER BY bt.bien_the_id ASC, vi.thu_tu_hien_thi ASC LIMIT 1) AS image_url
+                 ORDER BY bt.bien_the_id ASC, vi.thu_tu_hien_thi ASC LIMIT 1) AS image_url,
+                (SELECT row_to_json(d) FROM (
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE kmsp.san_pham_id = sp.san_pham_id
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY km.khuyen_mai_id DESC
+                    LIMIT 1
+                ) d) AS discount
          FROM danh_sach_yeu_thich w
          JOIN san_pham sp ON w.san_pham_id = sp.san_pham_id
          WHERE w.nguoi_dung_id = $1
@@ -54,8 +65,34 @@ const getMyWishlist = async (userId, { page, limit }) => {
         [userId, limit, offset]
     );
 
+    const processedItems = wishlistRes.rows.map(item => {
+        const price = Number(item.min_price || 0);
+        let finalPrice = price;
+        let discount = item.discount || null;
+
+        if (discount) {
+            discount.value = Number(discount.value);
+            if (discount.type === 'percent') {
+                finalPrice = price - (price * discount.value / 100);
+            } else if (discount.type === 'fixed') {
+                finalPrice = price - discount.value;
+            }
+            if (finalPrice < 0) finalPrice = 0;
+            
+            item.discount = discount;
+        } else {
+            delete item.discount;
+        }
+
+        return {
+            ...item,
+            min_price: price,
+            final_price: finalPrice
+        };
+    });
+
     return {
-        items: wishlistRes.rows,
+        items: processedItems,
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
     };
 };

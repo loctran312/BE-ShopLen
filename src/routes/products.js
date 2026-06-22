@@ -163,22 +163,24 @@ router.delete('/:product_id', requireAdmin, deleteProduct);
  * /products/filter:
  *   post:
  *     summary: Lọc sản phẩm theo nhiều tiêu chí
- *     tags: [Products]
+ *     tags:
+ *       - Products
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             example:
- *               keyword: "len cotton"
- *               category_ids: [1, 2]
- *               type_ids: [1]
- *               min_price: 10000
- *               max_price: 50000
- *               status: "active"
- *               page: 1
- *               limit: 10
+ *           example:
+ *             keyword: "len cotton"
+ *             category_ids: [1, 2]
+ *             type_ids: [1]
+ *             min_price: 10000
+ *             max_price: 50000
+ *             status: "active"
+ *             sort_price: "asc"
+ *             page: 1
+ *             limit: 10
  *     responses:
  *       200:
  *         description: Lọc sản phẩm thành công
