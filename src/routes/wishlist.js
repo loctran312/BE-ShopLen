@@ -4,24 +4,26 @@ const { toggleWishlist, getMyWishlist, triggerEmailNotifications } = require('..
 
 const router = express.Router();
 
-// User routes
 /**
  * @swagger
  * /wishlist/toggle:
  *   post:
- *     summary: Thêm/bỏ sản phẩm vào wishlist cho người dùng hiện tại
+ *     summary: Thêm hoặc xóa sản phẩm khỏi danh sách yêu thích
  *     tags:
  *       - Wishlist
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             example:
+ *               product_id: 2
  *     responses:
  *       200:
- *         description: Success
+ *         description: Trả về action là 'added' hoặc 'removed'
  */
 router.post('/toggle', requireAuth, toggleWishlist);
 
@@ -29,14 +31,23 @@ router.post('/toggle', requireAuth, toggleWishlist);
  * @swagger
  * /wishlist:
  *   get:
- *     summary: Lấy wishlist của người dùng hiện tại
+ *     summary: Lấy danh sách sản phẩm yêu thích của người dùng
  *     tags:
  *       - Wishlist
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Success
+ *         description: Thành công
  */
 router.get('/', requireAuth, getMyWishlist);
 
@@ -44,14 +55,14 @@ router.get('/', requireAuth, getMyWishlist);
  * @swagger
  * /wishlist/trigger-emails:
  *   post:
- *     summary: Gửi email thông báo cho người dùng wishlist (Admin)
+ *     summary: Gửi email nhắc nhở Giảm giá / Hàng về - ADMIN
  *     tags:
  *       - Wishlist
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Emails triggered
+ *         description: Thành công
  */
 router.post('/trigger-emails', requireAdmin, triggerEmailNotifications);
 

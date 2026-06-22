@@ -8,8 +8,7 @@ const router = express.Router();
  * /auth/register:
  *   post:
  *     summary: Đăng ký tài khoản mới
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -17,11 +16,11 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             example:
- *               username: user123
- *               email: user@example.com
- *               password: Password@123
- *               phone_number: 0901234567
- *               role: customer
+ *               username: "user123"
+ *               email: "user@example.com"
+ *               password: "Password@123"
+ *               phone_number: "0901234567"
+ *               role: "customer"
  *     responses:
  *       201:
  *         description: Đăng ký thành công
@@ -33,8 +32,7 @@ router.post('/register', register);
  * /auth/login:
  *   post:
  *     summary: Đăng nhập bằng email và mật khẩu
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -42,11 +40,11 @@ router.post('/register', register);
  *           schema:
  *             type: object
  *             example:
- *               email: user@example.com
- *               password: Password@123
+ *               email: "admin@gmail.com"
+ *               password: "Admin@123"
  *     responses:
  *       200:
- *         description: Đăng nhập thành công
+ *         description: Đăng nhập thành công (Trả về Token)
  */
 router.post('/login', login);
 
@@ -55,8 +53,7 @@ router.post('/login', login);
  * /auth/refresh-token:
  *   post:
  *     summary: Lấy access token mới bằng refresh token
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -64,10 +61,10 @@ router.post('/login', login);
  *           schema:
  *             type: object
  *             example:
- *               refresh_token: jwt-refresh-token
+ *               refresh_token: "jwt-refresh-token"
  *     responses:
  *       200:
- *         description: Lấy token thành công
+ *         description: Thành công
  */
 router.post('/refresh-token', refreshToken);
 
@@ -76,11 +73,10 @@ router.post('/refresh-token', refreshToken);
  * /auth/google:
  *   get:
  *     summary: Bắt đầu đăng nhập bằng Google
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     responses:
  *       302:
- *         description: Redirect tới Google OAuth
+ *         description: Redirect đến trang Google
  */
 router.get('/google', startGoogleLogin);
 
@@ -89,11 +85,19 @@ router.get('/google', startGoogleLogin);
  * /auth/google/callback:
  *   get:
  *     summary: Xử lý callback từ Google OAuth
- *     tags:
- *       - Auth
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: state
+ *         schema:
+ *           type: string
  *     responses:
  *       302:
- *         description: Redirect về frontend với token
+ *         description: Redirect về Frontend kèm Token
  */
 router.get('/google/callback', handleGoogleCallback);
 
@@ -102,11 +106,10 @@ router.get('/google/callback', handleGoogleCallback);
  * /auth/logout:
  *   post:
  *     summary: Đăng xuất phiên hiện tại
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     responses:
  *       200:
- *         description: Đăng xuất thành công
+ *         description: Thành công
  */
 router.post('/logout', logout);
 
@@ -115,13 +118,12 @@ router.post('/logout', logout);
  * /auth/me:
  *   get:
  *     summary: Lấy thông tin người dùng hiện tại
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Thông tin người dùng
+ *         description: Thành công
  */
 router.get('/me', getCurrentUser);
 
@@ -130,8 +132,7 @@ router.get('/me', getCurrentUser);
  * /auth/forgot-password:
  *   post:
  *     summary: Gửi OTP đặt lại mật khẩu
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -139,10 +140,10 @@ router.get('/me', getCurrentUser);
  *           schema:
  *             type: object
  *             example:
- *               email: user@example.com
+ *               email: "admin@gmail.com"
  *     responses:
  *       200:
- *         description: OTP đã được gửi
+ *         description: Đã gửi OTP
  */
 router.post('/forgot-password', forgotPassword);
 
@@ -151,8 +152,7 @@ router.post('/forgot-password', forgotPassword);
  * /auth/verify-reset-otp:
  *   post:
  *     summary: Xác thực OTP và lấy token phiên đặt lại
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -160,11 +160,11 @@ router.post('/forgot-password', forgotPassword);
  *           schema:
  *             type: object
  *             example:
- *               email: user@example.com
- *               otp: 123456
+ *               email: "admin@gmail.com"
+ *               otp: "123456"
  *     responses:
  *       200:
- *         description: OTP hợp lệ
+ *         description: Xác thực OTP thành công
  */
 router.post('/verify-reset-otp', verifyResetOtp);
 
@@ -173,8 +173,7 @@ router.post('/verify-reset-otp', verifyResetOtp);
  * /auth/reset-password:
  *   post:
  *     summary: Đặt lại mật khẩu bằng token phiên
- *     tags:
- *       - Auth
+ *     tags: [Auth]
  *     requestBody:
  *       required: true
  *       content:
@@ -182,9 +181,9 @@ router.post('/verify-reset-otp', verifyResetOtp);
  *           schema:
  *             type: object
  *             example:
- *               email: user@example.com
- *               new_password: NewPassword@123
- *               reset_session_token: jwt-reset-session-token
+ *               email: "admin@gmail.com"
+ *               new_password: "NewPassword@123"
+ *               reset_session_token: "jwt-reset-session-token"
  *     responses:
  *       200:
  *         description: Đặt lại mật khẩu thành công

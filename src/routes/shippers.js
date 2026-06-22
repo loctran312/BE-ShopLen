@@ -1,5 +1,4 @@
 const express = require('express');
-
 const { requireAuth, requireAdmin, requireShipper } = require('../middlewares/authMiddleware');
 const { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders } = require('../controllers/shipperController');
 
@@ -11,7 +10,7 @@ const router = express.Router();
  *   get:
  *     summary: Lấy danh sách Shipper có filter - ADMIN
  *     tags:
- *       - Delivery
+ *       - Shippers
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -19,27 +18,20 @@ const router = express.Router();
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
- *         description: Trang hiện tại
+ *         default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 10
- *         description: Số bản ghi trên 1 trang
+ *         default: 10
  *       - in: query
  *         name: working_city_id
  *         schema:
  *           type: string
- *           example: HCM
- *         description: Mã tỉnh/thành phố hoạt động
+ *         example: HCM
  *     responses:
  *       200:
  *         description: Lấy danh sách shipper thành công
- *       401:
- *         description: Chưa đăng nhập hoặc sai token
- *       403:
- *         description: Không có quyền Admin
  */
 router.get('/admin/shippers', requireAuth, requireAdmin, getShippers);
 
@@ -49,7 +41,7 @@ router.get('/admin/shippers', requireAuth, requireAdmin, getShippers);
  *   post:
  *     summary: Tạo Shipper mới - ADMIN
  *     tags:
- *       - Delivery
+ *       - Shippers
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -59,19 +51,13 @@ router.get('/admin/shippers', requireAuth, requireAdmin, getShippers);
  *           schema:
  *             type: object
  *             example:
- *               full_name: Nguyen Van A
- *               email: shipper@example.com
- *               phone_number: 0912345678
- *               working_city_id: HCM
+ *               full_name: "Lê Phân Phối"
+ *               phone: "0999888777"
+ *               email: "lephanphoi@gmail.com"
+ *               working_city_id: "DN"
  *     responses:
  *       201:
- *         description: Tạo Shipper thành công
- *       400:
- *         description: Dữ liệu không hợp lệ
- *       401:
- *         description: Chưa đăng nhập hoặc sai token
- *       403:
- *         description: Không có quyền Admin
+ *         description: Tạo tài khoản shipper thành công
  */
 router.post('/admin/shippers', requireAuth, requireAdmin, createShipper);
 
@@ -79,9 +65,9 @@ router.post('/admin/shippers', requireAuth, requireAdmin, createShipper);
  * @swagger
  * /admin/shippers/{shipper_id}/status:
  *   patch:
- *     summary: Cập nhật trạng thái Shipper - ADMIN
+ *     summary: Cập nhật trạng thái hoạt động của Shipper - ADMIN
  *     tags:
- *       - Delivery
+ *       - Shippers
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -89,8 +75,8 @@ router.post('/admin/shippers', requireAuth, requireAdmin, createShipper);
  *         name: shipper_id
  *         required: true
  *         schema:
- *           type: integer
- *         description: ID của shipper
+ *           type: string
+ *         example: "SHP013"
  *     requestBody:
  *       required: true
  *       content:
@@ -98,16 +84,10 @@ router.post('/admin/shippers', requireAuth, requireAdmin, createShipper);
  *           schema:
  *             type: object
  *             example:
- *               status: active
+ *               status: "INACTIVE"
  *     responses:
  *       200:
- *         description: Cập nhật trạng thái shipper thành công
- *       400:
- *         description: Dữ liệu không hợp lệ
- *       401:
- *         description: Chưa đăng nhập hoặc sai token
- *       403:
- *         description: Không có quyền Admin
+ *         description: Cập nhật trạng thái tài khoản thành công
  */
 router.patch('/admin/shippers/:shipper_id/status', requireAuth, requireAdmin, updateShipperStatus);
 
@@ -115,9 +95,9 @@ router.patch('/admin/shippers/:shipper_id/status', requireAuth, requireAdmin, up
  * @swagger
  * /shipper/profile:
  *   put:
- *     summary: Cập nhật thông tin profile shipper
+ *     summary: Cập nhật thông tin cá nhân - SHIPPER
  *     tags:
- *       - Delivery
+ *       - Shippers
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -127,18 +107,12 @@ router.patch('/admin/shippers/:shipper_id/status', requireAuth, requireAdmin, up
  *           schema:
  *             type: object
  *             example:
- *               full_name: Nguyen Van A
- *               phone_number: 0912345678
- *               working_city_id: HCM
+ *               full_name: "Nguyễn Văn Giao Nhanh"
+ *               phone: "0988888881"
+ *               personal_address: "888 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
  *     responses:
  *       200:
- *         description: Cập nhật profile shipper thành công
- *       400:
- *         description: Dữ liệu không hợp lệ
- *       401:
- *         description: Chưa đăng nhập hoặc sai token
- *       403:
- *         description: Không đủ quyền
+ *         description: Cập nhật thông tin cá nhân thành công
  */
 router.put('/shipper/profile', requireAuth, requireShipper, updateProfile);
 
@@ -146,21 +120,15 @@ router.put('/shipper/profile', requireAuth, requireShipper, updateProfile);
  * @swagger
  * /shipper/available-orders:
  *   get:
- *     summary: Lấy danh sách đơn hàng khả dụng cho shipper
+ *     summary: Lấy danh sách đơn hàng đang chờ giao - SHIPPER
  *     tags:
- *       - Delivery
+ *       - Shippers
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Lấy danh sách đơn hàng khả dụng thành công
- *       401:
- *         description: Chưa đăng nhập hoặc sai token
- *       403:
- *         description: Không đủ quyền
+ *         description: Lấy danh sách đơn hàng phù hợp thành công
  */
 router.get('/shipper/available-orders', requireAuth, requireShipper, getAvailableOrders);
-
-module.exports = router;
 
 module.exports = router;

@@ -1,8 +1,8 @@
-const express = require("express");
+const express = require('express');
 const {
-  getAllCities,
-  getWardsByCityCode,
-} = require("../controllers/locationController");
+    getAllCities,
+    getWardsByCityCode
+} = require('../controllers/locationController');
 
 const router = express.Router();
 
@@ -10,9 +10,8 @@ const router = express.Router();
  * @swagger
  * /location/cities:
  *   get:
- *     summary: Lấy danh sách tỉnh/thành
- *     tags:
- *       - Location
+ *     summary: Lấy danh sách tỉnh/thành phố
+ *     tags: [Location]
  *     responses:
  *       200:
  *         description: Thành công
@@ -24,14 +23,14 @@ router.get("/cities", getAllCities);
  * /location/cities/{city_code}/wards:
  *   get:
  *     summary: Lấy danh sách phường/xã theo mã tỉnh
- *     tags:
- *       - Location
+ *     tags: [Location]
  *     parameters:
  *       - in: path
  *         name: city_code
  *         required: true
  *         schema:
  *           type: string
+ *         example: "HCM"
  *     responses:
  *       200:
  *         description: Thành công

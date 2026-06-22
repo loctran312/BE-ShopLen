@@ -1,14 +1,14 @@
 const express = require('express');
 const { requireAdmin } = require('../middlewares/authMiddleware');
 const {
-	getAllUsers,
-	getUserById,
-	createUser,
-	updateUser,
-	updateCurrentUser,
-	deleteUser,
-	changePassword,
-	filterUsersAdmin
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  updateCurrentUser,
+  deleteUser,
+  changePassword,
+  filterUsersAdmin
 } = require('../controllers/userController');
 
 const router = express.Router();
@@ -17,7 +17,7 @@ const router = express.Router();
  * @swagger
  * /users:
  *   get:
- *     summary: Lấy danh sách người dùng
+ *     summary: Lấy danh sách người dùng - ADMIN
  *     tags:
  *       - Users
  *     security:
@@ -27,10 +27,12 @@ const router = express.Router();
  *         name: page
  *         schema:
  *           type: integer
+ *         default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
+ *         default: 10
  *     responses:
  *       200:
  *         description: Thành công
@@ -78,6 +80,9 @@ router.get('/:user_id', requireAdmin, getUserById);
  *               email: newuser@example.com
  *               password: Password@123
  *               role: customer
+ *               first_name: "New"
+ *               last_name: "User"
+ *               phone_number: "0901234567"
  *     responses:
  *       201:
  *         description: Tạo thành công
@@ -108,6 +113,11 @@ router.post('/', requireAdmin, createUser);
  *             example:
  *               username: updateduser
  *               email: updated@example.com
+ *               phone_number: "0901234567"
+ *               first_name: "Updated"
+ *               last_name: "User"
+ *               status: "active"
+ *               role: "customer"
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -118,7 +128,7 @@ router.put('/:user_id', requireAdmin, updateUser);
  * @swagger
  * /users/user/me:
  *   put:
- *     summary: Cập nhật thông tin người dùng hiện tại
+ *     summary: Cập nhật thông tin cá nhân
  *     tags:
  *       - Users
  *     security:
@@ -130,9 +140,11 @@ router.put('/:user_id', requireAdmin, updateUser);
  *           schema:
  *             type: object
  *             example:
- *               username: username
- *               first_name: user
- *               last_name: name
+ *               username: "username"
+ *               email: "user@gmail.com"
+ *               first_name: "user"
+ *               last_name: "name"
+ *               phone_number: "0912345678"
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -164,7 +176,7 @@ router.delete('/:user_id', requireAdmin, deleteUser);
  * @swagger
  * /users/change-password:
  *   post:
- *     summary: Đổi mật khẩu cho người dùng hiện tại
+ *     summary: Đổi mật khẩu
  *     tags:
  *       - Users
  *     security:
@@ -176,8 +188,9 @@ router.delete('/:user_id', requireAdmin, deleteUser);
  *           schema:
  *             type: object
  *             example:
- *               currentPassword: Password@123
- *               newPassword: NewPassword@123
+ *               currentPassword: "Password@123"
+ *               newPassword: "NewPassword@123"
+ *               confirmPassword: "NewPassword@123"
  *     responses:
  *       200:
  *         description: Đổi mật khẩu thành công
@@ -188,24 +201,26 @@ router.post('/change-password', changePassword);
  * @swagger
  * /users/filter:
  *   post:
- *     summary: Lọc người dùng theo nhiều tiêu chí (quyền admin)
+ *     summary: Lọc người dùng theo nhiều tiêu chí - ADMIN
  *     tags:
  *       - Users
  *     security:
  *       - bearerAuth: []
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
  *             example:
- *               keyword: Nguyễn
- *               roles: [customer]
+ *               keyword: "Nguyễn"
+ *               roles: ["customer"]
+ *               statuses: ["active", "inactive"]
  *               page: 1
+ *               limit: 10
  *     responses:
  *       200:
- *         description: Lọc thành công
+ *         description: Thành công
  */
 router.post('/filter', requireAdmin, filterUsersAdmin);
 

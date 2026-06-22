@@ -1,66 +1,87 @@
 const express = require('express');
 const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
 const { 
-	getAvailableVouchers, 
-	applyVoucher, 
-	getAllVouchersAdmin, 
-	getVoucherDetail, 
-	createVoucher, 
-	updateVoucher, 
-	deleteVoucher,
-	filterVouchersAdmin
+  getAvailableVouchers, 
+  applyVoucher, 
+  getAllVouchersAdmin, 
+  getVoucherDetail, 
+  createVoucher, 
+  updateVoucher, 
+  deleteVoucher,
+  filterVouchersAdmin
 } = require('../controllers/voucherController');
 
 const router = express.Router();
-
-// --- PUBLIC ROUTES ---
 
 /**
  * @swagger
  * /vouchers:
  *   get:
- *     summary: Lấy mã giảm giá khả dụng
+ *     summary: Lấy danh sách voucher đang hoạt động
  *     tags:
  *       - Vouchers
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         default: 10
  *     responses:
  *       200:
- *         description: Success
+ *         description: Thành công
  */
-router.get('/', getAvailableVouchers); 
+router.get('/', getAvailableVouchers);
 
 /**
  * @swagger
  * /vouchers/apply:
  *   post:
- *     summary: Áp dụng voucher cho người dùng/giỏ hàng
+ *     summary: Kiểm tra và áp dụng thử Voucher
  *     tags:
  *       - Vouchers
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             example:
+ *               code: "WELCOME10"
+ *               order_value: 250000
  *     responses:
  *       200:
- *         description: Applied
+ *         description: Trả về số tiền được giảm
  */
 router.post('/apply', requireAuth, applyVoucher); 
 
-// --- ADMIN ROUTES ---
 /**
  * @swagger
  * /vouchers/vouchers:
  *   get:
- *     summary: Lấy tất cả voucher (Admin)
+ *     summary: Quản lý danh sách voucher - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
  *     responses:
  *       200:
- *         description: Success
+ *         description: Thành công
  */
 router.get('/vouchers', requireAdmin, getAllVouchersAdmin);
 
@@ -68,7 +89,7 @@ router.get('/vouchers', requireAdmin, getAllVouchersAdmin);
  * @swagger
  * /vouchers/vouchers/{id}:
  *   get:
- *     summary: Lấy chi tiết voucher (Admin)
+ *     summary: Lấy chi tiết voucher - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
@@ -81,7 +102,7 @@ router.get('/vouchers', requireAdmin, getAllVouchersAdmin);
  *           type: integer
  *     responses:
  *       200:
- *         description: Success
+ *         description: Thành công
  */
 router.get('/vouchers/:id', requireAdmin, getVoucherDetail);
 
@@ -89,19 +110,30 @@ router.get('/vouchers/:id', requireAdmin, getVoucherDetail);
  * @swagger
  * /vouchers/vouchers:
  *   post:
- *     summary: Tạo voucher (Admin)
+ *     summary: Tạo voucher mới - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             example:
+ *               code: "WINTER2026"
+ *               voucher_name: "Sale Chào Đông 2026"
+ *               discount_type: "fixed"
+ *               value: 50000
+ *               minimum_value: 300000
+ *               max_discount: null
+ *               quantity: 100
+ *               start_date: "2026-06-01T00:00:00Z"
+ *               end_date: "2026-06-30T23:59:59Z"
  *     responses:
  *       201:
- *         description: Created
+ *         description: Tạo thành công
  */
 router.post('/vouchers', requireAdmin, createVoucher);
 
@@ -109,7 +141,7 @@ router.post('/vouchers', requireAdmin, createVoucher);
  * @swagger
  * /vouchers/vouchers/{id}:
  *   put:
- *     summary: Cập nhật voucher (Admin)
+ *     summary: Cập nhật voucher - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
@@ -121,13 +153,20 @@ router.post('/vouchers', requireAdmin, createVoucher);
  *         schema:
  *           type: integer
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             example:
+ *               code: "SUMMER2026"
+ *               voucher_name: "Sale Chào Hè"
+ *               discount_type: "fixed"
+ *               value: 50000
+ *               quantity: 200
  *     responses:
  *       200:
- *         description: Updated
+ *         description: Cập nhật thành công
  */
 router.put('/vouchers/:id', requireAdmin, updateVoucher);
 
@@ -135,7 +174,7 @@ router.put('/vouchers/:id', requireAdmin, updateVoucher);
  * @swagger
  * /vouchers/vouchers/{id}:
  *   delete:
- *     summary: Xóa voucher (Admin)
+ *     summary: Xóa voucher - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
@@ -148,7 +187,7 @@ router.put('/vouchers/:id', requireAdmin, updateVoucher);
  *           type: integer
  *     responses:
  *       200:
- *         description: Deleted
+ *         description: Xóa thành công
  */
 router.delete('/vouchers/:id', requireAdmin, deleteVoucher);
 
@@ -156,19 +195,25 @@ router.delete('/vouchers/:id', requireAdmin, deleteVoucher);
  * @swagger
  * /vouchers/vouchers/filter:
  *   post:
- *     summary: Lọc voucher (Admin)
+ *     summary: Lọc voucher theo nhiều tiêu chí - ADMIN
  *     tags:
  *       - Vouchers
  *     security:
  *       - bearerAuth: []
  *     requestBody:
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             example:
+ *               keyword: "WELCOME"
+ *               discount_types: ["percent", "fixed"]
+ *               page: 1
+ *               limit: 10
  *     responses:
  *       200:
- *         description: Success
+ *         description: Lọc thành công
  */
 router.post('/vouchers/filter', requireAdmin, filterVouchersAdmin);
 

@@ -4,43 +4,36 @@ const { momoIpn, processRefund, momoReturn } = require('../controllers/paymentCo
 
 const router = express.Router();
 
-// Route IPN ngầm của MoMo (cứ để đó)
-// Route IPN (MoMo)
 /**
  * @swagger
  * /payment/momo/ipn:
  *   post:
- *     summary: Endpoint IPN của MoMo (nội bộ)
- *     tags:
- *       - Payment
+ *     summary: Webhook nhận thông báo từ MoMo (Hệ thống dùng)
+ *     tags: [Payment]
  *     responses:
  *       200:
- *         description: OK
+ *         description: Nhận Webhook thành công
  */
 router.post('/momo/ipn', momoIpn);
 
-// MoMo return (redirect)
 /**
  * @swagger
  * /payment/momo/return:
  *   get:
- *     summary: URL trả về sau khi thanh toán MoMo
- *     tags:
- *       - Payment
+ *     summary: Redirect sau khi thanh toán MoMo xong
+ *     tags: [Payment]
  *     responses:
- *       302:
- *         description: Redirect
+ *       200:
+ *         description: Thành công
  */
 router.get('/momo/return', momoReturn);
 
-// Refund
 /**
  * @swagger
  * /payment/refund/{orderId}:
  *   post:
- *     summary: Xử lý hoàn tiền cho đơn hàng (Admin)
- *     tags:
- *       - Payment
+ *     summary: Xử lý hoàn tiền cho khách hàng - ADMIN
+ *     tags: [Payment]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -48,10 +41,10 @@ router.get('/momo/return', momoReturn);
  *         name: orderId
  *         required: true
  *         schema:
- *           type: integer
+ *           type: string
  *     responses:
  *       200:
- *         description: Refund processed
+ *         description: Hoàn tiền thành công
  */
 router.post('/refund/:orderId', requireAdmin, processRefund);
 

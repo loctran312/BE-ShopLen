@@ -11,14 +11,25 @@ const router = express.Router();
  * @swagger
  * /variants/stock:
  *   get:
- *     summary: Lấy tổng quan tồn kho biến thể (Admin)
+ *     summary: Lấy danh sách tồn kho của tất cả biến thể - ADMIN
  *     tags:
- *       - Variants
+ *       - Inventory
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         default: 10
  *     responses:
  *       200:
- *         description: Success
+ *         description: Lấy tồn kho biến thể thành công
  */
 router.get("/stock", requireAdmin, getAllVariantsStock);
 
@@ -26,9 +37,9 @@ router.get("/stock", requireAdmin, getAllVariantsStock);
  * @swagger
  * /variants/{variant_id}:
  *   delete:
- *     summary: Xóa biến thể (Admin)
+ *     summary: Xóa một biến thể (Variant) - ADMIN
  *     tags:
- *       - Variants
+ *       - Products
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -39,7 +50,7 @@ router.get("/stock", requireAdmin, getAllVariantsStock);
  *           type: integer
  *     responses:
  *       200:
- *         description: Deleted
+ *         description: Xóa biến thể thành công
  */
 router.delete("/:variant_id", requireAdmin, deleteVariant);
 

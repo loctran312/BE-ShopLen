@@ -1,12 +1,12 @@
-const express = require("express");
-const { requireAuth } = require("../middlewares/authMiddleware");
+const express = require('express');
+const { requireAuth } = require('../middlewares/authMiddleware');
 const {
-  getCart,
-  addToCart,
-  updateCartItem,
-  deleteCartItem,
-  syncCart,
-} = require("../controllers/cartController");
+    getCart,
+    addToCart,
+    updateCartItem,
+    deleteCartItem,
+    syncCart
+} = require('../controllers/cartController');
 
 const router = express.Router();
 
@@ -16,9 +16,8 @@ router.use(requireAuth);
  * @swagger
  * /cart:
  *   get:
- *     summary: Lấy thông tin giỏ hàng
- *     tags:
- *       - Cart
+ *     summary: Lấy thông tin giỏ hàng của người dùng hiện tại
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -32,8 +31,7 @@ router.get("/", getCart);
  * /cart:
  *   post:
  *     summary: Thêm sản phẩm vào giỏ hàng
- *     tags:
- *       - Cart
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -42,11 +40,9 @@ router.get("/", getCart);
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *               variant_id:
- *                 type: integer
- *               quantity:
- *                 type: integer
+ *             example:
+ *               variant_id: 1
+ *               quantity: 2
  *     responses:
  *       200:
  *         description: Thành công
@@ -57,14 +53,23 @@ router.post("/", addToCart);
  * @swagger
  * /cart/sync:
  *   post:
- *     summary: Đồng bộ giỏ hàng dưới Local lên Server
- *     tags:
- *       - Cart
+ *     summary: Đồng bộ giỏ hàng (từ LocalStorage lên Server)
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               local_cart:
+ *                 - variant_id: 1
+ *                   quantity: 2
  *     responses:
  *       200:
- *         description: Thành công
+ *         description: Đồng bộ thành công
  */
 router.post("/sync", syncCart);
 
@@ -73,8 +78,7 @@ router.post("/sync", syncCart);
  * /cart/{variant_id}:
  *   put:
  *     summary: Cập nhật số lượng sản phẩm
- *     tags:
- *       - Cart
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -83,9 +87,17 @@ router.post("/sync", syncCart);
  *         required: true
  *         schema:
  *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               quantity: 5
  *     responses:
  *       200:
- *         description: Thành công
+ *         description: Cập nhật thành công
  */
 router.put("/:variant_id", updateCartItem);
 
@@ -94,8 +106,7 @@ router.put("/:variant_id", updateCartItem);
  * /cart/{variant_id}:
  *   delete:
  *     summary: Xóa sản phẩm khỏi giỏ hàng
- *     tags:
- *       - Cart
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -106,7 +117,7 @@ router.put("/:variant_id", updateCartItem);
  *           type: integer
  *     responses:
  *       200:
- *         description: Thành công
+ *         description: Xóa thành công
  */
 router.delete("/:variant_id", deleteCartItem);
 
