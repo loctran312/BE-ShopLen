@@ -76,16 +76,41 @@ const updatePromotion = async (req, res) => {
         }
 
         const now = new Date();
+        const isStarted = !current.start_date || new Date(current.start_date) <= now;
+        const isEnded = current.end_date && new Date(current.end_date) <= now;
 
-        if (!current.ngay_bat_dau || new Date(current.ngay_bat_dau) <= now) {
+        if (isEnded) {
             return res.status(400).json({ 
                 success: false, 
-                message: "Không thể chỉnh sửa chương trình khuyến mãi đang hoạt động hoặc đã kết thúc." 
+                message: "Không thể chỉnh sửa chương trình khuyến mãi đã kết thúc." 
             });
         }
 
-        const promotion = await promotionRepository.updatePromotion(id, req.body);
-        return res.json({ success: true, message: 'Cập nhật khuyến mãi thành công', data: { promotion } });
+        let updatePayload = req.body;
+
+        if (isStarted) {
+            updatePayload = {
+                title: current.title,
+                discount_type: current.discount_type,
+                value: current.value,
+                min_order_value: current.min_order_value,
+                start_date: current.start_date,
+                end_date: current.end_date,
+                status: current.status,
+                applicable_products: req.body.applicable_products !== undefined 
+                    ? req.body.applicable_products 
+                    : current.applicable_products
+            };
+        }
+
+        const promotion = await promotionRepository.updatePromotion(id, updatePayload);
+        
+        let message = 'Cập nhật khuyến mãi thành công';
+        if (isStarted) {
+            message = 'Cập nhật danh sách sản phẩm thành công. (Các thông tin khác bị khóa do chương trình đang chạy)';
+        }
+
+        return res.json({ success: true, message, data: { promotion } });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
     }
