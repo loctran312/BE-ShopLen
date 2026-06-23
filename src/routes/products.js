@@ -7,6 +7,8 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
+    getProductsByCategory,
+    getTopSellingProducts,
     filterProducts,
 } = require('../controllers/productController');
 
@@ -47,23 +49,7 @@ router.get('/', getAllProducts);
  */
 router.get('/types', getAllProductTypes);
 
-/**
- * @swagger
- * /products/{product_id}:
- *   get:
- *     summary: Chi tiết sản phẩm
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: product_id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Lấy chi tiết sản phẩm thành công
- */
-router.get('/:product_id', getProductDetail);
+
 
 /**
  * @swagger
@@ -98,6 +84,99 @@ router.get('/:product_id', getProductDetail);
  *         description: Tạo sản phẩm thành công
  */
 router.post('/', requireAdmin, createProduct);
+
+/**
+ * @swagger
+ * /products/top-selling:
+ *   get:
+ *     summary: Lấy top 10 sản phẩm bán chạy nhất
+ *     tags:
+ *       - Products
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Mặc định là 10 sản phẩm
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get('/top-selling', getTopSellingProducts);
+
+/**
+ * @swagger
+ * /products/category/{category_id}:
+ *   get:
+ *     summary: Lấy sản phẩm theo danh mục (Có phân trang)
+ *     tags:
+ *       - Products
+ *     parameters:
+ *       - in: path
+ *         name: category_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get('/category/:category_id', getProductsByCategory);
+
+/**
+ * @swagger
+ * /products/filter:
+ *   post:
+ *     summary: Lọc sản phẩm theo nhiều tiêu chí
+ *     tags:
+ *       - Products
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *           example:
+ *             keyword: "len cotton"
+ *             category_ids: [1, 2]
+ *             type_ids: [1]
+ *             min_price: 10000
+ *             max_price: 50000
+ *             status: "active"
+ *             sort_price: "asc"
+ *             page: 1
+ *             limit: 10
+ *     responses:
+ *       200:
+ *         description: Lọc sản phẩm thành công
+ */
+router.post('/filter', filterProducts);
+
+/**
+ * @swagger
+ * /products/{product_id}:
+ *   get:
+ *     summary: Chi tiết sản phẩm
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: product_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lấy chi tiết sản phẩm thành công
+ */
+router.get('/:product_id', getProductDetail);
 
 /**
  * @swagger
@@ -157,34 +236,5 @@ router.put('/:product_id', requireAdmin, updateProduct);
  *         description: Xóa sản phẩm thành công
  */
 router.delete('/:product_id', requireAdmin, deleteProduct);
-
-/**
- * @swagger
- * /products/filter:
- *   post:
- *     summary: Lọc sản phẩm theo nhiều tiêu chí
- *     tags:
- *       - Products
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *           example:
- *             keyword: "len cotton"
- *             category_ids: [1, 2]
- *             type_ids: [1]
- *             min_price: 10000
- *             max_price: 50000
- *             status: "active"
- *             sort_price: "asc"
- *             page: 1
- *             limit: 10
- *     responses:
- *       200:
- *         description: Lọc sản phẩm thành công
- */
-router.post('/filter', filterProducts);
 
 module.exports = router;

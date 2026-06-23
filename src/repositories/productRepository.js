@@ -661,9 +661,9 @@ const filterProducts = async (filters) => {
 
     let orderByClause = 'ORDER BY p.san_pham_id DESC';
     if (sort_price === 'asc') {
-        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) ASC, p.san_pham_id DESC';
+        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) ASC NULLS LAST, p.san_pham_id DESC';
     } else if (sort_price === 'desc') {
-        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) DESC, p.san_pham_id DESC';
+        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) DESC NULLS LAST, p.san_pham_id DESC';
     }
 
     const fetchParams = [...params, limit, offset];
@@ -736,6 +736,89 @@ const filterProducts = async (filters) => {
     };
 };
 
+const getTopSellingProducts = async (limitNum = 10) => {
+    const query = `
+        WITH TopProducts AS (
+            SELECT sp.san_pham_id, SUM(ct.so_luong) as total_sold
+            FROM chi_tiet_don_hang ct
+            JOIN don_hang dh ON dh.don_hang_id = ct.don_hang_id
+            JOIN bien_the_san_pham bt ON bt.bien_the_id = ct.bien_the_id
+            JOIN san_pham sp ON sp.san_pham_id = bt.san_pham_id
+            WHERE dh.trang_thai != 'cancelled' AND sp.trang_thai_san_pham = 'active'
+            GROUP BY sp.san_pham_id
+            ORDER BY total_sold DESC
+            LIMIT $1
+        )
+        SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
+               c.ten_danh_muc AS category_name, pt.ten_loai AS type_name, tp.total_sold
+        FROM TopProducts tp
+        JOIN san_pham p ON p.san_pham_id = tp.san_pham_id
+        LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
+        LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
+        ORDER BY tp.total_sold DESC
+    `;
+    const productsResult = await pool.query(query, [limitNum]);
+
+    if (productsResult.rows.length === 0) return [];
+
+    const productIds = productsResult.rows.map(p => p.product_id);
+
+    const variantsResult = await pool.query(
+        `SELECT pv.san_pham_id AS product_id, pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size,
+                COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
+                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+                (SELECT row_to_json(d) FROM (
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE kmsp.san_pham_id = pv.san_pham_id
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY km.khuyen_mai_id DESC
+                    LIMIT 1
+                ) d) AS discount
+         FROM bien_the_san_pham pv
+         LEFT JOIN ton_kho tk ON tk.bien_the_id = pv.bien_the_id
+         LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
+         WHERE pv.san_pham_id = ANY($1::int[])
+         GROUP BY pv.san_pham_id, pv.bien_the_id, pv.sku, pv.slug, pv.gia, pv.mau_sac, pv.kich_co, tk.so_luong_ton
+         ORDER BY pv.san_pham_id DESC, pv.bien_the_id ASC`,
+        [productIds]
+    );
+
+    const variantsByProductId = new Map();
+    for (const row of variantsResult.rows) {
+        if (!variantsByProductId.has(row.product_id)) variantsByProductId.set(row.product_id, []);
+
+        const price = Number(row.price);
+        let finalPrice = price;
+        let discount = row.discount || null;
+
+        if (discount) {
+            discount.value = Number(discount.value);
+            if (discount.type === 'percent') {
+                finalPrice = price - (price * discount.value / 100);
+            } else if (discount.type === 'fixed') {
+                finalPrice = price - discount.value;
+            }
+            if (finalPrice < 0) finalPrice = 0;
+        }
+
+        variantsByProductId.get(row.product_id).push({
+            variant_id: row.variant_id, sku: row.sku, slug: row.slug, 
+            price: price, discount: discount, final_price: finalPrice,
+            color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity), images: row.images || []
+        });
+    }
+
+    return productsResult.rows.map(product => ({
+        ...product,
+        variants: variantsByProductId.get(product.product_id) || []
+    }));
+};
+
 module.exports = {
-    getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, parsePositiveInteger, filterProducts,
+    getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, 
+    parsePositiveInteger, filterProducts, getTopSellingProducts,
 };

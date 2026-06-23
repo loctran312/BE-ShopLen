@@ -137,6 +137,36 @@ const deleteProduct = async (req, res) => {
 	}
 };
 
+const getProductsByCategory = async (req, res) => {
+    try {
+        const categoryId = productRepository.parsePositiveInteger(req.params.category_id, 'category_id');
+        const page = productRepository.parsePositiveInteger(req.query.page || 1, 'page');
+        const limit = productRepository.parsePositiveInteger(req.query.limit || 10, 'limit');
+
+        const result = await productRepository.filterProducts({
+            page, 
+            limit,
+            category_ids: [categoryId],
+            status: 'active'
+        });
+
+        return res.json({ success: true, message: 'Lấy sản phẩm theo danh mục thành công', data: result });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
+};
+
+const getTopSellingProducts = async (req, res) => {
+    try {
+        const limit = req.query.limit ? productRepository.parsePositiveInteger(req.query.limit, 'limit') : 10;
+        const products = await productRepository.getTopSellingProducts(limit);
+        
+        return res.json({ success: true, message: 'Lấy top sản phẩm bán chạy thành công', data: { products } });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lấy top sản phẩm' });
+    }
+};
+
 const filterProducts = async (req, res) => {
     try {
         const page = productRepository.parsePositiveInteger(req.body.page || 1, 'page');
@@ -166,5 +196,7 @@ module.exports = {
 	createProduct,
 	updateProduct,
 	deleteProduct,
+	getProductsByCategory,
+	getTopSellingProducts,
 	filterProducts,
 };
