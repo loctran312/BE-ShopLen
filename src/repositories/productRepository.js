@@ -661,9 +661,9 @@ const filterProducts = async (filters) => {
 
     let orderByClause = 'ORDER BY p.san_pham_id DESC';
     if (sort_price === 'asc') {
-        orderByClause = 'ORDER BY (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id) ASC';
+        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) ASC, p.san_pham_id DESC';
     } else if (sort_price === 'desc') {
-        orderByClause = 'ORDER BY (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id) DESC';
+        orderByClause = 'ORDER BY (SELECT gia FROM bien_the_san_pham WHERE san_pham_id = p.san_pham_id ORDER BY bien_the_id ASC LIMIT 1) DESC, p.san_pham_id DESC';
     }
 
     const fetchParams = [...params, limit, offset];
