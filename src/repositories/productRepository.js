@@ -601,6 +601,23 @@ const deleteProduct = async (productId) => {
     }
 };
 
+const getCategoryDescendants = async (categoryId) => {
+    const query = `
+        WITH RECURSIVE CategoryTree AS (
+            SELECT danh_muc_id FROM danh_muc WHERE danh_muc_id = $1
+            UNION ALL
+            SELECT d.danh_muc_id 
+            FROM danh_muc d
+            INNER JOIN CategoryTree ct ON d.danh_muc_cha_id = ct.danh_muc_id
+        )
+        SELECT danh_muc_id FROM CategoryTree;
+    `;
+    
+    const result = await pool.query(query, [categoryId]);
+
+    return result.rows.map(row => row.danh_muc_id);
+};
+
 const filterProducts = async (filters) => {
     const { page = 1, limit = 10, keyword, category_ids, type_ids, min_price, max_price, status, sort_price } = filters;
     const offset = (page - 1) * limit;
@@ -820,5 +837,5 @@ const getTopSellingProducts = async (limitNum = 10) => {
 
 module.exports = {
     getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, 
-    parsePositiveInteger, filterProducts, getTopSellingProducts,
+    parsePositiveInteger, getCategoryDescendants, filterProducts, getTopSellingProducts,
 };

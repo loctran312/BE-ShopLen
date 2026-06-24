@@ -143,11 +143,21 @@ const getProductsByCategory = async (req, res) => {
         const page = productRepository.parsePositiveInteger(req.query.page || 1, 'page');
         const limit = productRepository.parsePositiveInteger(req.query.limit || 10, 'limit');
 
+        const categoryIds = await productRepository.getCategoryDescendants(categoryId);
+
+        if (!categoryIds || categoryIds.length === 0) {
+             return res.json({ 
+                 success: true, 
+                 message: 'Không tìm thấy sản phẩm', 
+                 data: { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } } 
+             });
+        }
+
         const result = await productRepository.filterProducts({
             page, 
             limit,
-            category_ids: [categoryId],
-            status: 'active'
+            category_ids: categoryIds,
+            status: 'active' 
         });
 
         return res.json({ success: true, message: 'Lấy sản phẩm theo danh mục thành công', data: result });
