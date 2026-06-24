@@ -38,18 +38,50 @@ const filterWorkshopsAdmin = async (filters) => {
     if (totalItems === 0) return { workshops: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
 
     const fetchParams = [...params, limit, offset];
-    const workshopsRes = await pool.query(
-        `SELECT ht.hoi_thao_id AS workshop_id, ht.san_pham_id AS product_id, ht.tieu_de AS title, ht.dia_diem AS location,
-                sp.trang_thai_san_pham AS status, sp.danh_muc_id AS category_id
-         FROM hoi_thao ht
-         JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id
-         ${whereString}
-         ORDER BY ht.hoi_thao_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-        fetchParams
-    );
+
+    const query = `
+        WITH PaginatedWorkshops AS (
+            SELECT ht.hoi_thao_id, ht.san_pham_id, ht.tieu_de, ht.mo_ta, ht.dia_diem,
+                   sp.trang_thai_san_pham, sp.danh_muc_id
+            FROM hoi_thao ht
+            JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id
+            ${whereString}
+            ORDER BY ht.hoi_thao_id DESC
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        )
+        SELECT pw.hoi_thao_id AS workshop_id, pw.san_pham_id AS product_id, pw.tieu_de AS title, 
+               pw.mo_ta AS description, pw.dia_diem AS location,
+               pw.trang_thai_san_pham AS product_status, pw.danh_muc_id AS category_id,
+               COALESCE(
+                   json_agg(
+                       json_build_object(
+                           'session_id', htb.hoi_thao_bien_the_id,
+                           'variant_id', htb.bien_the_id,
+                           'start_date', htb.ngay_bat_dau,
+                           'end_date', htb.ngay_ket_thuc,
+                           'status', htb.trang_thai
+                       ) ORDER BY htb.ngay_bat_dau ASC
+                   ) FILTER (WHERE htb.hoi_thao_bien_the_id IS NOT NULL), '[]'
+               ) AS sessions
+        FROM PaginatedWorkshops pw
+        LEFT JOIN hoi_thao_bien_the htb ON pw.hoi_thao_id = htb.hoi_thao_id
+        GROUP BY pw.hoi_thao_id, pw.san_pham_id, pw.tieu_de, pw.mo_ta, pw.dia_diem, pw.trang_thai_san_pham, pw.danh_muc_id
+        ORDER BY pw.hoi_thao_id DESC;
+    `;
+
+    const workshopsRes = await pool.query(query, fetchParams);
+
+    const processedWorkshops = workshopsRes.rows.map(ws => {
+        const hasOpenSession = ws.sessions.some(s => s.status === 'open');
+        
+        return {
+            ...ws,
+            overall_status: (ws.product_status === 'active' && hasOpenSession) ? 'open' : 'closed'
+        };
+    });
 
     return {
-        workshops: workshopsRes.rows,
+        workshops: processedWorkshops,
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
     };
 };
