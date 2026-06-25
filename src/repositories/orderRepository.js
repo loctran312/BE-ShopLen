@@ -281,11 +281,27 @@ const getOrderDetail = async (orderId, userId = null) => {
 
 	const order = orderRes.rows[0];
 
-	// Lấy danh sách sản phẩm trong đơn
 	const detailRes = await pool.query(
-		`SELECT chi_tiet_don_hang_id AS item_id, bien_the_id AS variant_id, ten_san_pham AS product_name, gia AS price, so_luong AS quantity 
-         FROM chi_tiet_don_hang 
-         WHERE don_hang_id = $1`,
+		`SELECT 
+            ct.chi_tiet_don_hang_id AS item_id, 
+            ct.bien_the_id AS variant_id, 
+            ct.ten_san_pham AS product_name, 
+            ct.gia AS price, 
+            ct.so_luong AS quantity,
+            bt.sku,
+            bt.slug,
+            bt.mau_sac AS color,
+            bt.kich_co AS size,
+            sp.san_pham_id AS product_id,
+            sp.mo_ta AS description,
+            c.ten_danh_muc AS category_name,
+            pt.ten_loai AS type_name
+         FROM chi_tiet_don_hang ct
+         LEFT JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+         LEFT JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+         LEFT JOIN danh_muc c ON sp.danh_muc_id = c.danh_muc_id
+         LEFT JOIN loai_san_pham pt ON sp.loai_san_pham_id = pt.loai_san_pham_id
+         WHERE ct.don_hang_id = $1`,
 		[orderId]
 	);
 
