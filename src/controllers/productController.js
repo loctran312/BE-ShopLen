@@ -137,35 +137,6 @@ const deleteProduct = async (req, res) => {
 	}
 };
 
-const getProductsByCategory = async (req, res) => {
-    try {
-        const categoryId = productRepository.parsePositiveInteger(req.params.category_id, 'category_id');
-        const page = productRepository.parsePositiveInteger(req.query.page || 1, 'page');
-        const limit = productRepository.parsePositiveInteger(req.query.limit || 10, 'limit');
-
-        const categoryIds = await productRepository.getCategoryDescendants(categoryId);
-
-        if (!categoryIds || categoryIds.length === 0) {
-             return res.json({ 
-                 success: true, 
-                 message: 'Không tìm thấy sản phẩm', 
-                 data: { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } } 
-             });
-        }
-
-        const result = await productRepository.filterProducts({
-            page, 
-            limit,
-            category_ids: categoryIds,
-            status: 'active' 
-        });
-
-        return res.json({ success: true, message: 'Lấy sản phẩm theo danh mục thành công', data: result });
-    } catch (error) {
-        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
-    }
-};
-
 const getTopSellingProducts = async (req, res) => {
     try {
         const limit = req.query.limit ? productRepository.parsePositiveInteger(req.query.limit, 'limit') : 10;
@@ -182,10 +153,27 @@ const filterProducts = async (req, res) => {
         const page = productRepository.parsePositiveInteger(req.body.page || 1, 'page');
         const limit = productRepository.parsePositiveInteger(req.body.limit || 10, 'limit');
         
+        let targetCategoryIds = [];
+
+        if (req.body.category_id) {
+            const categoryId = productRepository.parsePositiveInteger(req.body.category_id, 'category_id');
+
+            targetCategoryIds = await productRepository.getCategoryDescendants(categoryId);
+
+            if (!targetCategoryIds || targetCategoryIds.length === 0) {
+                 return res.json({ 
+                     success: true, 
+                     message: 'Không tìm thấy sản phẩm trong danh mục này', 
+                     data: { products: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } } 
+                 });
+            }
+        }
+
         const result = await productRepository.filterProducts({
-            page, limit,
+            page, 
+            limit,
             keyword: req.body.keyword,
-            category_ids: req.body.category_ids,
+            category_ids: targetCategoryIds.length > 0 ? targetCategoryIds : undefined, 
             type_ids: req.body.type_ids,
             min_price: req.body.min_price,
             max_price: req.body.max_price,
@@ -195,7 +183,7 @@ const filterProducts = async (req, res) => {
 
         return res.json({ success: true, message: 'Lọc sản phẩm thành công', data: result });
     } catch (error) {
-        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi lọc sản phẩm' });
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ khi lọc sản phẩm' });
     }
 };
 
@@ -206,7 +194,6 @@ module.exports = {
 	createProduct,
 	updateProduct,
 	deleteProduct,
-	getProductsByCategory,
 	getTopSellingProducts,
 	filterProducts,
 };

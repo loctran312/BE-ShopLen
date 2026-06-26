@@ -7,7 +7,6 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
-    getProductsByCategory,
     getTopSellingProducts,
     filterProducts,
 } = require('../controllers/productController');
@@ -106,36 +105,9 @@ router.get('/top-selling', getTopSellingProducts);
 
 /**
  * @swagger
- * /products/category/{category_id}:
- *   get:
- *     summary: Lấy sản phẩm theo danh mục (Có phân trang)
- *     tags:
- *       - Products
- *     parameters:
- *       - in: path
- *         name: category_id
- *         required: true
- *         schema:
- *           type: integer
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Thành công
- */
-router.get('/category/:category_id', getProductsByCategory);
-
-/**
- * @swagger
  * /products/filter:
  *   post:
- *     summary: Lọc sản phẩm theo nhiều tiêu chí
+ *     summary: Lọc sản phẩm theo nhiều tiêu chí (Hỗ trợ lọc theo cả danh mục con)
  *     tags:
  *       - Products
  *     requestBody:
@@ -144,16 +116,16 @@ router.get('/category/:category_id', getProductsByCategory);
  *         application/json:
  *           schema:
  *             type: object
- *           example:
- *             keyword: "len cotton"
- *             category_ids: [1, 2]
- *             type_ids: [1]
- *             min_price: 10000
- *             max_price: 50000
- *             status: "active"
- *             sort_price: "asc"
- *             page: 1
- *             limit: 10
+ *             example:
+ *               keyword: "len cotton"
+ *               category_id: 3
+ *               type_ids: [1]
+ *               min_price: 10000
+ *               max_price: 50000
+ *               status: "active"
+ *               sort_price: "asc"
+ *               page: 1
+ *               limit: 10
  *     responses:
  *       200:
  *         description: Lọc sản phẩm thành công
