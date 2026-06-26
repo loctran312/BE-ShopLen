@@ -68,7 +68,8 @@ const getUserById = async (userId) => pool.query(
           so_dien_thoai AS phone_number,
           vai_tro AS role,
           trang_thai AS status,
-          mat_khau AS password
+          mat_khau AS password,
+          avatar
    FROM nguoi_dung
    WHERE nguoi_dung_id = $1`,
   [userId]
@@ -93,34 +94,17 @@ const createUser = async ({ username, email, password, firstName, lastName, phon
 };
 
 const updateUser = async (userId, {
-  username,
-  email,
-  password,
-  firstName,
-  lastName,
-  phoneNumber,
-  status,
-  role,
+  username, email, password, firstName, lastName, phoneNumber, status, role, avatar
 }) => pool.query(
   `UPDATE nguoi_dung
-     SET ten_dang_nhap = $1,
-         thu_dien_tu = $2,
-         mat_khau = $3,
-         ho = $4,
-         ten = $5,
-         so_dien_thoai = $6,
-         trang_thai = $7,
-         vai_tro = $8
-   WHERE nguoi_dung_id = $9
-   RETURNING nguoi_dung_id AS user_id,
-             ten_dang_nhap AS username,
-             ho AS first_name,
-             ten AS last_name,
-             thu_dien_tu AS email,
-             so_dien_thoai AS phone_number,
-             trang_thai AS status,
-             vai_tro AS role`,
-  [username, email, password, firstName, lastName, phoneNumber, status, role, userId]
+     SET ten_dang_nhap = $1, thu_dien_tu = $2, mat_khau = $3,
+         ho = $4, ten = $5, so_dien_thoai = $6,
+         trang_thai = $7, vai_tro = $8, avatar = $9
+   WHERE nguoi_dung_id = $10
+   RETURNING nguoi_dung_id AS user_id, ten_dang_nhap AS username,
+             ho AS first_name, ten AS last_name, thu_dien_tu AS email,
+             so_dien_thoai AS phone_number, trang_thai AS status, vai_tro AS role, avatar`,
+  [username, email, password, firstName, lastName, phoneNumber, status, role, avatar, userId]
 );
 
 const deleteUser = async (userId) => pool.query(
@@ -139,28 +123,16 @@ const updateUserPassword = async (userId, hashedPassword) => pool.query(
 );
 
 const updateCurrentUser = async (userId, {
-  username,
-  email,
-  firstName,
-  lastName,
-  phoneNumber,
+  username, email, firstName, lastName, phoneNumber, avatar
 }) => pool.query(
   `UPDATE nguoi_dung
-     SET ten_dang_nhap = $1,
-         thu_dien_tu = $2,
-          ho = $3,
-          ten = $4,
-          so_dien_thoai = $5
-   WHERE nguoi_dung_id = $6
-    RETURNING nguoi_dung_id AS user_id,
-              ten_dang_nhap AS username,
-              ho AS first_name,
-              ten AS last_name,
-              thu_dien_tu AS email,
-              so_dien_thoai AS phone_number,
-              trang_thai AS status,
-              vai_tro AS role`,
-  [username, email, firstName, lastName, phoneNumber, userId]
+     SET ten_dang_nhap = $1, thu_dien_tu = $2,
+          ho = $3, ten = $4, so_dien_thoai = $5, avatar = $6
+   WHERE nguoi_dung_id = $7
+    RETURNING nguoi_dung_id AS user_id, ten_dang_nhap AS username,
+              ho AS first_name, ten AS last_name, thu_dien_tu AS email,
+              so_dien_thoai AS phone_number, trang_thai AS status, vai_tro AS role, avatar`,
+  [username, email, firstName, lastName, phoneNumber, avatar, userId]
 );
 
 const filterUsersAdmin = async (filters) => {

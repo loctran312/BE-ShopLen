@@ -145,6 +145,7 @@ router.put('/:user_id', requireAdmin, updateUser);
  *               first_name: "user"
  *               last_name: "name"
  *               phone_number: "0912345678"
+ *               avatar: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
  *     responses:
  *       200:
  *         description: Cập nhật thành công

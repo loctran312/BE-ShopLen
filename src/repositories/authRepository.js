@@ -7,7 +7,8 @@ const getUserByEmail = async (client, email) => client.query(
           so_dien_thoai AS phone_number,
           vai_tro AS role,
           ho AS first_name,
-          ten AS last_name
+          ten AS last_name,
+          avatar
    FROM nguoi_dung
    WHERE thu_dien_tu = $1`,
   [email]
@@ -20,7 +21,8 @@ const getUserById = async (client, userId) => client.query(
           so_dien_thoai AS phone_number,
           vai_tro AS role,
           ho AS first_name,
-          ten AS last_name
+          ten AS last_name,
+          avatar
    FROM nguoi_dung
    WHERE nguoi_dung_id = $1`,
   [userId]
@@ -33,7 +35,8 @@ const getUserByGoogleProviderId = async (client, providerId) => client.query(
           u.so_dien_thoai AS phone_number,
           u.vai_tro AS role,
           u.ho AS first_name,
-          u.ten AS last_name
+          u.ten AS last_name,
+          u.avatar
    FROM nguoi_dung_xac_thuc ap
    INNER JOIN nguoi_dung u ON u.nguoi_dung_id = ap.nguoi_dung_id
    WHERE ap.nha_cung_cap = 'google' AND ap.nha_cung_cap_id = $1
@@ -69,7 +72,8 @@ const createUser = async (client, { userId, username, email, password, phoneNumb
              so_dien_thoai AS phone_number,
              vai_tro AS role,
              ho AS first_name,
-             ten AS last_name`,
+             ten AS last_name,
+             avatar`,
   [userId, username, email, password, phoneNumber, role]
 );
 
@@ -107,7 +111,8 @@ const getUserByRefreshToken = async (refreshToken) => pool.query(
           so_dien_thoai AS phone_number,
           vai_tro AS role,
           ho AS first_name,
-          ten AS last_name
+          ten AS last_name,
+          avatar
    FROM nguoi_dung
    WHERE refresh_token = $1
    LIMIT 1`,
