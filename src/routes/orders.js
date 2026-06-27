@@ -8,6 +8,7 @@ const {
     getAllOrdersAdmin, 
     getOrderDetailAdmin, 
     updateOrderStatus,
+    getShippingFees,
     filterOrdersAdmin,
 } = require('../controllers/orderController');
 
@@ -36,11 +37,27 @@ const router = express.Router();
  *               sdt_nguoi_nhan: "0987654321"
  *               phieu_giam_gia_code: "WELCOME10"
  *               phuong_thuc_thanh_toan: "COD"
+ *               shipping_method_id: "GH_NHANH"
+ *               shipping_fee: 32000
  *     responses:
  *       201:
  *         description: Đặt hàng thành công
  */
 router.post('/', requireAuth, createOrder);
+
+/**
+ * @swagger
+ * /orders/shipping-fees:
+ *   get:
+ *     summary: Lấy danh sách phí vận chuyển
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get('/shipping-fees', requireAuth, getShippingFees);
 
 /**
  * @swagger

@@ -159,22 +159,22 @@ const createOrder = async (userId, payload) => {
 			voucherId = voucher.phieu_giam_gia_id;
 		}
 
-		const totalAmount = subTotal - discountAmount;
+		const shippingFee = Number(payload.shipping_fee || 0);
+		const totalAmount = subTotal - discountAmount + shippingFee;
 
 		const orderId = await generateOrderId(client);
 
-		// Tạo Đơn hàng chính
 		await client.query(
-			`INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')`,
+			`INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai, phi_van_chuyen, phuong_thuc_giao_hang)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', $10, $11)`,
 			[
 				orderId, userId, totalAmount, voucherId, discountAmount,
 				payload.phuong_xa_id, payload.dia_chi_giao_hang, 
-				payload.ten_nguoi_nhan, payload.sdt_nguoi_nhan
+				payload.ten_nguoi_nhan, payload.sdt_nguoi_nhan,
+				shippingFee, payload.shipping_method_id
 			]
 		);
 
-		// Tạo Chi tiết Đơn hàng, Trừ tồn kho & Ghi Nhật ký Tồn kho
 		for (const item of cartItems) {
 			// Chi tiết đơn
 			await client.query(
@@ -198,7 +198,6 @@ const createOrder = async (userId, payload) => {
 			);
 		}
 
-		// Đánh dấu Voucher đã dùng
 		if (voucherId) {
 			await client.query(
 				`UPDATE phieu_giam_gia SET da_dung = da_dung + 1 WHERE phieu_giam_gia_id = $1`,
@@ -212,7 +211,6 @@ const createOrder = async (userId, payload) => {
 			);
 		}
 
-		// Lưu Thanh toán
 		const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
 		await client.query(
 			`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`,
@@ -224,7 +222,6 @@ const createOrder = async (userId, payload) => {
 			[orderId]
 		);
 
-		// Dọn dẹp giỏ hàng sau khi đặt thành công
 		await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
 
 		await client.query('COMMIT');
@@ -272,8 +269,8 @@ const getUserOrders = async (userId, { page, limit }) => {
 const getOrderDetail = async (orderId, userId = null) => {
 	// Lấy thông tin chung của đơn hàng
 	const orderQuery = userId 
-		? `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1 AND nguoi_dung_id = $2`
-		: `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1`;
+		? `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phi_van_chuyen AS shipping_fee, phuong_thuc_giao_hang AS shipping_method, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1 AND nguoi_dung_id = $2`
+		: `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phi_van_chuyen AS shipping_fee, phuong_thuc_giao_hang AS shipping_method, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1`;
 	const params = userId ? [orderId, userId] : [orderId];
 
 	const orderRes = await pool.query(orderQuery, params);

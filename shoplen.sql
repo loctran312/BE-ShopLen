@@ -271,6 +271,8 @@ CREATE TABLE don_hang (
   dia_chi_giao_hang VARCHAR(255) NOT NULL,
   ten_nguoi_nhan VARCHAR(100) NOT NULL,
   sdt_nguoi_nhan VARCHAR(15) NOT NULL,
+  phi_van_chuyen NUMERIC(10,2) DEFAULT 0,
+  phuong_thuc_van_chuyen VARCHAR(50),
   FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
   FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id),
   FOREIGN KEY (phuong_xa_id) REFERENCES phuong_xa(phuong_xa_id)
@@ -889,18 +891,22 @@ INSERT INTO khuyen_mai_san_pham (khuyen_mai_id, san_pham_id) VALUES (1, 1), (2, 
 -- 6. BẢNG: DON_HANG, CHI_TIET_DON_HANG & LICH_SU
 -- ----------------------------------------
 -- Toàn bộ đơn hàng mẫu thực tế điền đầy đủ thông tin giao nhận
-INSERT INTO don_hang (don_hang_id, nguoi_dung_id, trang_thai, tong_tien, phieu_giam_gia_id, so_tien_giam, idempotency_key, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan) VALUES 
-('DH000003', 4, 'completed', 25000.00, NULL, 0.00, 'key-003', 1, '456 Đường Nguyễn Trãi', 'Nguyễn Văn Huy', '0909876543'),
-('DH000004', 5, 'pending', 240000.00, NULL, 0.00, 'key-004', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678'),
-('DH000005', 6, 'processing', 110000.00, 1, 15000.00, 'key-005', 6, '12 Lý Thường Kiệt', 'Lê Thị Mai', '0923456789'),
-('DH000006', 7, 'shipping', 90000.00, NULL, 0.00, 'key-006', 11, '45 Trần Phú', 'Phạm Minh Đức', '0934567890'),
-('DH000007', 8, 'completed', 135000.00, 2, 20000.00, 'key-007', 16, '88 Điện Biên Phủ', 'Hoàng Thị Dung', '0945678901'),
-('DH000008', 4, 'cancelled', 45000.00, NULL, 0.00, 'key-008', 3, '123 Đinh Tiên Hoàng', 'Nguyễn Văn Huy', '0909876543'),
-('DH000009', 9, 'pending', 170000.00, NULL, 0.00, 'key-009', 21, '34 Nguyễn Trãi', 'Đào Linh Chi', '0956789012'),
-('DH000010', 10, 'completed', 380000.00, 5, 15000.00, 'key-010', 4, '99 Cách Mạng Tháng 8', 'Vũ Anh Tuấn', '0967890123'),
-('DH000011', 11, 'processing', 95000.00, NULL, 0.00, 'key-011', 8, '14 Hàng Bạc', 'Bùi Thị Ngọc', '0978901234'),
-('DH000012', 12, 'shipping', 350000.00, NULL, 0.00, 'key-012', 12, '55 Hùng Vương', 'Đỗ Hoàng Việt', '0989012345'),
-('DH000013', 5, 'completed', 180000.00, NULL, 0.00, 'key-013', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678');
+INSERT INTO don_hang (
+    don_hang_id, nguoi_dung_id, trang_thai, tong_tien, phieu_giam_gia_id, 
+    so_tien_giam, idempotency_key, phuong_xa_id, dia_chi_giao_hang, 
+    ten_nguoi_nhan, sdt_nguoi_nhan, phi_van_chuyen, phuong_thuc_giao_hang
+) VALUES 
+('DH000003', 4, 'completed', 25000.00, NULL, 0.00, 'key-003', 1, '456 Đường Nguyễn Trãi', 'Nguyễn Văn Huy', '0909876543', 18000.00, 'GH_TIETKIEM'),
+('DH000004', 5, 'pending', 240000.00, NULL, 0.00, 'key-004', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678', 32000.00, 'GH_NHANH'),
+('DH000005', 6, 'processing', 110000.00, 1, 15000.00, 'key-005', 6, '12 Lý Thường Kiệt', 'Lê Thị Mai', '0923456789', 18000.00, 'GH_TIETKIEM'),
+('DH000006', 7, 'shipping', 90000.00, NULL, 0.00, 'key-006', 11, '45 Trần Phú', 'Phạm Minh Đức', '0934567890', 32000.00, 'GH_NHANH'),
+('DH000007', 8, 'completed', 135000.00, 2, 20000.00, 'key-007', 16, '88 Điện Biên Phủ', 'Hoàng Thị Dung', '0945678901', 18000.00, 'GH_TIETKIEM'),
+('DH000008', 4, 'cancelled', 45000.00, NULL, 0.00, 'key-008', 3, '123 Đinh Tiên Hoàng', 'Nguyễn Văn Huy', '0909876543', 32000.00, 'GH_NHANH'),
+('DH000009', 9, 'pending', 170000.00, NULL, 0.00, 'key-009', 21, '34 Nguyễn Trãi', 'Đào Linh Chi', '0956789012', 18000.00, 'GH_TIETKIEM'),
+('DH000010', 10, 'completed', 380000.00, 5, 15000.00, 'key-010', 4, '99 Cách Mạng Tháng 8', 'Vũ Anh Tuấn', '0967890123', 32000.00, 'GH_NHANH'),
+('DH000011', 11, 'processing', 95000.00, NULL, 0.00, 'key-011', 8, '14 Hàng Bạc', 'Bùi Thị Ngọc', '0978901234', 18000.00, 'GH_TIETKIEM'),
+('DH000012', 12, 'shipping', 350000.00, NULL, 0.00, 'key-012', 12, '55 Hùng Vương', 'Đỗ Hoàng Việt', '0989012345', 32000.00, 'GH_NHANH'),
+('DH000013', 5, 'completed', 180000.00, NULL, 0.00, 'key-013', 2, '789 Đường Lê Lợi', 'Nguyễn Văn Long', '0912345678', 18000.00, 'GH_TIETKIEM');
 
 -- Chi tiết các mặt hàng nằm trong đơn
 INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong) VALUES 

@@ -8,12 +8,12 @@ const { parsePositiveInteger } = require('../utils/pagination');
 const createOrder = async (req, res) => {
 	try {
 		const userId = req.user.user_id;
-		const { phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan } = req.body;
+		const { phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, shipping_method_id, shipping_fee } = req.body;
 
-		if (!phuong_xa_id || !dia_chi_giao_hang || !ten_nguoi_nhan || !sdt_nguoi_nhan) {
+		if (!phuong_xa_id || !dia_chi_giao_hang || !ten_nguoi_nhan || !sdt_nguoi_nhan || !shipping_method_id || shipping_fee === undefined) {
 			return res.status(400).json({ 
 				success: false, 
-				message: 'Vui lòng cung cấp đầy đủ thông tin giao hàng (Phường/xã, địa chỉ, tên, sđt)' 
+				message: 'Vui lòng cung cấp đầy đủ thông tin giao hàng và phương thức vận chuyển' 
 			});
 		}
 
@@ -222,6 +222,18 @@ const updateOrderStatus = async (req, res) => {
 	}
 };
 
+const getShippingFees = async (req, res) => {
+    try {
+        const fees = [
+          { method_id: "GH_NHANH", name: "Giao hàng Nhanh", fee: 32000, estimated_time: "2-3 ngày" },
+          { method_id: "GH_TIETKIEM", name: "Giao Tiết Kiệm", fee: 18000, estimated_time: "4-5 ngày" }
+        ];
+        return res.json({ success: true, message: 'Lấy danh sách phí vận chuyển thành công', data: fees });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+    }
+};
+
 const filterOrdersAdmin = async (req, res) => {
     try {
         const page = parsePositiveInteger(req.body.page || 1, 'page');
@@ -247,5 +259,6 @@ module.exports = {
 	getAllOrdersAdmin,
 	getOrderDetailAdmin,
 	updateOrderStatus,
+	getShippingFees,
 	filterOrdersAdmin,
 };
