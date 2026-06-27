@@ -272,7 +272,7 @@ CREATE TABLE don_hang (
   ten_nguoi_nhan VARCHAR(100) NOT NULL,
   sdt_nguoi_nhan VARCHAR(15) NOT NULL,
   phi_van_chuyen NUMERIC(10,2) DEFAULT 0,
-  phuong_thuc_van_chuyen VARCHAR(50),
+  phuong_thuc_giao_hang VARCHAR(50),
   FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
   FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id),
   FOREIGN KEY (phuong_xa_id) REFERENCES phuong_xa(phuong_xa_id)
