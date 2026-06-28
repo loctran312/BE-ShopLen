@@ -159,7 +159,6 @@ const createVoucher = async (req, res) => {
 const updateVoucher = async (req, res) => {
     try {
         const id = parsePositiveInteger(req.params.id, 'id');
-
         const current = await voucherRepository.getVoucherById(id);
         
         if (current.rows.length === 0) {
@@ -169,7 +168,9 @@ const updateVoucher = async (req, res) => {
         const currentVoucher = current.rows[0];
         const now = new Date();
 
-        if (!currentVoucher.ngay_bat_dau || new Date(currentVoucher.ngay_bat_dau) <= now) {
+        const startDate = currentVoucher.start_date ? new Date(currentVoucher.start_date) : null;
+
+        if (startDate === null || startDate <= now) {
             return res.status(400).json({ 
                 success: false, 
                 message: "Không thể chỉnh sửa mã giảm giá đang trong thời gian hoạt động hoặc đã hết hạn." 
@@ -203,6 +204,52 @@ const deleteVoucher = async (req, res) => {
 	}
 };
 
+const saveVoucher = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const voucherId = parsePositiveInteger(req.body.voucher_id, 'voucher_id');
+
+        const checkVoucher = await voucherRepository.getVoucherById(voucherId);
+        if (checkVoucher.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Voucher không tồn tại' });
+        }
+        
+        const voucher = checkVoucher.rows[0];
+        const now = new Date();
+
+        if (voucher.end_date && new Date(voucher.end_date) < now) {
+            return res.status(400).json({ success: false, message: 'Voucher đã hết hạn, không thể lưu' });
+        }
+        if (voucher.quantity !== null && voucher.used_count >= voucher.quantity) {
+            return res.status(400).json({ success: false, message: 'Voucher đã hết lượt sử dụng' });
+        }
+
+        const saved = await voucherRepository.saveVoucherToAccount(userId, voucherId);
+        if (!saved) {
+            return res.status(400).json({ success: false, message: 'Bạn đã lưu voucher này vào ví rồi' });
+        }
+
+        return res.json({ success: true, message: 'Lưu voucher thành công' });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
+};
+
+const getMySavedVouchers = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const vouchers = await voucherRepository.getMySavedVouchers(userId);
+        
+        return res.json({ 
+            success: true, 
+            message: 'Lấy danh sách voucher đã lưu thành công', 
+            data: { vouchers } 
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+    }
+};
+
 const filterVouchersAdmin = async (req, res) => {
     try {
         const page = parsePositiveInteger(req.body.page || 1, 'page');
@@ -228,5 +275,7 @@ module.exports = {
 	createVoucher,
 	updateVoucher,
 	deleteVoucher,
+	saveVoucher,
+	getMySavedVouchers,
 	filterVouchersAdmin
 };

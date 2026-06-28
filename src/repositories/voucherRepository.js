@@ -157,6 +157,33 @@ const deleteVoucher = async (id) => {
 	}
 };
 
+const saveVoucherToAccount = async (userId, voucherId) => {
+    const result = await pool.query(
+        `INSERT INTO nguoi_dung_phieu_giam_gia (nguoi_dung_id, phieu_giam_gia_id, so_lan_su_dung)
+         VALUES ($1, $2, 0)
+         ON CONFLICT (phieu_giam_gia_id, nguoi_dung_id) DO NOTHING
+         RETURNING id`,
+        [userId, voucherId]
+    );
+    return result.rowCount > 0;
+};
+
+const getMySavedVouchers = async (userId) => {
+    const result = await pool.query(
+        `SELECT p.phieu_giam_gia_id AS voucher_id, p.ma AS code, p.ten_phieu AS voucher_name, 
+                p.kieu_giam_gia AS discount_type, p.gia_tri AS value, p.gia_tri_toi_thieu AS minimum_value, 
+                p.giam_toi_da AS max_discount, p.so_luong AS quantity, p.da_dung AS used_count, 
+                p.ngay_bat_dau AS start_date, p.ngay_ket_thuc AS end_date,
+                uv.so_lan_su_dung AS used_times
+         FROM phieu_giam_gia p
+         JOIN nguoi_dung_phieu_giam_gia uv ON p.phieu_giam_gia_id = uv.phieu_giam_gia_id
+         WHERE uv.nguoi_dung_id = $1
+         ORDER BY p.ngay_ket_thuc ASC NULLS LAST`,
+        [userId]
+    );
+    return result.rows;
+};
+
 const filterVouchersAdmin = async (filters) => {
     const { page = 1, limit = 10, keyword, discount_types } = filters;
     const offset = (page - 1) * limit;
@@ -209,5 +236,7 @@ module.exports = {
 	createVoucher,
 	updateVoucher,
 	deleteVoucher,
+	saveVoucherToAccount,
+	getMySavedVouchers,
 	filterVouchersAdmin,
 };

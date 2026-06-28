@@ -8,6 +8,8 @@ const {
   createVoucher, 
   updateVoucher, 
   deleteVoucher,
+  saveVoucher,
+  getMySavedVouchers,
   filterVouchersAdmin
 } = require('../controllers/voucherController');
 
@@ -190,6 +192,42 @@ router.put('/vouchers/:id', requireAdmin, updateVoucher);
  *         description: Xóa thành công
  */
 router.delete('/vouchers/:id', requireAdmin, deleteVoucher);
+
+/**
+ * @swagger
+ * /vouchers/save:
+ *   post:
+ *     summary: Khách hàng - Lưu voucher vào ví cá nhân
+ *     tags: [Vouchers]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               voucher_id: 1
+ *     responses:
+ *       200:
+ *         description: Lưu voucher thành công
+ */
+router.post('/save', requireAuth, saveVoucher);
+
+/**
+ * @swagger
+ * /vouchers/my-vouchers:
+ *   get:
+ *     summary: Khách hàng - Lấy danh sách voucher đã lưu
+ *     tags: [Vouchers]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách thành công
+ */
+router.get('/my-vouchers', requireAuth, getMySavedVouchers);
 
 /**
  * @swagger
