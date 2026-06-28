@@ -171,14 +171,27 @@ const buildProductsList = async ({ page, limit }) => {
     const offset = (page - 1) * limit;
 
     const [countResult, productsResult] = await Promise.all([
-        pool.query('SELECT COUNT(*)::int AS total_items FROM san_pham'),
+        pool.query(`
+            SELECT COUNT(*)::int AS total_items
+            FROM san_pham
+            WHERE loai_san_pham_id <> 3
+        `),
         pool.query(
-            `SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
-                    c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
-             FROM san_pham p
-             LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
-             LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
-             ORDER BY p.san_pham_id DESC LIMIT $1 OFFSET $2`,
+            `SELECT
+                p.san_pham_id AS product_id,
+                p.ten_san_pham AS product_name,
+                p.mo_ta AS description,
+                p.trang_thai_san_pham AS product_status,
+                c.ten_danh_muc AS category_name,
+                pt.ten_loai AS type_name
+            FROM san_pham p
+            LEFT JOIN danh_muc c
+                ON c.danh_muc_id = p.danh_muc_id
+            LEFT JOIN loai_san_pham pt
+                ON pt.loai_san_pham_id = p.loai_san_pham_id
+            WHERE p.loai_san_pham_id <> 3
+            ORDER BY p.san_pham_id DESC
+            LIMIT $1 OFFSET $2`,
             [limit, offset]
         ),
     ]);
