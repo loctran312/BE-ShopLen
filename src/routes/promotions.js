@@ -180,11 +180,12 @@ router.delete('/promotions/:id', requireAdmin, deletePromotion);
  *               keyword: "Sale"
  *               discount_types: ["fixed"]
  *               statuses: ["active"]
+ *               sort_by: "start_date_asc"
  *               page: 1
  *               limit: 10
  *     responses:
  *       200:
- *         description: Lọc khuyến mãi thành công
+ *         description: Lọc khuyến mãi thành công, ENUM sort_by 'start_date_asc', 'start_date_desc', 'end_date_asc', 'end_date_desc'
  */
 router.post('/promotions/filter', requireAdmin, filterPromotionsAdmin);
 

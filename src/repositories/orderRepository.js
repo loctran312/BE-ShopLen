@@ -38,14 +38,13 @@ const generateOrderId = async (client) => {
 // --- PUBLIC (NGƯỜI DÙNG) ---
 
 const createOrder = async (userId, payload) => {
-	const client = await pool.connect();
+    const client = await pool.connect();
 
-	try {
-		await client.query('BEGIN');
+    try {
+        await client.query('BEGIN');
 
-		// Đọc giỏ hàng của user VÀ LẤY GIÁ ĐÃ GIẢM (Khuyến mãi sản phẩm)
-		const cartResult = await client.query(
-			`SELECT gh.bien_the_id, gh.so_luong, bt.gia, sp.ten_san_pham,
+        const cartResult = await client.query(
+            `SELECT gh.bien_the_id, gh.so_luong, bt.gia, sp.ten_san_pham,
                     (SELECT row_to_json(d) FROM (
                         SELECT km.kieu_giam_gia AS type, km.gia_tri AS value
                         FROM khuyen_mai_san_pham kmsp
@@ -61,178 +60,172 @@ const createOrder = async (userId, payload) => {
              JOIN bien_the_san_pham bt ON gh.bien_the_id = bt.bien_the_id
              JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
              WHERE gh.nguoi_dung_id = $1`,
-			[userId]
-		);
+            [userId]
+        );
 
-		if (cartResult.rows.length === 0) {
-			throw { statusCode: 400, message: 'Giỏ hàng của bạn đang trống' };
-		}
-		const cartItems = cartResult.rows;
+        if (cartResult.rows.length === 0) {
+            throw { statusCode: 400, message: 'Giỏ hàng của bạn đang trống' };
+        }
+        const cartItems = cartResult.rows;
 
-		// Tính tổng tiền gốc (Dựa trên giá sau khi áp dụng Sale)
-		let subTotal = 0;
-		cartItems.forEach(item => {
-			let finalPrice = Number(item.gia);
-			if (item.discount) {
-				const discountValue = Number(item.discount.value);
-				if (item.discount.type === 'percent') {
-					finalPrice = finalPrice - (finalPrice * discountValue / 100);
-				} else if (item.discount.type === 'fixed') {
-					finalPrice = finalPrice - discountValue;
-				}
-				if (finalPrice < 0) finalPrice = 0;
-			}
-			item.finalPrice = finalPrice;
-			subTotal += finalPrice * Number(item.so_luong);
-		});
+        let subTotal = 0;
+        cartItems.forEach(item => {
+            let finalPrice = Number(item.gia);
+            if (item.discount) {
+                const discountValue = Number(item.discount.value);
+                if (item.discount.type === 'percent') {
+                    finalPrice = finalPrice - (finalPrice * discountValue / 100);
+                } else if (item.discount.type === 'fixed') {
+                    finalPrice = finalPrice - discountValue;
+                }
+                if (finalPrice < 0) finalPrice = 0;
+            }
+            item.finalPrice = finalPrice;
+            subTotal += finalPrice * Number(item.so_luong);
+        });
 
-		// Khóa dòng và kiểm tra tồn kho (Tránh Race Condition)
-		const variantIds = cartItems.map(item => item.bien_the_id).sort((a, b) => a - b);
-		const stockResult = await client.query(
-			`SELECT bien_the_id, so_luong_ton 
+        const variantIds = cartItems.map(item => item.bien_the_id).sort((a, b) => a - b);
+        const stockResult = await client.query(
+            `SELECT bien_the_id, so_luong_ton 
              FROM ton_kho 
              WHERE bien_the_id = ANY($1::int[]) 
              FOR UPDATE`,
-			[variantIds]
-		);
+            [variantIds]
+        );
 
-		const stockMap = new Map(stockResult.rows.map(row => [row.bien_the_id, row.so_luong_ton]));
+        const stockMap = new Map(stockResult.rows.map(row => [row.bien_the_id, row.so_luong_ton]));
 
-		for (const item of cartItems) {
-			const currentStock = stockMap.get(item.bien_the_id) || 0;
-			if (currentStock < item.so_luong) {
-				throw { 
-					statusCode: 400, 
-					message: `Sản phẩm "${item.ten_san_pham}" chỉ còn ${currentStock} sản phẩm trong kho, không đủ số lượng yêu cầu.` 
-				};
-			}
-		}
+        for (const item of cartItems) {
+            const currentStock = stockMap.get(item.bien_the_id) || 0;
+            if (currentStock < item.so_luong) {
+                throw { 
+                    statusCode: 400, 
+                    message: `Sản phẩm "${item.ten_san_pham}" chỉ còn ${currentStock} sản phẩm trong kho, không đủ số lượng yêu cầu.` 
+                };
+            }
+        }
 
-		// Xử lý Voucher (Khuyến mãi đơn hàng)
-		let voucherId = null;
-		let discountAmount = 0;
+        let voucherId = null;
+        let discountAmount = 0;
 
-		if (payload.phieu_giam_gia_code) {
-			const voucherRes = await client.query(
-				`SELECT * FROM phieu_giam_gia WHERE ma = $1 FOR UPDATE`,
-				[payload.phieu_giam_gia_code]
-			);
+        if (payload.phieu_giam_gia_code) {
+            const voucherRes = await client.query(
+                `SELECT * FROM phieu_giam_gia WHERE ma = $1 FOR UPDATE`,
+                [payload.phieu_giam_gia_code]
+            );
 
-			if (voucherRes.rows.length === 0) {
-				throw { statusCode: 404, message: 'Mã giảm giá không tồn tại' };
-			}
+            if (voucherRes.rows.length === 0) {
+                throw { statusCode: 404, message: 'Mã giảm giá không tồn tại' };
+            }
 
-			const voucher = voucherRes.rows[0];
+            const voucher = voucherRes.rows[0];
 
-			if (voucher.so_luong !== null && voucher.da_dung >= voucher.so_luong) {
-				throw { statusCode: 400, message: 'Mã giảm giá đã hết lượt sử dụng' };
-			}
-			const now = new Date();
-			if (voucher.ngay_bat_dau && new Date(voucher.ngay_bat_dau) > now) {
-				throw { statusCode: 400, message: 'Mã giảm giá chưa đến thời gian áp dụng' };
-			}
-			if (voucher.ngay_ket_thuc && new Date(voucher.ngay_ket_thuc) < now) {
-				throw { statusCode: 400, message: 'Mã giảm giá đã hết hạn' };
-			}
-			if (voucher.gia_tri_toi_thieu !== null && subTotal < Number(voucher.gia_tri_toi_thieu)) {
-				throw { statusCode: 400, message: `Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này` };
-			}
+            if (voucher.so_luong !== null && voucher.da_dung >= voucher.so_luong) {
+                throw { statusCode: 400, message: 'Mã giảm giá đã hết lượt sử dụng' };
+            }
+            const now = new Date();
+            if (voucher.ngay_bat_dau && new Date(voucher.ngay_bat_dau) > now) {
+                throw { statusCode: 400, message: 'Mã giảm giá chưa đến thời gian áp dụng' };
+            }
+            if (voucher.ngay_ket_thuc && new Date(voucher.ngay_ket_thuc) < now) {
+                throw { statusCode: 400, message: 'Mã giảm giá đã hết hạn' };
+            }
+            if (voucher.gia_tri_toi_thieu !== null && subTotal < Number(voucher.gia_tri_toi_thieu)) {
+                throw { statusCode: 400, message: `Đơn hàng chưa đạt giá trị tối thiểu để dùng mã này` };
+            }
 
-			const usageRes = await client.query(
-				`SELECT so_lan_su_dung FROM nguoi_dung_phieu_giam_gia WHERE nguoi_dung_id = $1 AND phieu_giam_gia_id = $2`,
-				[userId, voucher.phieu_giam_gia_id]
-			);
-			if (usageRes.rows.length > 0 && usageRes.rows[0].so_lan_su_dung > 0) {
-				throw { statusCode: 400, message: 'Bạn đã sử dụng mã giảm giá này rồi' };
-			}
+            const usageRes = await client.query(
+                `SELECT so_lan_su_dung FROM nguoi_dung_phieu_giam_gia WHERE nguoi_dung_id = $1 AND phieu_giam_gia_id = $2`,
+                [userId, voucher.phieu_giam_gia_id]
+            );
+            if (usageRes.rows.length > 0 && usageRes.rows[0].so_lan_su_dung > 0) {
+                throw { statusCode: 400, message: 'Bạn đã sử dụng mã giảm giá này rồi' };
+            }
 
-			if (voucher.kieu_giam_gia === 'fixed') {
-				discountAmount = Number(voucher.gia_tri);
-			} else if (voucher.kieu_giam_gia === 'percent') {
-				discountAmount = (subTotal * Number(voucher.gia_tri)) / 100;
-				if (voucher.giam_toi_da !== null && discountAmount > Number(voucher.giam_toi_da)) {
-					discountAmount = Number(voucher.giam_toi_da);
-				}
-			}
+            if (voucher.kieu_giam_gia === 'fixed') {
+                discountAmount = Number(voucher.gia_tri);
+            } else if (voucher.kieu_giam_gia === 'percent') {
+                discountAmount = (subTotal * Number(voucher.gia_tri)) / 100;
+                if (voucher.giam_toi_da !== null && discountAmount > Number(voucher.giam_toi_da)) {
+                    discountAmount = Number(voucher.giam_toi_da);
+                }
+            }
 
-			if (discountAmount > subTotal) discountAmount = subTotal;
-			voucherId = voucher.phieu_giam_gia_id;
-		}
+            if (discountAmount > subTotal) discountAmount = subTotal;
+            voucherId = voucher.phieu_giam_gia_id;
+        }
 
-		const shippingFee = Number(payload.shipping_fee || 0);
-		const totalAmount = subTotal - discountAmount + shippingFee;
+        const shippingFee = Number(payload.shipping_fee || 0);
+        const totalAmount = subTotal - discountAmount + shippingFee;
 
-		const orderId = await generateOrderId(client);
+        const orderId = await generateOrderId(client);
 
-		await client.query(
-			`INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai, phi_van_chuyen, phuong_thuc_giao_hang)
+        await client.query(
+            `INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai, phi_van_chuyen, phuong_thuc_giao_hang)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', $10, $11)`,
-			[
-				orderId, userId, totalAmount, voucherId, discountAmount,
-				payload.phuong_xa_id, payload.dia_chi_giao_hang, 
-				payload.ten_nguoi_nhan, payload.sdt_nguoi_nhan,
-				shippingFee, payload.shipping_method_id
-			]
-		);
+            [
+                orderId, userId, totalAmount, voucherId, discountAmount,
+                payload.phuong_xa_id, payload.dia_chi_giao_hang, 
+                payload.ten_nguoi_nhan, payload.sdt_nguoi_nhan,
+                shippingFee, payload.shipping_method_id
+            ]
+        );
 
-		for (const item of cartItems) {
-			// Chi tiết đơn
-			await client.query(
-				`INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
+        for (const item of cartItems) {
+            await client.query(
+                `INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
                  VALUES ($1, $2, $3, $4, $5)`,
-				[orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
-			);
+                [orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
+            );
 
-			// Trừ kho và lấy số lượng tồn còn lại ngay lập tức
-			const stockUpdateRes = await client.query(
-				`UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
-				[item.so_luong, item.bien_the_id]
-			);
-			const soLuongSauKhiDoi = stockUpdateRes.rows[0].so_luong_ton;
+            const stockUpdateRes = await client.query(
+                `UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
+                [item.so_luong, item.bien_the_id]
+            );
+            const soLuongSauKhiDoi = stockUpdateRes.rows[0].so_luong_ton;
 
-			// Tự động Ghi lịch sử quản lý kho
-			await client.query(
-				`INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
+            await client.query(
+                `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
                  VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho khi khách đặt hàng', $5)`,
-				[item.bien_the_id, -item.so_luong, soLuongSauKhiDoi, orderId, userId]
-			);
-		}
+                [item.bien_the_id, -item.so_luong, soLuongSauKhiDoi, orderId, userId]
+            );
+        }
 
-		if (voucherId) {
-			await client.query(
-				`UPDATE phieu_giam_gia SET da_dung = da_dung + 1 WHERE phieu_giam_gia_id = $1`,
-				[voucherId]
-			);
-			await client.query(
-				`INSERT INTO nguoi_dung_phieu_giam_gia (phieu_giam_gia_id, nguoi_dung_id, so_lan_su_dung)
+        if (voucherId) {
+            await client.query(
+                `UPDATE phieu_giam_gia SET da_dung = da_dung + 1 WHERE phieu_giam_gia_id = $1`,
+                [voucherId]
+            );
+            await client.query(
+                `INSERT INTO nguoi_dung_phieu_giam_gia (phieu_giam_gia_id, nguoi_dung_id, so_lan_su_dung)
                  VALUES ($1, $2, 1)
                  ON CONFLICT (phieu_giam_gia_id, nguoi_dung_id) DO UPDATE SET so_lan_su_dung = nguoi_dung_phieu_giam_gia.so_lan_su_dung + 1`,
-				[voucherId, userId]
-			);
-		}
+                [voucherId, userId]
+            );
+        }
 
-		const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
-		await client.query(
-			`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`,
-			[orderId, paymentMethod]
-		);
+        const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
+        await client.query(
+            `INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`,
+            [orderId, paymentMethod]
+        );
 
-		await client.query(
-			`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'pending')`,
-			[orderId]
-		);
+        await client.query(
+            `INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'pending')`,
+            [orderId]
+        );
 
-		await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
+        await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
 
-		await client.query('COMMIT');
-		return { order_id: orderId, total_amount: totalAmount, payment_method: paymentMethod };
+        await client.query('COMMIT');
+        return { order_id: orderId, total_amount: totalAmount, payment_method: paymentMethod };
 
-	} catch (error) {
-		await client.query('ROLLBACK');
-		throw error;
-	} finally {
-		client.release();
-	}
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 const getUserOrders = async (userId, { page, limit }) => {

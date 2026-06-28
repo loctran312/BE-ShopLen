@@ -141,7 +141,8 @@ const filterPromotionsAdmin = async (req, res) => {
             page, limit,
             keyword: req.body.keyword,
             discount_types: req.body.discount_types,
-            statuses: req.body.statuses
+            statuses: req.body.statuses,
+            sort_by: req.body.sort_by
         });
 
         return res.json({ success: true, message: 'Lọc khuyến mãi thành công', data: result });

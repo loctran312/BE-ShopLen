@@ -192,7 +192,7 @@ const deletePromotion = async (id) => {
 };
 
 const filterPromotionsAdmin = async (filters) => {
-    const { page = 1, limit = 10, keyword, discount_types, statuses } = filters;
+    const { page = 1, limit = 10, keyword, discount_types, statuses, sort_by } = filters;
     const offset = (page - 1) * limit;
     const params = [];
     let paramIndex = 1;
@@ -221,6 +221,18 @@ const filterPromotionsAdmin = async (filters) => {
 
     const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
+    let orderByString = 'ORDER BY khuyen_mai_id DESC';
+
+    if (sort_by === 'start_date_asc') {
+        orderByString = 'ORDER BY ngay_bat_dau ASC NULLS LAST';
+    } else if (sort_by === 'start_date_desc') {
+        orderByString = 'ORDER BY ngay_bat_dau DESC NULLS LAST';
+    } else if (sort_by === 'end_date_asc') {
+        orderByString = 'ORDER BY ngay_ket_thuc ASC NULLS LAST';
+    } else if (sort_by === 'end_date_desc') {
+        orderByString = 'ORDER BY ngay_ket_thuc DESC NULLS LAST';
+    }
+
     const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM khuyen_mai ${whereString}`, params);
     const totalItems = countRes.rows[0].total;
 
@@ -230,7 +242,7 @@ const filterPromotionsAdmin = async (filters) => {
                 gia_tri AS value, gia_tri_don_hang_toi_thieu AS min_order_value,
                 ngay_bat_dau AS start_date, ngay_ket_thuc AS end_date, trang_thai AS status
          FROM khuyen_mai ${whereString}
-         ORDER BY khuyen_mai_id DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+         ${orderByString} LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         fetchParams
     );
 
