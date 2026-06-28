@@ -38,7 +38,6 @@ const router = express.Router();
  *               phieu_giam_gia_code: "WELCOME10"
  *               phuong_thuc_thanh_toan: "COD"
  *               shipping_method_id: "GH_NHANH"
- *               shipping_fee: 32000
  *     responses:
  *       201:
  *         description: Đặt hàng thành công

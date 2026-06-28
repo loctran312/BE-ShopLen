@@ -20,89 +20,80 @@ const getAvailableVouchers = async (req, res) => {
 };
 
 const applyVoucher = async (req, res) => {
-	try {
-		const userId = req.user.user_id;
-		const code = req.body.code ? req.body.code.trim() : null;
-		const orderValue = Number(req.body.order_value);
+    try {
+        const userId = req.user.user_id;
+        const code = req.body.code ? req.body.code.trim() : null;
+        const orderValue = Number(req.body.order_value);
+        const shippingMethodId = req.body.shipping_method_id;
 
-		if (!code) {
-			return res.status(400).json({ success: false, message: 'Vui lòng nhập mã giảm giá' });
-		}
+        if (!code) return res.status(400).json({ success: false, message: 'Vui lòng nhập mã giảm giá' });
+        if (Number.isNaN(orderValue) || orderValue < 0) return res.status(400).json({ success: false, message: 'Giá trị đơn hàng không hợp lệ' });
 
-		if (Number.isNaN(orderValue) || orderValue < 0) {
-			return res.status(400).json({ success: false, message: 'Giá trị đơn hàng không hợp lệ' });
-		}
+        let shippingFee = 0;
+        if (shippingMethodId === 'GH_NHANH') {
+            shippingFee = 32000;
+        } else if (shippingMethodId === 'GH_TIETKIEM') {
+            shippingFee = 18000;
+        }
 
-		const voucherResult = await voucherRepository.getVoucherByCode(code);
-		if (voucherResult.rows.length === 0) {
-			return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
-		}
+        const voucherResult = await voucherRepository.getVoucherByCode(code);
+        if (voucherResult.rows.length === 0) return res.status(404).json({ success: false, message: 'Mã giảm giá không tồn tại' });
+        const voucher = voucherResult.rows[0];
 
-		const voucher = voucherResult.rows[0];
+        if (voucher.quantity !== null && voucher.used_count >= voucher.quantity) return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết lượt sử dụng' });
+        const now = new Date();
+        if (voucher.start_date && new Date(voucher.start_date) > now) return res.status(400).json({ success: false, message: 'Mã giảm giá chưa đến thời gian bắt đầu' });
+        if (voucher.end_date && new Date(voucher.end_date) < now) return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết hạn' });
+        if (voucher.minimum_value !== null && orderValue < Number(voucher.minimum_value)) {
+            return res.status(400).json({ success: false, message: `Đơn hàng phải từ ${Number(voucher.minimum_value).toLocaleString('vi-VN')}đ để áp dụng mã này` });
+        }
 
-		if (voucher.quantity !== null && voucher.used_count >= voucher.quantity) {
-			return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết lượt sử dụng' });
-		}
+        const usageResult = await voucherRepository.getUserVoucherUsage(userId, voucher.voucher_id);
+        if (usageResult.rows.length > 0 && usageResult.rows[0].so_lan_su_dung > 0) {
+            return res.status(400).json({ success: false, message: 'Bạn đã sử dụng mã giảm giá này rồi' });
+        }
 
-		const now = new Date();
-		if (voucher.start_date && new Date(voucher.start_date) > now) {
-			return res.status(400).json({ success: false, message: 'Mã giảm giá chưa đến thời gian bắt đầu' });
-		}
+        let discountAmount = 0;
 
-		if (voucher.end_date && new Date(voucher.end_date) < now) {
-			return res.status(400).json({ success: false, message: 'Mã giảm giá đã hết hạn' });
-		}
+        if (voucher.discount_type === 'fixed') {
+            discountAmount = Number(voucher.value);
+            if (discountAmount > orderValue) discountAmount = orderValue;
 
-		if (voucher.minimum_value !== null && orderValue < Number(voucher.minimum_value)) {
-			return res.status(400).json({ 
-				success: false, 
-				message: `Đơn hàng phải từ ${Number(voucher.minimum_value).toLocaleString('vi-VN')}đ để áp dụng mã này` 
-			});
-		}
+        } else if (voucher.discount_type === 'percent') {
+            discountAmount = (orderValue * Number(voucher.value)) / 100;
+            if (voucher.max_discount !== null && discountAmount > Number(voucher.max_discount)) {
+                discountAmount = Number(voucher.max_discount);
+            }
+            if (discountAmount > orderValue) discountAmount = orderValue;
 
-		const usageResult = await voucherRepository.getUserVoucherUsage(userId, voucher.voucher_id);
-		if (usageResult.rows.length > 0 && usageResult.rows[0].so_lan_su_dung > 0) {
-			return res.status(400).json({ success: false, message: 'Bạn đã sử dụng mã giảm giá này rồi' });
-		}
+        } else if (voucher.discount_type === 'free_ship') {
+            if (!shippingMethodId) {
+                return res.status(400).json({ success: false, message: 'Vui lòng chọn phương thức vận chuyển trước khi áp dụng mã Freeship' });
+            }
+            discountAmount = shippingFee;
+            if (voucher.max_discount !== null && discountAmount > Number(voucher.max_discount)) {
+                discountAmount = Number(voucher.max_discount);
+            }
+        }
 
-		let discountAmount = 0;
+        const finalAmount = orderValue - discountAmount; 
 
-		if (voucher.discount_type === 'fixed') {
-			discountAmount = Number(voucher.value);
-		} else if (voucher.discount_type === 'percent') {
-			discountAmount = (orderValue * Number(voucher.value)) / 100;
+        return res.json({
+            success: true,
+            message: 'Áp dụng mã giảm giá thành công',
+            data: {
+                voucher_id: voucher.voucher_id,
+                code: voucher.code,
+                discount_type: voucher.discount_type,
+                discount_amount: discountAmount,
+                original_amount: orderValue,
+                final_amount: finalAmount
+            },
+        });
 
-			if (voucher.max_discount !== null && discountAmount > Number(voucher.max_discount)) {
-				discountAmount = Number(voucher.max_discount);
-			}
-		}
-
-		if (discountAmount > orderValue) {
-			discountAmount = orderValue;
-		}
-
-		const finalAmount = orderValue - discountAmount;
-
-		return res.json({
-			success: true,
-			message: 'Áp dụng mã giảm giá thành công',
-			data: {
-				voucher_id: voucher.voucher_id,
-				code: voucher.code,
-				discount_type: voucher.discount_type,
-				discount_amount: discountAmount,
-				original_amount: orderValue,
-				final_amount: finalAmount
-			},
-		});
-
-	} catch (error) {
-		console.error('[VOUCHER][APPLY] Error:', error);
-		return res.status(500).json({
-			success: false,
-			message: 'Lỗi máy chủ khi áp dụng mã giảm giá',
-		});
-	}
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi áp dụng mã giảm giá' });
+    }
 };
 
 // --- ADMIN API ---

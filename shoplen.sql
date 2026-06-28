@@ -195,7 +195,7 @@ CREATE TABLE phieu_giam_gia (
 );
 
 ALTER TABLE phieu_giam_gia ADD CONSTRAINT chk_kieu_giam_gia CHECK (
-  kieu_giam_gia IN ('percent','fixed')
+  kieu_giam_gia IN ('percent','fixed', 'free_ship')
 );
 
 CREATE TABLE nguoi_dung_phieu_giam_gia (
@@ -222,7 +222,7 @@ CREATE TABLE phieu_giam_gia_san_pham (
 CREATE TABLE khuyen_mai (
   khuyen_mai_id SERIAL PRIMARY KEY,
   tieu_de VARCHAR(100),
-  kieu_giam_gia VARCHAR(20) DEFAULT 'percent' CHECK (kieu_giam_gia IN ('percent','fixed')),
+  kieu_giam_gia VARCHAR(20) DEFAULT 'percent' CHECK (kieu_giam_gia IN ('percent','fixed', 'free_ship')),
   gia_tri NUMERIC(10,2) NOT NULL,
   gia_tri_don_hang_toi_thieu NUMERIC(10,2) DEFAULT 0,
   ngay_bat_dau TIMESTAMP,

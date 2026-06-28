@@ -8,9 +8,9 @@ const { parsePositiveInteger } = require('../utils/pagination');
 const createOrder = async (req, res) => {
 	try {
 		const userId = req.user.user_id;
-		const { phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, shipping_method_id, shipping_fee } = req.body;
+		const { phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, shipping_method_id } = req.body;
 
-		if (!phuong_xa_id || !dia_chi_giao_hang || !ten_nguoi_nhan || !sdt_nguoi_nhan || !shipping_method_id || shipping_fee === undefined) {
+		if (!phuong_xa_id || !dia_chi_giao_hang || !ten_nguoi_nhan || !sdt_nguoi_nhan || !shipping_method_id) {
 			return res.status(400).json({ 
 				success: false, 
 				message: 'Vui lòng cung cấp đầy đủ thông tin giao hàng và phương thức vận chuyển' 
