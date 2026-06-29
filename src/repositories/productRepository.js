@@ -701,6 +701,7 @@ const filterProducts = async (filters) => {
         SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
                c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
         FROM san_pham p
+        WHERE p.loai_san_pham_id <> 3
         LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
         LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
         ${whereString}

@@ -178,6 +178,12 @@ const getMySavedVouchers = async (userId) => {
          FROM phieu_giam_gia p
          JOIN nguoi_dung_phieu_giam_gia uv ON p.phieu_giam_gia_id = uv.phieu_giam_gia_id
          WHERE uv.nguoi_dung_id = $1
+           -- Điều kiện: User chưa sử dụng (chỉ được dùng 1 lần)
+           AND uv.so_lan_su_dung = 0 
+           -- Điều kiện: Voucher chưa hết hạn
+           AND (p.ngay_ket_thuc IS NULL OR p.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+           -- Điều kiện: Voucher chưa hết lượt sử dụng (số lượng tổng)
+           AND (p.so_luong IS NULL OR p.da_dung < p.so_luong)
          ORDER BY p.ngay_ket_thuc ASC NULLS LAST`,
         [userId]
     );
