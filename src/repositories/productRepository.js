@@ -639,6 +639,8 @@ const filterProducts = async (filters) => {
     let paramIndex = 1;
     let whereClauses = [];
 
+    whereClauses.push(`p.loai_san_pham_id <> 3`);
+
     if (keyword) {
         whereClauses.push(`p.ten_san_pham ILIKE $${paramIndex}`);
         params.push(`%${keyword}%`);
@@ -679,7 +681,7 @@ const filterProducts = async (filters) => {
         whereClauses.push(priceClause);
     }
 
-    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+    const whereString = `WHERE ${whereClauses.join(' AND ')}`;
 
     const countQuery = `SELECT COUNT(*)::int AS total_items FROM san_pham p ${whereString}`;
     const countResult = await pool.query(countQuery, params);
@@ -701,7 +703,6 @@ const filterProducts = async (filters) => {
         SELECT p.san_pham_id AS product_id, p.ten_san_pham AS product_name, p.mo_ta AS description, p.trang_thai_san_pham AS product_status,
                c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
         FROM san_pham p
-        WHERE p.loai_san_pham_id <> 3
         LEFT JOIN danh_muc c ON c.danh_muc_id = p.danh_muc_id
         LEFT JOIN loai_san_pham pt ON pt.loai_san_pham_id = p.loai_san_pham_id
         ${whereString}
