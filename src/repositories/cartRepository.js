@@ -1,34 +1,53 @@
 const pool = require('../config/db');
 
 const getCartByUserId = async (userId) => {
-	return pool.query(
-		`SELECT 
-			gh.gio_hang_id AS cart_id,
-			gh.bien_the_id AS variant_id,
-			gh.so_luong AS quantity,
-			bt.sku,
-			bt.slug,
-			bt.gia AS price,
-			bt.mau_sac AS color,
-			bt.kich_co AS size,
-			sp.san_pham_id AS product_id,
-			sp.ten_san_pham AS product_name,
-			COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
-			(
-				SELECT duong_dan_anh 
-				FROM hinh_anh_bien_the 
-				WHERE bien_the_id = bt.bien_the_id 
-				ORDER BY thu_tu_hien_thi ASC, hinh_anh_id ASC 
-				LIMIT 1
-			) AS image_url
-		 FROM gio_hang gh
-		 INNER JOIN bien_the_san_pham bt ON gh.bien_the_id = bt.bien_the_id
-		 INNER JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
-		 LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
-		 WHERE gh.nguoi_dung_id = $1
-		 ORDER BY gh.gio_hang_id DESC`,
-		[userId]
-	);
+    return pool.query(
+        `SELECT 
+            gh.gio_hang_id AS cart_id,
+            gh.bien_the_id AS variant_id,
+            gh.so_luong AS quantity,
+            bt.sku,
+            bt.slug,
+            COALESCE(
+                (
+                    SELECT 
+                        CASE 
+                            WHEN km.kieu_giam_gia = 'percent' THEN GREATEST(0, bt.gia - (bt.gia * km.gia_tri / 100))
+                            WHEN km.kieu_giam_gia = 'fixed' THEN GREATEST(0, bt.gia - km.gia_tri)
+                            ELSE bt.gia 
+                        END
+                    FROM khuyen_mai_san_pham kmsp
+                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE kmsp.san_pham_id = sp.san_pham_id
+                      AND km.trang_thai = 'active'
+                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                    ORDER BY km.khuyen_mai_id DESC
+                    LIMIT 1
+                ), 
+                bt.gia
+            ) AS price,
+
+            bt.mau_sac AS color,
+            bt.kich_co AS size,
+            sp.san_pham_id AS product_id,
+            sp.ten_san_pham AS product_name,
+            COALESCE(tk.so_luong_ton, 0) AS stock_quantity,
+            (
+                SELECT duong_dan_anh 
+                FROM hinh_anh_bien_the 
+                WHERE bien_the_id = bt.bien_the_id 
+                ORDER BY thu_tu_hien_thi ASC, hinh_anh_id ASC 
+                LIMIT 1
+            ) AS image_url
+         FROM gio_hang gh
+         INNER JOIN bien_the_san_pham bt ON gh.bien_the_id = bt.bien_the_id
+         INNER JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+         WHERE gh.nguoi_dung_id = $1
+         ORDER BY gh.gio_hang_id DESC`,
+        [userId]
+    );
 };
 
 const getCartItem = async (userId, variantId) => {
