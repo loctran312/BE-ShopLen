@@ -55,6 +55,7 @@ const deleteVariant = async (variantId) => {
         await client.query('DELETE FROM ton_kho WHERE bien_the_id = $1', [variantId]);
 
         await client.query('DELETE FROM gio_hang WHERE bien_the_id = $1', [variantId]);
+        await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE bien_the_id = $1', [variantId]);
 
         await client.query('DELETE FROM hoi_thao_bien_the WHERE bien_the_id = $1', [variantId]);
 

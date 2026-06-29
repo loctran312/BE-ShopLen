@@ -256,6 +256,10 @@ const deleteWorkshop = async (workshopId) => {
 
             await client.query(`DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
             await client.query(`DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
+            await client.query(`DELETE FROM gio_hang WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
+            await client.query(`DELETE FROM danh_sach_yeu_thich WHERE san_pham_id = $1`, [productId]);
+            await client.query(`DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1`, [productId]);
+            await client.query(`DELETE FROM phieu_giam_gia_san_pham WHERE san_pham_id = $1 OR bien_the_id = ANY($2::int[])`, [productId, variantIds]);
             await client.query(`DELETE FROM hoi_thao_bien_the WHERE hoi_thao_id = $1`, [workshopId]);
             await client.query(`DELETE FROM bien_the_san_pham WHERE san_pham_id = $1`, [productId]);
         }

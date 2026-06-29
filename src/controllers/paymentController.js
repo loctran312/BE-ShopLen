@@ -20,7 +20,7 @@ const momoIpn = async (req, res) => {
             await paymentRepository.updatePaymentStatus(originalOrderId, 'paid', transId);
             console.log(`[MOMO IPN] Đơn hàng ${orderId} đã thanh toán thành công.`);
         } else {
-            await paymentRepository.updatePaymentStatus(originalOderId, 'failed');
+            await paymentRepository.updatePaymentStatus(originalOrderId, 'failed');
             console.log(`[MOMO IPN] Đơn hàng ${orderId} thanh toán thất bại (Mã lỗi: ${resultCode}).`);
         }
 

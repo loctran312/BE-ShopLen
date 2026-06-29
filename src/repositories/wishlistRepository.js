@@ -2,14 +2,14 @@ const pool = require('../config/db');
 const notificationService = require('../services/notificationService');
 
 // --- TÍNH NĂNG USER: CRUD WISHLIST ---
-const toggleWishlist = async (userId, productId) => { // Sửa tham số
+const toggleWishlist = async (userId, productId) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
         
         const checkRes = await client.query(
             `SELECT danh_sach_yeu_thich_id FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND san_pham_id = $2`,
-            [userId, productId] // Sửa điều kiện
+            [userId, productId]
         );
 
         let action = '';
@@ -17,12 +17,15 @@ const toggleWishlist = async (userId, productId) => { // Sửa tham số
             await client.query(`DELETE FROM danh_sach_yeu_thich WHERE nguoi_dung_id = $1 AND san_pham_id = $2`, [userId, productId]);
             action = 'removed';
         } else {
-            await client.query(`INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, san_pham_id) VALUES ($1, $2)`, [userId, productId]);
-            action = 'added';
+            const insertRes = await client.query(
+                `INSERT INTO danh_sach_yeu_thich (nguoi_dung_id, san_pham_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *`, 
+                [userId, productId]
+            );
+            action = insertRes.rows.length > 0 ? 'added' : 'already_added';
         }
 
         await client.query('COMMIT');
-        return action;
+        return action === 'already_added' ? 'added' : action;
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;

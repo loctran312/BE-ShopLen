@@ -601,7 +601,6 @@ const deleteProduct = async (productId) => {
         
         await client.query('DELETE FROM khuyen_mai_san_pham WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
-        await client.query('DELETE FROM thong_bao_yeu_thich WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
         await client.query('DELETE FROM san_pham WHERE san_pham_id = $1', [productId]);
         await client.query('COMMIT');
