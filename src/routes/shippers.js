@@ -1,6 +1,6 @@
 const express = require('express');
 const { requireAuth, requireAdmin, requireShipper } = require('../middlewares/authMiddleware');
-const { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders } = require('../controllers/shipperController');
+const { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders, acceptOrder } = require('../controllers/shipperController');
 
 const router = express.Router();
 
@@ -130,5 +130,27 @@ router.put('/shipper/profile', requireAuth, requireShipper, updateProfile);
  *         description: Lấy danh sách đơn hàng phù hợp thành công
  */
 router.get('/shipper/available-orders', requireAuth, requireShipper, getAvailableOrders);
+
+/**
+ * @swagger
+ * /shipper/orders/{order_id}/accept:
+ *   put:
+ *     summary: Nhận giao một đơn hàng - SHIPPER
+ *     tags: [Shippers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: order_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Nhận đơn hàng thành công
+ *       400:
+ *         description: Đơn hàng đã bị người khác nhận
+ */
+router.put('/shipper/orders/:order_id/accept', requireAuth, requireShipper, acceptOrder);
 
 module.exports = router;

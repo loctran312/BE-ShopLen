@@ -154,7 +154,39 @@ const getAvailableOrdersForShipper = async (userId) => {
     return rows;
 };
 
+const acceptOrder = async (shipperId, orderId) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const updateRes = await client.query(
+            `UPDATE don_hang 
+             SET trang_thai = 'shipping', shipper_id = $1 
+             WHERE don_hang_id = $2 AND trang_thai = 'processing'
+             RETURNING don_hang_id`,
+            [shipperId, orderId]
+        );
+
+        if (updateRes.rows.length === 0) {
+            throw { statusCode: 400, message: 'Đơn hàng này không còn khả dụng hoặc đã có Shipper khác nhận.' };
+        }
+
+        await client.query(
+            `INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'shipping')`,
+            [orderId]
+        );
+
+        await client.query('COMMIT');
+        return true;
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
 module.exports = {
     getShippersList, createShipperAccount, updateShipperStatusByAdmin,
-    updateShipperProfile, getAvailableOrdersForShipper
+    updateShipperProfile, getAvailableOrdersForShipper, acceptOrder
 };

@@ -84,4 +84,23 @@ const getAvailableOrders = async (req, res) => {
     }
 };
 
-module.exports = { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders };
+const acceptOrder = async (req, res) => {
+    try {
+        const shipperId = req.user.user_id;
+        const orderId = req.params.order_id;
+
+        await shipperRepository.acceptOrder(shipperId, orderId);
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: "Nhận giao đơn hàng thành công! Trạng thái đơn đã chuyển sang Đang giao." 
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || "Lỗi máy chủ" 
+        });
+    }
+};
+
+module.exports = { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders, acceptOrder };
