@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth, requireAdmin, requireShipper } = require('../middlewares/authMiddleware');
-const { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders, acceptOrder } = require('../controllers/shipperController');
+const { getShippers, createShipper, updateShipperStatus, updateShipperLocation, 
+        getProfile, updateProfile, getAvailableOrders, acceptOrder } = require('../controllers/shipperController');
 
 const router = express.Router();
 
@@ -90,6 +91,66 @@ router.post('/admin/shippers', requireAuth, requireAdmin, createShipper);
  *         description: Cập nhật trạng thái tài khoản thành công
  */
 router.patch('/admin/shippers/:shipper_id/status', requireAuth, requireAdmin, updateShipperStatus);
+
+/**
+ * @swagger
+ * /admin/shippers/{shipper_id}/location:
+ *   put:
+ *     summary: Điều chuyển khu vực hoạt động của Shipper - ADMIN
+ *     tags:
+ *       - Shippers
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: shipper_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               working_city_id: "DN"
+ *     responses:
+ *       200:
+ *         description: Điều chuyển thành công
+ *       404:
+ *         description: Không tìm thấy Shipper
+ */
+router.put('/admin/shippers/:shipper_id/location', requireAuth, requireAdmin, updateShipperLocation);
+
+/**
+ * @swagger
+ * /shipper/profile:
+ *   get:
+ *     summary: Xem thông tin hồ sơ cá nhân - SHIPPER
+ *     tags:
+ *       - Shippers
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy thông tin cá nhân thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               example:
+ *                 success: true
+ *                 data:
+ *                   profile:
+ *                     user_id: 13
+ *                     first_name: "Nguyễn Văn Giao"
+ *                     last_name: "Nhanh"
+ *                     shipper_code: "SHP013"
+ *                     personal_address: "888 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+ *                     working_city_id: "HCM"
+ */
+router.get('/shipper/profile', requireAuth, requireShipper, getProfile);
 
 /**
  * @swagger

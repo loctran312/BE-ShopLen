@@ -100,7 +100,63 @@ const updateShipperStatusByAdmin = async (shipperIdStr, status) => {
     await pool.query("UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2", [status.toLowerCase(), rows[0].nguoi_dung_id]);
 };
 
+const updateShipperWorkingCity = async (shipperId, newCityId) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const res = await client.query(
+            `UPDATE thong_tin_shipper SET ma_tinh_hoat_dong = $1 WHERE nguoi_dung_id = $2`,
+            [newCityId, shipperId]
+        );
+        
+        if (res.rowCount === 0) {
+            const error = new Error('Không tìm thấy thông tin Shipper này');
+            error.statusCode = 404;
+            throw error;
+        }
+        
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
 // --- SHIPPER ---
+
+const getShipperProfile = async (userId) => {
+    const query = `
+        SELECT 
+            nd.nguoi_dung_id AS user_id,
+            nd.ten_dang_nhap AS username,
+            nd.ho AS first_name,
+            nd.ten AS last_name,
+            nd.thu_dien_tu AS email,
+            nd.so_dien_thoai AS phone_number,
+            nd.avatar,
+            ts.ma_shipper AS shipper_code,
+            ts.cccd,
+            ts.bien_so_xe AS license_plate,
+            ts.dia_chi_ca_nhan AS personal_address,
+            ts.ma_tinh_hoat_dong AS working_city_id
+        FROM nguoi_dung nd
+        LEFT JOIN thong_tin_shipper ts ON nd.nguoi_dung_id = ts.nguoi_dung_id
+        WHERE nd.nguoi_dung_id = $1 AND nd.vai_tro = 'shipper'
+    `;
+    
+    const result = await pool.query(query, [userId]);
+    
+    if (result.rows.length === 0) {
+        const error = new Error('Không tìm thấy thông tin hồ sơ Shipper');
+        error.statusCode = 404;
+        throw error;
+    }
+    
+    return result.rows[0];
+};
 
 const updateShipperProfile = async (userId, { full_name, phone, personal_address }) => {
     const client = await pool.connect();
@@ -187,6 +243,6 @@ const acceptOrder = async (shipperId, orderId) => {
 };
 
 module.exports = {
-    getShippersList, createShipperAccount, updateShipperStatusByAdmin,
-    updateShipperProfile, getAvailableOrdersForShipper, acceptOrder
+    getShippersList, createShipperAccount, updateShipperStatusByAdmin, updateShipperWorkingCity,
+    getShipperProfile, updateShipperProfile, getAvailableOrdersForShipper, acceptOrder
 };

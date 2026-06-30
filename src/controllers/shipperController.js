@@ -63,7 +63,51 @@ const updateShipperStatus = async (req, res) => {
     }
 };
 
+const updateShipperLocation = async (req, res) => {
+    try {
+        const shipperId = req.params.shipper_id;
+        const { working_city_id } = req.body;
+
+        if (!working_city_id || working_city_id.trim() === '') {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Vui lòng cung cấp mã tỉnh/thành phố hoạt động (working_city_id)" 
+            });
+        }
+
+        await shipperRepository.updateShipperWorkingCity(shipperId, working_city_id.trim());
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: `Đã điều chuyển Shipper sang khu vực ${working_city_id.toUpperCase()} thành công` 
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || "Lỗi máy chủ" 
+        });
+    }
+};
+
 // --- SHIPPER API ---
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const profile = await shipperRepository.getShipperProfile(userId);
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: "Lấy thông tin cá nhân Shipper thành công", 
+            data: { profile }
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || "Lỗi máy chủ" 
+        });
+    }
+};
+
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.user_id;
@@ -103,4 +147,5 @@ const acceptOrder = async (req, res) => {
     }
 };
 
-module.exports = { getShippers, createShipper, updateShipperStatus, updateProfile, getAvailableOrders, acceptOrder };
+module.exports = { getShippers, createShipper, updateShipperStatus, updateShipperLocation,
+    getProfile, updateProfile, getAvailableOrders, acceptOrder };
