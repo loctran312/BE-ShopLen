@@ -95,64 +95,54 @@ const getInventoryHistory = async (variantId, { page, limit }) => {
 // Điều chỉnh kho thủ công (Hỗ trợ xử lý mảng hàng loạt)
 const adjustInventory = async (adminId, payloads) => {
     const client = await pool.connect();
-
     try {
         await client.query("BEGIN");
-        
         const results = [];
 
-        // Lặp qua từng item trong mảng gửi lên
-        for (const payload of payloads) {
-            const { variant_id, quantity_change, transaction_type, reference_code, note } = payload;
+        const now = new Date();
+        const fallbackRefCode = `ADJ-${now.toISOString().replace(/[-:T.]/g, '').slice(0, 14)}`; 
 
-            // Kiểm tra biến thể
-            const variantCheck = await client.query("SELECT 1 FROM bien_the_san_pham WHERE bien_the_id = $1 LIMIT 1", [variant_id]);
-            if (variantCheck.rows.length === 0) {
-                const error = new Error(`Biến thể mang ID ${variant_id} không tồn tại`); 
-                error.statusCode = 404; 
-                throw error;
-            }
+        for (const item of payloads) {
+            const { variant_id, quantity_change, transaction_type, reference_code, note } = item;
 
-            // Khóa dòng tồn kho để tránh Race Condition
-            const stockResult = await client.query("SELECT so_luong_ton FROM ton_kho WHERE bien_the_id = $1 FOR UPDATE", [variant_id]);
-            
+            const stockRes = await client.query("SELECT so_luong_ton FROM ton_kho WHERE bien_the_id = $1", [variant_id]);
             let currentStock = 0;
             let isInsert = false;
 
-            if (stockResult.rows.length > 0) {
-                currentStock = Number(stockResult.rows[0].so_luong_ton);
-            } else {
+            if (stockRes.rows.length === 0) {
                 isInsert = true;
+            } else {
+                currentStock = Number(stockRes.rows[0].so_luong_ton);
             }
 
-            const newStock = currentStock + Number(quantity_change);
+            const newStock = currentStock + quantity_change;
 
-            if (Number.isNaN(newStock) || newStock < 0) {
-                const error = new Error(`Số lượng tồn kho của biến thể ID ${variant_id} không hợp lệ hoặc không đủ để trừ`); 
+            if (newStock < 0) {
+                const error = new Error(`Số lượng tồn kho của biến thể ${variant_id} không hợp lệ hoặc không đủ để trừ`); 
                 error.statusCode = 400; 
                 throw error;
             }
 
-            // Cập nhật bảng Tồn kho
             if (isInsert) {
                 await client.query("INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)", [variant_id, newStock]);
             } else {
                 await client.query("UPDATE ton_kho SET so_luong_ton = $2 WHERE bien_the_id = $1", [variant_id, newStock]);
             }
 
-            // Ghi lại Nhật ký tồn kho
+            const finalRefCode = (reference_code && reference_code.trim() !== '') ? reference_code.trim() : fallbackRefCode;
+
             await client.query(
                 `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien) 
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [variant_id, quantity_change, newStock, transaction_type, reference_code || null, note || '', adminId]
+                [variant_id, quantity_change, newStock, transaction_type, finalRefCode, note || '', adminId]
             );
 
-            // Lưu lại kết quả của item này
             results.push({
                 variant_id: variant_id,
                 quantity_change: quantity_change,
                 previous_stock: currentStock,
-                new_stock: newStock
+                new_stock: newStock,
+                reference_code_used: finalRefCode
             });
         }
 

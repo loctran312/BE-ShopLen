@@ -87,7 +87,6 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *               - variant_id: 2
  *                 quantity_change: 100
  *                 transaction_type: "nhap_kho"
- *                 reference_code: "PN-2026-06-02"
  *                 note: "Nhập Len Cotton Milk màu Xanh"
  *     responses:
  *       200:
