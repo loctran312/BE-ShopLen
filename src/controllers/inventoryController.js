@@ -53,11 +53,29 @@ const adjustInventory = async (req, res) => {
 
         for (let i = 0; i < payloads.length; i++) {
             const item = payloads[i];
-            if (!item.variant_id || item.quantity_change === undefined || !item.transaction_type) {
+            
+            if (!item.variant_id || !item.transaction_type) {
                 return res.status(400).json({ 
                     success: false, 
-                    message: `Thiếu dữ liệu bắt buộc (variant_id, quantity_change, transaction_type) tại vị trí thứ ${i + 1}` 
+                    message: `Thiếu dữ liệu bắt buộc (variant_id, transaction_type) tại vị trí thứ ${i + 1}` 
                 });
+            }
+
+            // Tách biệt nghiệp vụ: Kiểm kho dùng physical_quantity, các loại khác dùng quantity_change
+            if (item.transaction_type === 'kiem_kho') {
+                if (item.physical_quantity === undefined) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: `Nghiệp vụ KIỂM KHO bắt buộc phải truyền 'physical_quantity' (số lượng thực tế) tại vị trí thứ ${i + 1}` 
+                    });
+                }
+            } else {
+                if (item.quantity_change === undefined) {
+                    return res.status(400).json({ 
+                        success: false, 
+                        message: `Nghiệp vụ '${item.transaction_type}' bắt buộc phải truyền 'quantity_change' tại vị trí thứ ${i + 1}` 
+                    });
+                }
             }
         }
 

@@ -80,14 +80,14 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *               type: object
  *           example:
  *             - variant_id: 1
- *               quantity_change: -5
- *               transaction_type: "kiem_kho"
- *               reference_code: "PXT-2026-06-03"
- *               note: "Xuất hủy 5 cuộn do kho bị ngập ẩm mốc"
- *             - variant_id: 2
- *               quantity_change: 100
+ *               physical_quantity: 5
  *               transaction_type: "nhap_kho"
+ *               reference_code: "PXT-2026-06-03"
  *               note: "Nhập hàng đợt 1 tháng 6"
+ *             - variant_id: 2
+ *               physical_quantity: 100
+ *               transaction_type: "kiem_kho"
+ *               note: "Kiểm kho định kỳ"
  *     responses:
  *       200:
  *         description: Điều chỉnh thành công

@@ -1,5 +1,5 @@
 const express = require('express');
-const { requireAdmin } = require('../middlewares/authMiddleware');
+const { requireAdmin, requireAuth } = require('../middlewares/authMiddleware');
 const { 
   filterWorkshops, 
   getWorkshopDetail, 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @swagger
  * /workshops/filter:
  *   post:
- *     summary: Lọc workshop theo nhiều tiêu chí - ADMIN
+ *     summary: Lọc workshop theo nhiều tiêu chí
  *     tags:
  *       - Workshops
  *     security:
@@ -34,13 +34,13 @@ const router = express.Router();
  *       200:
  *         description: Lọc thành công
  */
-router.post('/filter', requireAdmin, filterWorkshops);
+router.post('/filter', filterWorkshops);
 
 /**
  * @swagger
  * /workshops/{id}:
  *   get:
- *     summary: Lấy chi tiết workshop - ADMIN
+ *     summary: Lấy chi tiết workshop
  *     tags:
  *       - Workshops
  *     security:
@@ -55,7 +55,7 @@ router.post('/filter', requireAdmin, filterWorkshops);
  *       200:
  *         description: Thành công
  */
-router.get('/:id', requireAdmin, getWorkshopDetail);
+router.get('/:id', getWorkshopDetail);
 
 /**
  * @swagger

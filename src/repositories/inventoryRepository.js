@@ -108,9 +108,8 @@ const adjustInventory = async (adminId, payloads) => {
         const fallbackRefCode = `ADJ-${now.toISOString().replace(/[-:T.]/g, '').slice(0, 14)}`; 
 
         for (const item of payloads) {
-            const { variant_id, quantity_change, transaction_type, reference_code, note } = item;
+            const { variant_id, quantity_change, physical_quantity, transaction_type, reference_code, note } = item;
 
-            // 1. Kiểm tra tồn kho hiện tại
             const stockRes = await client.query("SELECT so_luong_ton FROM ton_kho WHERE bien_the_id = $1", [variant_id]);
             let currentStock = 0;
             let isInsert = false;
@@ -121,21 +120,21 @@ const adjustInventory = async (adminId, payloads) => {
                 currentStock = Number(stockRes.rows[0].so_luong_ton);
             }
 
-            const absoluteChange = Math.abs(quantity_change); 
             let actualChange = 0;
-
             const increaseTypes = ['nhap_kho', 'hoan_tra'];
-            const decreaseTypes = ['xuat_ban'];
-            const bypassTypes = ['kiem_kho', 'khac'];
+            const decreaseTypes = ['xuat_ban']; 
+            const bypassTypes = ['khac'];
 
-            if (increaseTypes.includes(transaction_type)) {
-                actualChange = absoluteChange; 
+            if (transaction_type === 'kiem_kho') {
+                actualChange = Number(physical_quantity) - currentStock; 
+            } else if (increaseTypes.includes(transaction_type)) {
+                actualChange = Math.abs(quantity_change); 
             } else if (decreaseTypes.includes(transaction_type)) {
-                actualChange = -absoluteChange; 
+                actualChange = -Math.abs(quantity_change); 
             } else if (bypassTypes.includes(transaction_type)) {
                 actualChange = quantity_change; 
             } else {
-                const error = new Error(`Loại giao dịch '${transaction_type}' không được hệ thống hỗ trợ.`); 
+                const error = new Error(`Loại giao dịch '${transaction_type}' không hợp lệ. Chỉ chấp nhận: nhap_kho, xuat_ban, hoan_tra, kiem_kho, khac.`); 
                 error.statusCode = 400; 
                 throw error;
             }
@@ -162,13 +161,21 @@ const adjustInventory = async (adminId, payloads) => {
                 [variant_id, actualChange, newStock, transaction_type, finalRefCode, note || '', adminId]
             );
 
-            results.push({
+            const resultItem = {
                 variant_id: variant_id,
-                quantity_change: actualChange,
                 previous_stock: currentStock,
                 new_stock: newStock,
                 reference_code_used: finalRefCode 
-            });
+            };
+
+            if (transaction_type === 'kiem_kho') {
+                resultItem.physical_quantity = physical_quantity;
+                resultItem.variance = actualChange;
+            } else {
+                resultItem.quantity_change = actualChange;
+            }
+
+            results.push(resultItem);
         }
 
         await client.query("COMMIT");
