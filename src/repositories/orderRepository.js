@@ -245,7 +245,6 @@ const getUserOrders = async (userId, { page, limit }) => {
 };
 
 const getOrderDetail = async (orderId, userId = null) => {
-	// Lấy thông tin chung của đơn hàng
 	const orderQuery = userId 
 		? `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phi_van_chuyen AS shipping_fee, phuong_thuc_giao_hang AS shipping_method, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1 AND nguoi_dung_id = $2`
 		: `SELECT don_hang_id AS order_id, nguoi_dung_id AS user_id, tong_tien AS total_amount, phieu_giam_gia_id AS voucher_id, so_tien_giam AS discount_amount, phi_van_chuyen AS shipping_fee, phuong_thuc_giao_hang AS shipping_method, phuong_xa_id AS ward_id, dia_chi_giao_hang AS shipping_address, ten_nguoi_nhan AS customer_name, sdt_nguoi_nhan AS phone_number, trang_thai AS status FROM don_hang WHERE don_hang_id = $1`;
@@ -270,7 +269,14 @@ const getOrderDetail = async (orderId, userId = null) => {
             sp.san_pham_id AS product_id,
             sp.mo_ta AS description,
             c.ten_danh_muc AS category_name,
-            pt.ten_loai AS type_name
+            pt.ten_loai AS type_name,
+            (
+                SELECT duong_dan_anh 
+                FROM hinh_anh_bien_the 
+                WHERE bien_the_id = ct.bien_the_id 
+                ORDER BY thu_tu_hien_thi ASC 
+                LIMIT 1
+            ) AS image_url
          FROM chi_tiet_don_hang ct
          LEFT JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
          LEFT JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
