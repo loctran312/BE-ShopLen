@@ -80,7 +80,7 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *               type: object
  *           example:
  *             - variant_id: 1
- *               physical_quantity: 5
+ *               quantity_change: 5
  *               transaction_type: "nhap_kho"
  *               reference_code: "PXT-2026-06-03"
  *               note: "Nhập hàng đợt 1 tháng 6"
