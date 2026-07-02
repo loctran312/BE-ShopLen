@@ -29,14 +29,15 @@ const getInventoryHistory = async (req, res) => {
         const rawLimit = req.query.limit !== undefined 
             ? req.query.limit 
             : (req.body && req.body.limit !== undefined ? req.body.limit : 10);
-
+            
         const page = parsePositiveInteger(rawPage, 'page');
         const limit = parsePositiveInteger(rawLimit, 'limit');
-
+        
         const data = await inventoryRepository.getInventoryHistory(variantId, { page, limit });
+        
         return res.status(200).json({ success: true, message: "Lấy lịch sử tồn kho thành công", data });
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
     }
 };
 
@@ -50,7 +51,6 @@ const adjustInventory = async (req, res) => {
             return res.status(400).json({ success: false, message: "Dữ liệu không được để trống" });
         }
 
-        // Validate từng item trong mảng
         for (let i = 0; i < payloads.length; i++) {
             const item = payloads[i];
             if (!item.variant_id || item.quantity_change === undefined || !item.transaction_type) {
@@ -69,8 +69,12 @@ const adjustInventory = async (req, res) => {
             data 
         });
     } catch (error) {
-        return res.status(error.statusCode || 500).json({ success: false, message: error.message || "Lỗi máy chủ" });
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
     }
 };
 
-module.exports = { getInventoryOverview, getInventoryHistory, adjustInventory };
+module.exports = {
+    getInventoryOverview,
+    getInventoryHistory,
+    adjustInventory
+};

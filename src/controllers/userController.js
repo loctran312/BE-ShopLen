@@ -299,7 +299,7 @@ const deleteUser = async (req, res) => {
 
     return res.json({ message: 'Xóa người dùng thành công' });
   } catch (error) {
-    return res.status(500).json({ message: 'Lỗi máy chủ' });
+    return res.status(500).json({ message: 'Không thể xóa người dùng này' });
   }
 };
 

@@ -28,7 +28,7 @@ router.use(requireAuth, requireAdmin);
  *               stock_status: "in_stock"
  *     responses:
  *       200:
- *         description: Thành công
+ *         description: Lấy dữ liệu thành công
  */
 router.post('/overview', inventoryController.getInventoryOverview);
 
@@ -78,16 +78,16 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *             type: array
  *             items:
  *               type: object
- *             example:
- *               - variant_id: 1
- *                 quantity_change: -5
- *                 transaction_type: "kiem_kho"
- *                 reference_code: "PXT-2026-06-03"
- *                 note: "Xuất hủy 5 cuộn do kho bị ngập ẩm mốc"
- *               - variant_id: 2
- *                 quantity_change: 100
- *                 transaction_type: "nhap_kho"
- *                 note: "Nhập Len Cotton Milk màu Xanh"
+ *           example:
+ *             - variant_id: 1
+ *               quantity_change: -5
+ *               transaction_type: "kiem_kho"
+ *               reference_code: "PXT-2026-06-03"
+ *               note: "Xuất hủy 5 cuộn do kho bị ngập ẩm mốc"
+ *             - variant_id: 2
+ *               quantity_change: 100
+ *               transaction_type: "nhap_kho"
+ *               note: "Nhập hàng đợt 1 tháng 6"
  *     responses:
  *       200:
  *         description: Điều chỉnh thành công
