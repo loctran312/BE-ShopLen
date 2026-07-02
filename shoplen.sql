@@ -427,6 +427,28 @@ CREATE TABLE phan_cong_giao_hang (
   FOREIGN KEY (shipper_id) REFERENCES nguoi_dung(nguoi_dung_id)
 );
 
+-- Bảng danh mục các Voucher được phép đổi bằng điểm
+CREATE TABLE muc_doi_diem (
+    muc_doi_id SERIAL PRIMARY KEY,
+    phieu_giam_gia_id INT NOT NULL UNIQUE,
+    diem_yeu_cau INT NOT NULL CHECK (diem_yeu_cau > 0),
+    trang_thai VARCHAR(20) DEFAULT 'active',
+    ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id)
+);
+
+-- Bảng Lịch sử biến động điểm
+CREATE TABLE lich_su_diem (
+    lich_su_diem_id SERIAL PRIMARY KEY,
+    nguoi_dung_id INT NOT NULL,
+    so_diem INT NOT NULL, -- Số dương (cộng điểm) hoặc Số âm (trừ điểm)
+    loai_giao_dich VARCHAR(20) CHECK (loai_giao_dich IN ('earn', 'redeem', 'refund')),
+    tham_chieu_id VARCHAR(100), -- Chứa Mã đơn hàng (nếu earn) hoặc Mã voucher (nếu redeem)
+    mo_ta TEXT,
+    ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id)
+);
+
 -- =========================
 -- COMPATIBILITY VIEWS
 -- =========================

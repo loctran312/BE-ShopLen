@@ -275,7 +275,6 @@ const updateCurrentUser = async (req, res) => {
     return res.json({ message: 'Cập nhật thông tin thành công', user: result.rows[0] });
 
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 };

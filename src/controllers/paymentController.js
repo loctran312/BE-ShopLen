@@ -8,7 +8,6 @@ const momoIpn = async (req, res) => {
 
         const isValidSignature = momoService.verifyIpnSignature(ipnData);
         if (!isValidSignature) {
-            console.error('[MOMO IPN] Lỗi chữ ký không hợp lệ');
             return res.status(400).json({ message: 'Invalid Signature' });
         }
 
@@ -18,16 +17,13 @@ const momoIpn = async (req, res) => {
 
         if (resultCode === 0) {
             await paymentRepository.updatePaymentStatus(originalOrderId, 'paid', transId);
-            console.log(`[MOMO IPN] Đơn hàng ${orderId} đã thanh toán thành công.`);
         } else {
             await paymentRepository.updatePaymentStatus(originalOrderId, 'failed');
-            console.log(`[MOMO IPN] Đơn hàng ${orderId} thanh toán thất bại (Mã lỗi: ${resultCode}).`);
         }
 
         return res.status(204).send();
 
     } catch (error) {
-        console.error('[MOMO IPN] Lỗi server:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
@@ -38,7 +34,6 @@ const momoReturn = async (req, res) => {
 
         const isValidSignature = momoService.verifyIpnSignature(queryData);
         if (!isValidSignature) {
-            console.error('[MOMO RETURN] Lỗi chữ ký không hợp lệ');
             return res.status(400).json({ message: 'Invalid Signature' });
         }
 
@@ -51,10 +46,8 @@ const momoReturn = async (req, res) => {
         if (paymentInfo && paymentInfo.trang_thai === 'pending') {
             if (Number(resultCode) === 0) {
                 await paymentRepository.updatePaymentStatus(originalOrderId, 'paid', transId);
-                console.log(`[MOMO RETURN] Đơn hàng ${originalOrderId} đã thanh toán thành công.`);
             } else {
                 await paymentRepository.updatePaymentStatus(originalOrderId, 'failed');
-                console.log(`[MOMO RETURN] Đơn hàng ${originalOrderId} thanh toán thất bại (Mã lỗi: ${resultCode}).`);
             }
         }
 
@@ -65,7 +58,6 @@ const momoReturn = async (req, res) => {
         }
 
     } catch (error) {
-        console.error('[MOMO RETURN] Lỗi server:', error);
         return res.status(500).send('Đã xảy ra lỗi khi xử lý kết quả thanh toán');
     }
 };

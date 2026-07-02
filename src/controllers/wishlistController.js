@@ -15,7 +15,6 @@ const toggleWishlist = async (req, res) => {
 
         return res.json({ success: true, message: message, action: action });
     } catch (error) {
-        console.error('[WISHLIST] Error:', error);
         return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
     }
 };

@@ -15,16 +15,18 @@ const getUserByEmail = async (client, email) => client.query(
 );
 
 const getUserById = async (client, userId) => client.query(
-  `SELECT nguoi_dung_id AS user_id,
-          ten_dang_nhap AS username,
-          thu_dien_tu AS email,
-          so_dien_thoai AS phone_number,
-          vai_tro AS role,
-          ho AS first_name,
-          ten AS last_name,
-          avatar
-   FROM nguoi_dung
-   WHERE nguoi_dung_id = $1`,
+  `SELECT nd.nguoi_dung_id AS user_id,
+          nd.ten_dang_nhap AS username,
+          nd.thu_dien_tu AS email,
+          nd.so_dien_thoai AS phone_number,
+          nd.vai_tro AS role,
+          nd.ho AS first_name,
+          nd.ten AS last_name,
+          nd.avatar,
+          COALESCE(dtl.tong_diem, 0) AS loyalty_points
+   FROM nguoi_dung nd
+   LEFT JOIN diem_tich_luy dtl ON nd.nguoi_dung_id = dtl.nguoi_dung_id
+   WHERE nd.nguoi_dung_id = $1`,
   [userId]
 );
 

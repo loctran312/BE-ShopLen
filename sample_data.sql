@@ -341,6 +341,24 @@ INSERT INTO thong_tin_shipper (nguoi_dung_id, ma_shipper, cccd, bien_so_xe, dia_
 (13, 'SHP013', '079090000001', '59A1-12345', '123 Phạm Văn Đồng, TP.HCM', 'HCM'),
 (14, 'SHP014', '001090000002', '29B1-67890', '456 Giảng Võ, Hà Nội', 'HN');
 
+-- ----------------------------------------
+-- 11. BẢNG: MUC_DOI_DIEM & LICH_SU_DIEM (Hệ thống Loyalty)
+-- ----------------------------------------
+INSERT INTO muc_doi_diem (phieu_giam_gia_id, diem_yeu_cau, trang_thai, ngay_tao) VALUES 
+(11, 100, 'active', '2026-06-01 10:00:00'),
+(8, 200, 'active', '2026-06-01 10:05:00'),
+(14, 300, 'active', '2026-06-05 09:00:00'),
+(6, 500, 'active', '2026-06-10 14:30:00'),
+(7, 400, 'inactive', '2026-06-12 08:00:00');
+
+INSERT INTO lich_su_diem (nguoi_dung_id, so_diem, loai_giao_dich, tham_chieu_id, mo_ta, ngay_tao) VALUES 
+(4, 150, 'earn', 'DH-20260620-0001', 'Tích điểm từ đơn hàng DH-20260620-0001', '2026-06-20 15:30:00'),
+(5, 340, 'earn', 'DH-20260621-0001', 'Tích điểm từ đơn hàng DH-20260621-0001', '2026-06-21 09:15:00'),
+(5, -100, 'redeem', 'FREESHIP15', 'Đổi 100 điểm lấy Voucher FREESHIP15', '2026-06-22 10:00:00'),
+(8, 450, 'earn', 'DH-20260623-0001', 'Tích điểm từ đơn hàng DH-20260623-0001', '2026-06-23 11:20:00'),
+(10, 620, 'earn', 'DH-20260626-0001', 'Tích điểm từ đơn hàng DH-20260626-0001', '2026-06-26 14:00:00'),
+(12, 200, 'earn', 'DH-20260627-0002', 'Tích điểm từ đơn hàng DH-20260627-0002', '2026-06-27 16:00:00'),
+(12, -95, 'refund', 'DH-20260627-0002', 'Hệ thống trừ điểm do hoàn trả 1 phần đơn hàng DH-20260627-0002', '2026-06-28 09:00:00');
 
 -- Tự động reset và đồng bộ các Sequence hệ thống tăng tự động tránh lệch index
 DO $$

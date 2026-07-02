@@ -40,7 +40,6 @@ const deleteVariant = async (req, res) => {
       message: "Xóa biến thể thành công",
     });
   } catch (error) {
-    console.error("Lỗi khi xóa biến thể:", error);
     res.status(500).json({ success: false, message: "Lỗi khi xóa biến thể" });
   }
 };

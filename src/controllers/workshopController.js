@@ -46,7 +46,6 @@ const createWorkshop = async (req, res) => {
         const workshop = await workshopRepository.createWorkshop(payload);
         return res.status(201).json({ success: true, message: 'Tạo Workshop thành công', data: { workshop } });
     } catch (error) {
-        console.error('[WORKSHOP][CREATE]', error);
         return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi tạo Workshop' });
     }
 };
@@ -59,7 +58,6 @@ const updateWorkshop = async (req, res) => {
         const workshop = await workshopRepository.updateWorkshop(id, payload);
         return res.json({ success: true, message: 'Cập nhật Workshop thành công', data: { workshop } });
     } catch (error) {
-        console.error('[WORKSHOP][UPDATE]', error);
         return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ khi cập nhật Workshop' });
     }
 };

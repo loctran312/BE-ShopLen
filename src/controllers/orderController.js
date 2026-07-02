@@ -43,7 +43,6 @@ const createOrder = async (req, res) => {
 		if (error.statusCode) {
 			return res.status(error.statusCode).json({ success: false, message: error.message });
 		}
-		console.error('[ORDER][CREATE] Error:', error);
 		return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ khi tạo đơn hàng' });
 	}
 };
@@ -153,7 +152,6 @@ const repurchaseOrder = async (req, res) => {
 		});
 
 	} catch (error) {
-		console.error('[ORDER][REPURCHASE] Error:', error);
 		return res.status(500).json({ success: false, message: 'Lỗi máy chủ khi mua lại đơn hàng' });
 	}
 };

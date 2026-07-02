@@ -58,6 +58,7 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 | **Hoàn tiền** | Xử lý yêu cầu hoàn tiền |
 | **Danh sách yêu thích** | Wishlist với thông báo giảm giá/hàng về |
 | **Thông báo** | Push notification cho các sự kiện |
+| **Điểm tích lũy** | Hệ thống loyalty points cho khách hàng thân thiết |
 
 ### Đang phát triển
 
@@ -68,7 +69,6 @@ Backend API cho hệ thống thương mại điện tử **ShopLen** - cửa hà
 
 | Tính năng | Mô tả |
 |-----------|-------|
-| **Điểm tích lũy** | Hệ thống loyalty points cho khách hàng thân thiết |
 | **Vòng quay may mắn** | Minigame spin to win voucher/điểm thưởng |
 
 ---
