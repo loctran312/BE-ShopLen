@@ -116,7 +116,7 @@ const getWorkshopDetail = async (workshopId) => {
 
     workshop.sessions = sessionsRes.rows.map(s => ({ ...s, capacity: Number(s.capacity) }));
     return {
-        workshop,
+        ...workshop,
         overall_status: (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed'
     };
 };
