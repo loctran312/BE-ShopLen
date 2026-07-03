@@ -51,7 +51,7 @@ const filterWorkshopsAdmin = async (filters) => {
         )
         SELECT pw.hoi_thao_id AS workshop_id, pw.san_pham_id AS product_id, pw.tieu_de AS title, 
                pw.mo_ta AS description, pw.dia_diem AS location,
-               pw.trang_thai_san_pham AS product_status, pw.danh_muc_id AS category_id,
+               pw.trang_thai_san_pham AS status, pw.danh_muc_id AS category_id,
                COALESCE(
                    json_agg(
                        json_build_object(
@@ -76,7 +76,7 @@ const filterWorkshopsAdmin = async (filters) => {
         
         return {
             ...ws,
-            overall_status: (ws.product_status === 'active' && hasOpenSession) ? 'open' : 'closed'
+            overall_status: (ws.status === 'active' && hasOpenSession) ? 'open' : 'closed'
         };
     });
 
@@ -115,7 +115,10 @@ const getWorkshopDetail = async (workshopId) => {
     );
 
     workshop.sessions = sessionsRes.rows.map(s => ({ ...s, capacity: Number(s.capacity) }));
-    return workshop;
+    return {
+        workshop,
+        overall_status: (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed'
+    };
 };
 
 const createWorkshop = async (payload) => {
