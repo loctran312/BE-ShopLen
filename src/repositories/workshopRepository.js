@@ -102,11 +102,16 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
                COALESCE((SELECT SUM(so_luong) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id=dh.don_hang_id WHERE ct.bien_the_id=htb.bien_the_id AND dh.trang_thai!='cancelled'), 0)::int AS booked_slots,
                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
                (SELECT row_to_json(d) FROM (
-                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
-                    FROM khuyen_mai_san_pham kmsp JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE kmsp.san_pham_id = bt.san_pham_id AND km.trang_thai = 'active'
-                    LIMIT 1
-               ) d) AS discount
+                SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                FROM khuyen_mai_san_pham kmsp 
+                JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                WHERE kmsp.san_pham_id = bt.san_pham_id 
+                AND km.trang_thai = 'active'
+                AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                ORDER BY km.khuyen_mai_id DESC
+                LIMIT 1
+            ) d) AS discount
         FROM hoi_thao_bien_the htb 
         JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id 
         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
@@ -193,6 +198,9 @@ const getWorkshopDetail = async (workshopId) => {
                 JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
                 WHERE kmsp.san_pham_id = bt.san_pham_id 
                 AND km.trang_thai = 'active'
+                AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
+                AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+                ORDER BY km.khuyen_mai_id DESC
                 LIMIT 1
             ) d) AS discount
         FROM hoi_thao_bien_the htb 
