@@ -10,6 +10,7 @@ const {
     updateOrderStatus,
     getShippingFees,
     filterOrdersAdmin,
+    createBuyNowOrder
 } = require('../controllers/orderController');
 
 const router = express.Router();
@@ -43,6 +44,37 @@ const router = express.Router();
  *         description: Đặt hàng thành công
  */
 router.post('/', requireAuth, createOrder);
+
+/**
+ * @swagger
+ * /orders/buy-now:
+ *   post:
+ *     summary: Tạo đơn hàng Mua ngay (Dành cho Workshop hoặc mua nóng Sản phẩm)
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               buy_now_item: 
+ *                 variant_id: 16
+ *                 quantity: 1
+ *               ten_nguoi_nhan: "Người Nhận 1"
+ *               sdt_nguoi_nhan: "0987654321"
+ *               dia_chi_giao_hang: "Nhận vé qua Email"
+ *               phuong_xa_id: null
+ *               shipping_method_id: null
+ *               phuong_thuc_thanh_toan: "MOMO"
+ *               phieu_giam_gia_code: ""
+ *     responses:
+ *       201:
+ *         description: Đặt hàng thành công
+ */
+router.post('/buy-now', requireAuth, createBuyNowOrder);
 
 /**
  * @swagger

@@ -47,6 +47,48 @@ const createOrder = async (req, res) => {
 	}
 };
 
+const createBuyNowOrder = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const payload = req.body;
+
+        if (!payload.buy_now_item || !payload.buy_now_item.variant_id || !payload.buy_now_item.quantity) {
+            return res.status(400).json({ success: false, message: 'Vui lòng cung cấp thông tin sản phẩm hoặc ca học mua ngay' });
+        }
+
+        if (!payload.dia_chi_giao_hang || !payload.ten_nguoi_nhan || !payload.sdt_nguoi_nhan) {
+            return res.status(400).json({ success: false, message: 'Vui lòng cung cấp thông tin người nhận hàng' });
+        }
+
+        const result = await orderRepository.createBuyNowOrder(userId, payload);
+
+        let payUrl = null;
+        if (result.payment_method === 'MOMO') {
+            const momoResponse = await momoService.createPaymentUrl(
+                result.order_id, 
+                result.total_amount, 
+                `Thanh toan don hang ${result.order_id} tai ShopLen`
+            );
+            payUrl = momoResponse.payUrl;
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: result.payment_method === 'MOMO' ? 'Vui lòng thanh toán để hoàn tất' : 'Đặt hàng thành công',
+            data: {
+                ...result,
+                payUrl: payUrl
+            }
+        });
+
+    } catch (error) {
+        if (error.statusCode) {
+            return res.status(error.statusCode).json({ success: false, message: error.message });
+        }
+        return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ khi tạo đơn hàng' });
+    }
+};
+
 const getMyOrders = async (req, res) => {
 	try {
 		const userId = req.user.user_id;
@@ -251,6 +293,7 @@ const filterOrdersAdmin = async (req, res) => {
 
 module.exports = {
 	createOrder,
+    createBuyNowOrder,
 	getMyOrders,
 	getMyOrderDetail,
 	repurchaseOrder,
