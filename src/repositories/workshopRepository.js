@@ -153,22 +153,53 @@ const getWorkshopDetail = async (workshopId) => {
     const workshop = wsRes.rows[0];
 
     const sRes = await pool.query(`
-        SELECT htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
-               bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name, tk.so_luong_ton AS capacity,
-               COALESCE((SELECT SUM(so_luong) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id=dh.don_hang_id WHERE ct.bien_the_id=htb.bien_the_id AND dh.trang_thai!='cancelled'), 0)::int AS booked_slots,
-               COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
-               (SELECT row_to_json(d) FROM (
-                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
-                    FROM khuyen_mai_san_pham kmsp JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE kmsp.san_pham_id = bt.san_pham_id AND km.trang_thai = 'active'
-                    LIMIT 1
-               ) d) AS discount
+        SELECT 
+            htb.bien_the_id AS variant_id, 
+            htb.ngay_bat_dau AS start_date, 
+            htb.ngay_ket_thuc AS end_date, 
+            htb.trang_thai AS status,
+            bt.sku, 
+            bt.slug, 
+            bt.gia AS price, 
+            bt.mau_sac AS session_name, 
+            tk.so_luong_ton AS capacity,
+            COALESCE((
+                SELECT SUM(ct.so_luong) 
+                FROM chi_tiet_don_hang ct 
+                JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id 
+                WHERE ct.bien_the_id = htb.bien_the_id 
+                AND dh.trang_thai != 'cancelled'
+            ), 0)::int AS booked_slots,
+            COALESCE(json_agg(
+                json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) 
+                ORDER BY vi.thu_tu_hien_thi ASC
+            ) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+            (SELECT row_to_json(d) FROM (
+                SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                FROM khuyen_mai_san_pham kmsp 
+                JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                WHERE kmsp.san_pham_id = bt.san_pham_id 
+                AND km.trang_thai = 'active'
+                LIMIT 1
+            ) d) AS discount
         FROM hoi_thao_bien_the htb 
         JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id 
         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
         LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
         WHERE htb.hoi_thao_id = $1
-        GROUP BY htb.bien_the_id, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton`, [workshopId]);
+        GROUP BY 
+            htb.bien_the_id, 
+            htb.ngay_bat_dau, 
+            htb.ngay_ket_thuc, 
+            htb.trang_thai, 
+            bt.sku, 
+            bt.slug, 
+            bt.gia, 
+            bt.mau_sac, 
+            tk.so_luong_ton, 
+            bt.san_pham_id`, 
+        [workshopId]
+    );
 
     workshop.sessions = processWorkshopSessions(sRes.rows);
     workshop.overall_status = (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed';
