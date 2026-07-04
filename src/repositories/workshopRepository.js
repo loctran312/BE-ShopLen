@@ -8,12 +8,47 @@ const generateSKU = (prefix, id) => {
 const normalizeText = (value) => (value === undefined || value === null ? '' : String(value)).trim();
 const slugifyText = (value) => normalizeText(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-const filterWorkshopsAdmin = async (filters) => {
-    const { page = 1, limit = 10, keyword, status } = filters;
+const processWorkshopSessions = (sessions) => {
+    return sessions.map(s => {
+        const price = Number(s.price);
+        const capacity = Number(s.capacity);
+        const booked = Number(s.booked_slots);
+        const available = Math.max(0, capacity - booked);
+        
+        let finalPrice = price;
+        let discount = s.discount || null;
+
+        if (discount) {
+            discount.value = Number(discount.value);
+            if (discount.type === 'percent') finalPrice = price - (price * discount.value / 100);
+            else if (discount.type === 'fixed') finalPrice = price - discount.value;
+            finalPrice = Math.max(0, finalPrice);
+        }
+
+        return {
+            variant_id: s.variant_id,
+            sku: s.sku,
+            slug: s.slug,
+            session_name: s.session_name,
+            price: price,
+            discount: discount,
+            final_price: finalPrice,
+            total_capacity: capacity,
+            booked_slots: booked,
+            available_slots: available,
+            start_date: s.start_date,
+            end_date: s.end_date,
+            status: (available <= 0) ? 'full' : s.status,
+            images: s.images || []
+        };
+    });
+};
+
+const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) => {
     const offset = (page - 1) * limit;
     const params = [];
     let paramIndex = 1;
-    let whereClauses = [];
+    let whereClauses = ["sp.loai_san_pham_id = 3"];
 
     if (keyword) {
         whereClauses.push(`(ht.tieu_de ILIKE $${paramIndex} OR ht.dia_diem ILIKE $${paramIndex})`);
@@ -27,12 +62,8 @@ const filterWorkshopsAdmin = async (filters) => {
         paramIndex++;
     }
 
-    const whereString = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-
-    const countRes = await pool.query(
-        `SELECT COUNT(*)::int AS total FROM hoi_thao ht JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id ${whereString}`, 
-        params
-    );
+    const whereString = `WHERE ${whereClauses.join(' AND ')}`;
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM hoi_thao ht JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id ${whereString}`, params);
     const totalItems = countRes.rows[0].total;
 
     if (totalItems === 0) return { workshops: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
@@ -41,8 +72,7 @@ const filterWorkshopsAdmin = async (filters) => {
 
     const workshopsRes = await pool.query(
         `SELECT ht.hoi_thao_id AS workshop_id, ht.san_pham_id AS product_id, ht.tieu_de AS title, ht.mo_ta AS description, ht.dia_diem AS location,
-                sp.trang_thai_san_pham AS status, sp.danh_muc_id AS category_id,
-                c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
+                sp.trang_thai_san_pham AS status, sp.danh_muc_id AS category_id, c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
          FROM hoi_thao ht
          JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id
          LEFT JOIN danh_muc c ON sp.danh_muc_id = c.danh_muc_id
@@ -53,162 +83,96 @@ const filterWorkshopsAdmin = async (filters) => {
         fetchParams
     );
 
-    const workshops = workshopsRes.rows;
-    const workshopIds = workshops.map(ws => ws.workshop_id);
-
-    const sessionsRes = await pool.query(
-        `SELECT htb.hoi_thao_id AS workshop_id, htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
-                bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name,
-                COALESCE(tk.so_luong_ton, 0) AS capacity,
-                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
-                (SELECT row_to_json(d) FROM (
+    const workshopIds = workshopsRes.rows.map(ws => ws.workshop_id);
+    const sessionsRes = await pool.query(`
+        SELECT htb.hoi_thao_id AS workshop_id, htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
+               bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name, tk.so_luong_ton AS capacity,
+               COALESCE((SELECT SUM(so_luong) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id=dh.don_hang_id WHERE ct.bien_the_id=htb.bien_the_id AND dh.trang_thai!='cancelled'), 0)::int AS booked_slots,
+               COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+               (SELECT row_to_json(d) FROM (
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
-                    FROM khuyen_mai_san_pham kmsp
-                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE kmsp.san_pham_id = bt.san_pham_id
-                      AND km.trang_thai = 'active'
-                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
-                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
-                    ORDER BY km.khuyen_mai_id DESC
+                    FROM khuyen_mai_san_pham kmsp JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE kmsp.san_pham_id = bt.san_pham_id AND km.trang_thai = 'active'
                     LIMIT 1
-                ) d) AS discount
-         FROM hoi_thao_bien_the htb
-         JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id
-         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
-         LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
-         WHERE htb.hoi_thao_id = ANY($1::int[])
-         GROUP BY htb.hoi_thao_id, htb.bien_the_id, htb.ngay_bat_dau, htb.ngay_ket_thuc, htb.trang_thai, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton, bt.san_pham_id
-         ORDER BY htb.ngay_bat_dau ASC`,
+               ) d) AS discount
+        FROM hoi_thao_bien_the htb 
+        JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id 
+        LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+        LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
+        WHERE htb.hoi_thao_id = ANY($1::int[])
+        GROUP BY htb.hoi_thao_id, htb.bien_the_id, htb.ngay_bat_dau, htb.ngay_ket_thuc, htb.trang_thai, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton, bt.san_pham_id`, 
         [workshopIds]
     );
 
-    const sessionsByWorkshopId = new Map();
-    for (const row of sessionsRes.rows) {
-        if (!sessionsByWorkshopId.has(row.workshop_id)) sessionsByWorkshopId.set(row.workshop_id, []);
-
-        const price = Number(row.price);
+    const sessionsMap = new Map();
+    sessionsRes.rows.forEach(s => {
+        if (!sessionsMap.has(s.workshop_id)) sessionsMap.set(s.workshop_id, []);
+        
+        const price = Number(s.price);
         let finalPrice = price;
-        let discount = row.discount || null;
-
+        let discount = s.discount || null;
         if (discount) {
             discount.value = Number(discount.value);
-            if (discount.type === 'percent') {
-                finalPrice = price - (price * discount.value / 100);
-            } else if (discount.type === 'fixed') {
-                finalPrice = price - discount.value;
-            }
-            if (finalPrice < 0) finalPrice = 0;
+            if (discount.type === 'percent') finalPrice = Math.max(0, price - (price * discount.value / 100));
+            else if (discount.type === 'fixed') finalPrice = Math.max(0, price - discount.value);
         }
+        
+        const capacity = Number(s.capacity);
+        const booked = Number(s.booked_slots);
+        const available = Math.max(0, capacity - booked);
 
-        sessionsByWorkshopId.get(row.workshop_id).push({
-            variant_id: row.variant_id,
-            sku: row.sku,
-            slug: row.slug,
-            session_name: row.session_name,
-            price: price,
-            discount: discount,
-            final_price: finalPrice,
-            capacity: Number(row.capacity),
-            start_date: row.start_date,
-            end_date: row.end_date,
-            status: row.status,
-            images: row.images || []
+        sessionsMap.get(s.workshop_id).push({
+            variant_id: s.variant_id, sku: s.sku, slug: s.slug, session_name: s.session_name,
+            price, discount, final_price: finalPrice, total_capacity: capacity, booked_slots: booked,
+            available_slots: available, start_date: s.start_date, end_date: s.end_date,
+            status: (available <= 0) ? 'full' : s.status, images: s.images
         });
-    }
-
-    const processedWorkshops = workshops.map(ws => {
-        const sessions = sessionsByWorkshopId.get(ws.workshop_id) || [];
-        const hasOpenSession = sessions.some(s => s.status === 'open');
-        return {
-            ...ws,
-            overall_status: (ws.status === 'active' && hasOpenSession) ? 'open' : 'closed',
-            sessions: sessions
-        };
     });
 
     return {
-        workshops: processedWorkshops,
-        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit },
+        workshops: workshopsRes.rows.map(ws => {
+            const sessions = sessionsMap.get(ws.workshop_id) || [];
+            return { ...ws, overall_status: (ws.status === 'active' && sessions.some(s => s.status === 'open')) ? 'open' : 'closed', sessions };
+        }),
+        pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit }
     };
 };
 
 const getWorkshopDetail = async (workshopId) => {
-    const workshopRes = await pool.query(
+    const wsRes = await pool.query(
         `SELECT ht.hoi_thao_id AS workshop_id, ht.san_pham_id AS product_id, ht.tieu_de AS title, ht.mo_ta AS description, ht.dia_diem AS location,
-                sp.danh_muc_id AS category_id, sp.trang_thai_san_pham AS status,
-                c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
+                sp.danh_muc_id AS category_id, sp.trang_thai_san_pham AS status, c.ten_danh_muc AS category_name, pt.ten_loai AS type_name
          FROM hoi_thao ht
          JOIN san_pham sp ON ht.san_pham_id = sp.san_pham_id
          LEFT JOIN danh_muc c ON sp.danh_muc_id = c.danh_muc_id
          LEFT JOIN loai_san_pham pt ON sp.loai_san_pham_id = pt.loai_san_pham_id
-         WHERE ht.hoi_thao_id = $1`, 
-        [workshopId]
+         WHERE ht.hoi_thao_id = $1`, [workshopId]
     );
 
-    if (workshopRes.rows.length === 0) return null;
-    const workshop = workshopRes.rows[0];
+    if (wsRes.rows.length === 0) return null;
+    const workshop = wsRes.rows[0];
 
-    const sessionsRes = await pool.query(
-        `SELECT htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
-                bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name,
-                COALESCE(tk.so_luong_ton, 0) AS capacity,
-                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
-                (SELECT row_to_json(d) FROM (
+    const sRes = await pool.query(`
+        SELECT htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
+               bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name, tk.so_luong_ton AS capacity,
+               COALESCE((SELECT SUM(so_luong) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id=dh.don_hang_id WHERE ct.bien_the_id=htb.bien_the_id AND dh.trang_thai!='cancelled'), 0)::int AS booked_slots,
+               COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
+               (SELECT row_to_json(d) FROM (
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
-                    FROM khuyen_mai_san_pham kmsp
-                    JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
-                    WHERE kmsp.san_pham_id = bt.san_pham_id
-                      AND km.trang_thai = 'active'
-                      AND (km.ngay_bat_dau IS NULL OR km.ngay_bat_dau <= CURRENT_TIMESTAMP)
-                      AND (km.ngay_ket_thuc IS NULL OR km.ngay_ket_thuc >= CURRENT_TIMESTAMP)
-                    ORDER BY km.khuyen_mai_id DESC
+                    FROM khuyen_mai_san_pham kmsp JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
+                    WHERE kmsp.san_pham_id = bt.san_pham_id AND km.trang_thai = 'active'
                     LIMIT 1
-                ) d) AS discount
-         FROM hoi_thao_bien_the htb
-         JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id
-         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
-         LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
-         WHERE htb.hoi_thao_id = $1
-         GROUP BY htb.bien_the_id, htb.ngay_bat_dau, htb.ngay_ket_thuc, htb.trang_thai, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton, bt.san_pham_id
-         ORDER BY htb.ngay_bat_dau ASC`, 
-        [workshopId]
-    );
+               ) d) AS discount
+        FROM hoi_thao_bien_the htb 
+        JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id 
+        LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+        LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
+        WHERE htb.hoi_thao_id = $1
+        GROUP BY htb.bien_the_id, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton`, [workshopId]);
 
-    workshop.sessions = sessionsRes.rows.map(s => {
-        const price = Number(s.price);
-        let finalPrice = price;
-        let discount = s.discount || null;
-
-        if (discount) {
-            discount.value = Number(discount.value);
-            if (discount.type === 'percent') {
-                finalPrice = price - (price * discount.value / 100);
-            } else if (discount.type === 'fixed') {
-                finalPrice = price - discount.value;
-            }
-            if (finalPrice < 0) finalPrice = 0;
-        }
-
-        return { 
-            variant_id: s.variant_id,
-            sku: s.sku,
-            slug: s.slug,
-            session_name: s.session_name,
-            price: price,
-            discount: discount,
-            final_price: finalPrice,
-            capacity: Number(s.capacity),
-            start_date: s.start_date,
-            end_date: s.end_date,
-            status: s.status,
-            images: s.images || []
-        };
-    });
-
-    return {
-        ...workshop,
-        overall_status: (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed'
-    };
+    workshop.sessions = processWorkshopSessions(sRes.rows);
+    workshop.overall_status = (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed';
+    return workshop;
 };
 
 const createWorkshop = async (payload) => {

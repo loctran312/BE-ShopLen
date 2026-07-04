@@ -3,33 +3,21 @@ const { parsePositiveInteger } = require('../utils/pagination');
 
 const filterWorkshops = async (req, res) => {
     try {
-        const page = parsePositiveInteger(req.body.page || 1, 'page');
-        const limit = parsePositiveInteger(req.body.limit || 10, 'limit');
-        
-        const result = await workshopRepository.filterWorkshopsAdmin({
-            page, limit,
-            keyword: req.body.keyword,
-            status: req.body.status
-        });
-
+        const { page = 1, limit = 10, keyword, status } = req.body;
+        const result = await workshopRepository.filterWorkshopsAdmin({ page, limit, keyword, status });
         return res.json({ success: true, message: 'Lấy danh sách Workshop thành công', data: result });
     } catch (error) {
-        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
 const getWorkshopDetail = async (req, res) => {
     try {
-        const id = parsePositiveInteger(req.params.id, 'id');
-        const workshop = await workshopRepository.getWorkshopDetail(id);
-
-        if (!workshop) {
-            return res.status(404).json({ success: false, message: 'Workshop không tồn tại' });
-        }
-
+        const workshop = await workshopRepository.getWorkshopDetail(req.params.id);
+        if (!workshop) return res.status(404).json({ success: false, message: 'Workshop không tồn tại' });
         return res.json({ success: true, data: { workshop } });
     } catch (error) {
-        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

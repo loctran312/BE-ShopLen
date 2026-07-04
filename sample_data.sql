@@ -72,14 +72,28 @@ INSERT INTO danh_muc (danh_muc_id, ten_danh_muc, mo_ta, danh_muc_cha_id, hinh_an
 -- ----------------------------------------
 -- 3. BẢNG: SAN_PHAM, BIEN_THE_SAN_PHAM, TON_KHO, HINH_ANH (Mở rộng lên 15 biến thể)
 -- ----------------------------------------
-INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta) VALUES 
-(1, 1, 2, 'Len Cotton Milk', 'Dòng len sợi sữa mềm thích hợp cho cả da em bé'),
-(2, 2, 5, 'Kim Móc Cán Dẻo Tulip', 'Thương hiệu kim móc cao cấp nhập khẩu Nhật Bản'),
-(3, 1, 10, 'Len Sợi Nhung Đũa', 'Sợi len kết cấu nhung siêu to chuyên dùng đan chăn, thảm'),
-(4, 2, 4, 'Bộ Kim Đan Vòng Gỗ Sồi', 'Chất liệu gỗ tự nhiên nối dây cáp dẻo chống xoắn'),
-(5, 3, 7, 'Workshop Đan Khăn Căn Bản', 'Buổi học thực tế đan khăn trực tiếp'),
-(6, 4, 9, 'Thú Bông Khủng Long Xanh', 'Thành phẩm thú bông móc thủ công từ len Milk bò mềm mịn'),
-(7, 1, 11, 'Sợi Dệt Macrame Cotton', 'Sợi cotton xoắn dày chuyên dụng thắt macrame treo tường');
+INSERT INTO san_pham (san_pham_id, loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham) VALUES 
+(1, 1, 2, 'Len Cotton Milk', 'Dòng len sợi sữa mềm thích hợp cho cả da em bé', 'active'),
+(2, 2, 5, 'Kim Móc Cán Dẻo Tulip', 'Thương hiệu kim móc cao cấp nhập khẩu Nhật Bản', 'active'),
+(3, 1, 10, 'Len Sợi Nhung Đũa', 'Sợi len kết cấu nhung siêu to chuyên dùng đan chăn, thảm', 'active'),
+(4, 2, 4, 'Bộ Kim Đan Vòng Gỗ Sồi', 'Chất liệu gỗ tự nhiên nối dây cáp dẻo chống xoắn', 'active'),
+(5, 3, NULL, 'Workshop đan khăn len cơ bản', 'Hướng dẫn cách gầy mũi đan dòng đầu tiên và hoàn thiện viền khăn', 'active'),
+(6, 4, 9, 'Thú Bông Khủng Long Xanh', 'Thành phẩm thú bông móc thủ công từ len Milk bò mềm mịn', 'active'),
+(7, 1, 11, 'Sợi Dệt Macrame Cotton', 'Sợi cotton xoắn dày chuyên dụng thắt macrame treo tường', 'active'),
+(8, 3, NULL, 'Học móc len nâng cao Tulip Nhật', 'Ứng dụng kim cán dẻo móc hoa văn dâu tây, hoa hướng dương nổi', 'active'),
+(9, 3, NULL, 'Tự làm chăn Sofa từ len đũa khổng lồ', 'Kỹ thuật dùng tay không bện các búi len nhung đũa thành chăn nằm', 'active'),
+(10, 3, NULL, 'Ứng dụng kim vòng đan mũ không đường may', 'Kỹ thuật giấu chỉ nối nâng cao khi sử dụng kim vòng gỗ sồi', 'active'),
+(11, 3, NULL, 'Móc thú bông Amigurumi mini cho bé', 'Từng bước tạo hình đầu, thân và ráp các chi tiết thú nhồi bông', 'active'),
+(12, 3, NULL, 'Chuyên đề sửa các mũi lỗi khi đan móc', 'Phương pháp khắc phục khi bị tuột chỉ, lỏng tay không đều mũi', 'active'),
+(13, 3, NULL, 'Móc thảm tròn phòng ngủ từ sợi nhung siêu to', 'Thiết kế thảm dệt chân từ sợi len đũa êm ái cho mùa đông', 'active'),
+(14, 3, NULL, 'Đan áo Cardigan len dáng lửng', 'Cách xem bảng chart hình vẽ, tính size len và ráp áo hoàn chỉnh', 'active'),
+(15, 3, NULL, 'Offline cộng đồng Yêu Đan Móc Việt Nam', 'Giao lưu, trao đổi kinh nghiệm và chia sẻ len sợi thừa', 'active'),
+(16, 3, NULL, 'Khóa học đan khăn len cấp tốc làm quà tặng', 'Hoàn thành trọn vẹn mẫu khăn len đơn giản chỉ trong 1 buổi học', 'active'),
+(17, 3, NULL, 'Nhập môn Thắt nút Nghệ thuật Macrame', 'Tạo hình sản phẩm rèm treo cửa decor nhỏ phong cách Bắc Âu', 'active'),
+(18, 3, NULL, 'Workshop ráp bông len thành túi xách', 'Kết nối các mảnh hoa văn vuông granny square thành túi thời trang', 'active'),
+(19, 3, NULL, 'Lớp thêu hoa bằng len nổi trên nền canvas', 'Kỹ thuật đâm kim Punch Needle tạo bề mặt xù nổi độc đáo', 'active'),
+(20, 3, NULL, 'Khai phá kỹ thuật móc búp bê Chart Tây', 'Đọc hiểu thuật ngữ viết chart nước ngoài và ứng dụng định hình khuôn mặt', 'active'),
+(21, 3, NULL, 'Tự tay dệt ổ nằm ấm áp cho thú cưng', 'Sử dụng len đũa cỡ đại bện nôi ngủ cho chó mèo siêu tốc', 'active');
 
 INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES 
 (1, 1, 'L-COTTON-001', 'len-cotton-milk-trang', 25000.00, 'Trắng', 'M'),
@@ -91,17 +105,33 @@ INSERT INTO bien_the_san_pham (bien_the_id, san_pham_id, sku, slug, gia, mau_sac
 (7, 4, 'KD-VONG-50MM', 'kim-dan-vong-50mm', 90000.00, 'Gỗ Tự Nhiên', '5.0mm'),
 (8, 4, 'KD-VONG-60MM', 'kim-dan-vong-60mm', 95000.00, 'Gỗ Tự Nhiên', '6.0mm'),
 (9, 4, 'KD-VONG-70MM', 'kim-dan-vong-70mm', 100000.00, 'Gỗ Tự Nhiên', '7.0mm'),
-(10, 5, 'WS-KHAN-01', 've-workshop-dan-khan-hcm', 350000.00, 'Mặc định', '1 Buổi'),
+(10, 5, 'WS-001', 've-workshop-dan-khan-hcm', 350000.00, 'Ca Sáng', '1 Buổi'),
 (11, 6, 'TP-AMIGURUMI-KL', 'thu-bong-khung-long-moc-tay', 195000.00, 'Xanh Mint', 'Cao 25cm'),
 (12, 7, 'L-MACRAME-BE', 'soi-macrame-cotton-be-4mm', 75000.00, 'Màu Be Trầm', 'Cuộn 500g'),
 (13, 1, 'L-COTTON-002', 'len-cotton-milk-vang', 25000.00, 'Vàng Cúc', 'M'),
 (14, 1, 'L-COTTON-003', 'len-cotton-milk-hong', 25000.00, 'Hồng Đào', 'M'),
-(15, 2, 'KM-TULIP-40MM', 'kim-moc-tulip-40mm', 130000.00, 'Xanh Dương', '4.0mm');
+(15, 2, 'KM-TULIP-40MM', 'kim-moc-tulip-40mm', 130000.00, 'Xanh Dương', '4.0mm'),
+(16, 8, 'WS-002', 'ws-moc-len-nang-cao', 350000.00, 'Ca Chiều', '1 Buổi'),
+(17, 9, 'WS-003', 'ws-lam-chan-sofa', 450000.00, 'Ca Sáng', '1 Buổi'),
+(18, 10, 'WS-004', 'ws-dan-mu-kim-vong', 300000.00, 'Ca Tối', '1 Buổi'),
+(19, 11, 'WS-005', 'ws-moc-amigurumi-mini', 200000.00, 'Ca Chiều', '1 Buổi'),
+(20, 12, 'WS-006', 'ws-sua-mui-loi', 150000.00, 'Ca Sáng', '1 Buổi'),
+(21, 13, 'WS-007', 'ws-moc-tham-nhung', 500000.00, 'Ca Chiều', '1 Buổi'),
+(22, 14, 'WS-008', 'ws-dan-cardigan', 600000.00, 'Ca Sáng', '1 Buổi'),
+(23, 15, 'WS-009', 'ws-offline-cong-dong', 100000.00, 'Cả Ngày', '1 Buổi'),
+(24, 16, 'WS-010', 'ws-dan-khan-cap-toc', 250000.00, 'Ca Chiều', '1 Buổi'),
+(25, 17, 'WS-011', 'ws-that-macrame', 350000.00, 'Ca Chiều', '1 Buổi'),
+(26, 18, 'WS-012', 'ws-rap-tui-xach', 400000.00, 'Ca Sáng', '1 Buổi'),
+(27, 19, 'WS-013', 'ws-theu-hoa-noi', 280000.00, 'Ca Tối', '1 Buổi'),
+(28, 20, 'WS-014', 'ws-moc-bup-be-tay', 320000.00, 'Ca Chiều', '1 Buổi'),
+(29, 21, 'WS-015', 'ws-det-o-thu-cung', 380000.00, 'Ca Sáng', '1 Buổi');
 
-INSERT INTO ton_kho (ton_kho_id, bien_the_id, so_luong_ton) VALUES 
-(1, 1, 100), (2, 2, 150), (3, 3, 210), (4, 4, 120), (5, 5, 60),
-(6, 6, 80), (7, 7, 140), (8, 8, 100), (9, 9, 50), (10, 10, 30),
-(11, 11, 15), (12, 12, 90), (13, 13, 110), (14, 14, 85), (15, 15, 45);
+INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES 
+(1, 100), (2, 150), (3, 210), (4, 120), (5, 60), (6, 80), (7, 140), (8, 100), (9, 50), 
+(11, 15), (12, 90), (13, 110), (14, 85), (15, 45);
+
+INSERT INTO ton_kho (bien_the_id, so_luong_ton) 
+SELECT bien_the_id, 20 FROM bien_the_san_pham WHERE bien_the_id IN (10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29);
 
 INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, ghi_chu, nguoi_thuc_hien) VALUES
 (1, 100, 100, 'nhap_kho', 'Khởi tạo kho ban đầu', 1), (2, 150, 150, 'nhap_kho', 'Khởi tạo kho ban đầu', 1),
@@ -113,7 +143,6 @@ INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_do
 (13, 110, 110, 'nhap_kho', 'Nhập bổ sung Cotton Milk Vàng', 1), (14, 85, 85, 'nhap_kho', 'Nhập bổ sung Cotton Milk Hồng', 1),
 (15, 45, 45, 'nhap_kho', 'Khởi tạo biến thể Tulip 4.0mm', 1);
 
--- Gắn ảnh thực tế chất lượng cao từ Unsplash
 INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi) VALUES 
 (1, 'https://images.unsplash.com/photo-1610444391690-362095cc6c7a?w=600', 1),
 (2, 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=600', 1),
@@ -124,12 +153,15 @@ INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi) VALU
 (7, 'https://images.unsplash.com/photo-1584065792246-88005391208b?w=600', 1),
 (8, 'https://images.unsplash.com/photo-1584065792246-88005391208b?w=600', 1),
 (9, 'https://images.unsplash.com/photo-1584065792246-88005391208b?w=600', 1),
-(10, 'https://images.unsplash.com/photo-1544928147-79a2dbc1f389?w=600', 1),
 (11, 'https://images.unsplash.com/photo-1588610546683-11a5b8bebf65?w=600', 1),
 (12, 'https://images.unsplash.com/photo-1632731885542-f2f219fdfb78?w=600', 1),
 (13, 'https://images.unsplash.com/photo-1509423424749-373143fefbc4?w=600', 1),
 (14, 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600', 1),
 (15, 'https://images.unsplash.com/photo-1590494412353-81b0a8eb1467?w=600', 1);
+
+INSERT INTO hinh_anh_bien_the (bien_the_id, duong_dan_anh, thu_tu_hien_thi) 
+SELECT bien_the_id, 'https://images.unsplash.com/photo-1544928147-79a2dbc1f389?w=600', 1 
+FROM bien_the_san_pham WHERE bien_the_id IN (10, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29);
 
 -- ----------------------------------------
 -- 4. BẢNG: GIO_HANG (15 bản ghi mẫu)
@@ -308,31 +340,38 @@ INSERT INTO lich_su_quay (nguoi_dung_id, cau_hinh_qua_quay_id) VALUES
 -- 9. BẢNG: WORKSHOP (Đầy đủ 15 bản ghi cho phân hệ hội thảo)
 -- ----------------------------------------
 INSERT INTO hoi_thao (hoi_thao_id, san_pham_id, tieu_de, mo_ta, dia_diem) VALUES 
-(1, 1, 'Workshop đan khăn len cơ bản', 'Hướng dẫn cách gầy mũi đan dòng đầu tiên và hoàn thiện viền khăn', 'TP. Hồ Chí Minh'),
-(2, 2, 'Học móc len nâng cao Tulip Nhật', 'Ứng dụng kim cán dẻo móc hoa văn dâu tây, hoa hướng dương nổi', 'Hà Nội'),
-(3, 3, 'Tự làm chăn Sofa từ len đũa khổng lồ', 'Kỹ thuật dùng tay không bện các búi len nhung đũa thành chăn nằm', 'Đà Nẵng'),
-(4, 4, 'Ứng dụng kim vòng đan mũ không đường may', 'Kỹ thuật giấu chỉ nối nâng cao khi sử dụng kim vòng gỗ sồi', 'TP. Hồ Chí Minh'),
-(5, 1, 'Móc thú bông Amigurumi mini cho bé', 'Từng bước tạo hình đầu, thân và ráp các chi tiết thú nhồi bông', 'Cần Thơ'),
-(6, 2, 'Chuyên đề sửa các mũi lỗi khi đan móc', 'Phương pháp khắc phục khi bị tuột chỉ, lỏng tay không đều mũi', 'Hải Phòng'),
-(7, 3, 'Móc thảm tròn phòng ngủ từ sợi nhung siêu to', 'Thiết kế thảm dệt chân từ sợi len đũa êm ái cho mùa đông', 'Hà Nội'),
-(8, 4, 'Đan áo Cardigan len dáng lửng', 'Cách xem bảng chart hình vẽ, tính size len và ráp áo hoàn chỉnh', 'TP. Hồ Chí Minh'),
-(9, 1, 'Offline cộng đồng Yêu Đan Móc Việt Nam', 'Giao lưu, trao đổi kinh nghiệm và chia sẻ len sợi thừa', 'Đà Nẵng'),
-(10, 5, 'Khóa học đan khăn len cấp tốc làm quà tặng', 'Hoàn thành trọn vẹn mẫu khăn len đơn giản chỉ trong 1 buổi học', 'TP. Hồ Chí Minh'),
-(11, 7, 'Nhập môn Thắt nút Nghệ thuật Macrame', 'Tạo hình sản phẩm rèm treo cửa decor nhỏ phong cách Bắc Âu', 'Hà Nội'),
-(12, 6, 'Workshop ráp bông len thành túi xách', 'Kết nối các mảnh hoa văn vuông granny square thành túi thời trang', 'TP. Hồ Chí Minh'),
-(13, 1, 'Lớp thêu hoa bằng len nổi trên nền canvas', 'Kỹ thuật đâm kim Punch Needle tạo bề mặt xù nổi độc đáo', 'Đà Nẵng'),
-(14, 2, 'Khai phá kỹ thuật móc búp bê Chart Tây', 'Đọc hiểu thuật ngữ viết chart nước ngoài và ứng dụng định hình khuôn mặt', 'Hà Nội'),
-(15, 3, 'Tự tay dệt ổ nằm ấm áp cho thú cưng', 'Sử dụng len đũa cỡ đại bện nôi ngủ cho chó mèo siêu tốc', 'TP. Hồ Chí Minh');
+(1, 5, 'Workshop đan khăn len cơ bản', 'Hướng dẫn cách gầy mũi đan dòng đầu tiên và hoàn thiện viền khăn', 'TP. Hồ Chí Minh'),
+(2, 8, 'Học móc len nâng cao Tulip Nhật', 'Ứng dụng kim cán dẻo móc hoa văn dâu tây, hoa hướng dương nổi', 'Hà Nội'),
+(3, 9, 'Tự làm chăn Sofa từ len đũa khổng lồ', 'Kỹ thuật dùng tay không bện các búi len nhung đũa thành chăn nằm', 'Đà Nẵng'),
+(4, 10, 'Ứng dụng kim vòng đan mũ không đường may', 'Kỹ thuật giấu chỉ nối nâng cao khi sử dụng kim vòng gỗ sồi', 'TP. Hồ Chí Minh'),
+(5, 11, 'Móc thú bông Amigurumi mini cho bé', 'Từng bước tạo hình đầu, thân và ráp các chi tiết thú nhồi bông', 'Cần Thơ'),
+(6, 12, 'Chuyên đề sửa các mũi lỗi khi đan móc', 'Phương pháp khắc phục khi bị tuột chỉ, lỏng tay không đều mũi', 'Hải Phòng'),
+(7, 13, 'Móc thảm tròn phòng ngủ từ sợi nhung siêu to', 'Thiết kế thảm dệt chân từ sợi len đũa êm ái cho mùa đông', 'Hà Nội'),
+(8, 14, 'Đan áo Cardigan len dáng lửng', 'Cách xem bảng chart hình vẽ, tính size len và ráp áo hoàn chỉnh', 'TP. Hồ Chí Minh'),
+(9, 15, 'Offline cộng đồng Yêu Đan Móc Việt Nam', 'Giao lưu, trao đổi kinh nghiệm và chia sẻ len sợi thừa', 'Đà Nẵng'),
+(10, 16, 'Khóa học đan khăn len cấp tốc làm quà tặng', 'Hoàn thành trọn vẹn mẫu khăn len đơn giản chỉ trong 1 buổi học', 'TP. Hồ Chí Minh'),
+(11, 17, 'Nhập môn Thắt nút Nghệ thuật Macrame', 'Tạo hình sản phẩm rèm treo cửa decor nhỏ phong cách Bắc Âu', 'Hà Nội'),
+(12, 18, 'Workshop ráp bông len thành túi xách', 'Kết nối các mảnh hoa văn vuông granny square thành túi thời trang', 'TP. Hồ Chí Minh'),
+(13, 19, 'Lớp thêu hoa bằng len nổi trên nền canvas', 'Kỹ thuật đâm kim Punch Needle tạo bề mặt xù nổi độc đáo', 'Đà Nẵng'),
+(14, 20, 'Khai phá kỹ thuật móc búp bê Chart Tây', 'Đọc hiểu thuật ngữ viết chart nước ngoài và ứng dụng định hình khuôn mặt', 'Hà Nội'),
+(15, 21, 'Tự tay dệt ổ nằm ấm áp cho thú cưng', 'Sử dụng len đũa cỡ đại bện nôi ngủ cho chó mèo siêu tốc', 'TP. Hồ Chí Minh');
 
 INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES 
-(1, 1, '2026-06-10 09:00:00', '2026-06-10 12:00:00', 'closed'), (2, 2, '2026-07-01 14:00:00', '2026-07-01 17:00:00', 'open'),
-(3, 4, '2026-07-05 08:30:00', '2026-07-05 11:30:00', 'open'), (4, 6, '2026-07-10 18:00:00', '2026-07-10 21:00:00', 'open'),
-(5, 1, '2026-07-15 09:00:00', '2026-07-15 12:00:00', 'open'), (6, 3, '2026-06-20 13:00:00', '2026-06-20 16:00:00', 'cancelled'),
-(7, 5, '2026-07-22 09:00:00', '2026-07-22 12:00:00', 'open'), (8, 7, '2026-08-01 08:00:00', '2026-08-01 12:00:00', 'open'),
-(9, 1, '2026-08-15 09:00:00', '2026-08-15 17:00:00', 'open'), (10, 10, '2026-06-25 14:00:00', '2026-06-25 17:00:00', 'open'),
-(11, 12, '2026-07-18 13:30:00', '2026-07-18 16:30:00', 'open'), (12, 11, '2026-07-20 09:00:00', '2026-07-20 12:00:00', 'open'),
-(13, 14, '2026-07-25 15:00:00', '2026-07-25 18:00:00', 'open'), (14, 15, '2026-08-05 09:00:00', '2026-08-05 12:00:00', 'open'),
-(15, 4, '2026-08-10 14:00:00', '2026-08-10 17:00:00', 'open');
+(1, 10, '2026-06-10 09:00:00', '2026-06-10 12:00:00', 'closed'), 
+(2, 16, '2026-07-01 14:00:00', '2026-07-01 17:00:00', 'open'),
+(3, 17, '2026-07-05 08:30:00', '2026-07-05 11:30:00', 'open'), 
+(4, 18, '2026-07-10 18:00:00', '2026-07-10 21:00:00', 'open'),
+(5, 19, '2026-07-15 09:00:00', '2026-07-15 12:00:00', 'open'), 
+(6, 20, '2026-06-20 13:00:00', '2026-06-20 16:00:00', 'cancelled'),
+(7, 21, '2026-07-22 09:00:00', '2026-07-22 12:00:00', 'open'), 
+(8, 22, '2026-08-01 08:00:00', '2026-08-01 12:00:00', 'open'),
+(9, 23, '2026-08-15 09:00:00', '2026-08-15 17:00:00', 'open'), 
+(10, 24, '2026-06-25 14:00:00', '2026-06-25 17:00:00', 'open'),
+(11, 25, '2026-07-18 13:30:00', '2026-07-18 16:30:00', 'open'), 
+(12, 26, '2026-07-20 09:00:00', '2026-07-20 12:00:00', 'open'),
+(13, 27, '2026-07-25 15:00:00', '2026-07-25 18:00:00', 'open'), 
+(14, 28, '2026-08-05 09:00:00', '2026-08-05 12:00:00', 'open'),
+(15, 29, '2026-08-10 14:00:00', '2026-08-10 17:00:00', 'open');
 
 -- ----------------------------------------
 -- 10. BẢNG: THONG_TIN_SHIPPER
