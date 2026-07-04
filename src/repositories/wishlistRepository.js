@@ -1,7 +1,6 @@
 const pool = require('../config/db');
 const notificationService = require('../services/notificationService');
 
-// --- TÍNH NĂNG USER: CRUD WISHLIST ---
 const toggleWishlist = async (userId, productId) => {
     const client = await pool.connect();
     try {
@@ -43,14 +42,18 @@ const getMyWishlist = async (userId, { page, limit }) => {
     if (totalItems === 0) return { items: [], pagination: { total_items: 0, total_pages: 1, current_page: page, limit } };
 
     const wishlistRes = await pool.query(
-        `SELECT w.san_pham_id AS product_id, sp.ten_san_pham AS product_name, sp.trang_thai_san_pham AS status,
+        `SELECT w.san_pham_id AS product_id, 
+                sp.ten_san_pham AS product_name, 
+                sp.trang_thai_san_pham AS status,
+                sp.loai_san_pham_id AS type_id,
+                lsp.ten_loai AS type_name,
                 (SELECT MIN(gia) FROM bien_the_san_pham WHERE san_pham_id = sp.san_pham_id) AS min_price,
                 (SELECT duong_dan_anh FROM hinh_anh_bien_the vi 
                  JOIN bien_the_san_pham bt ON vi.bien_the_id = bt.bien_the_id 
                  WHERE bt.san_pham_id = sp.san_pham_id 
                  ORDER BY bt.bien_the_id ASC, vi.thu_tu_hien_thi ASC LIMIT 1) AS image_url,
                 (SELECT row_to_json(d) FROM (
-                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
+                    SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS promotion_name, km.kieu_giam_gia AS type, km.gia_tri AS value
                     FROM khuyen_mai_san_pham kmsp
                     JOIN khuyen_mai km ON km.khuyen_mai_id = kmsp.khuyen_mai_id
                     WHERE kmsp.san_pham_id = sp.san_pham_id
@@ -62,6 +65,7 @@ const getMyWishlist = async (userId, { page, limit }) => {
                 ) d) AS discount
          FROM danh_sach_yeu_thich w
          JOIN san_pham sp ON w.san_pham_id = sp.san_pham_id
+         LEFT JOIN loai_san_pham lsp ON sp.loai_san_pham_id = lsp.loai_san_pham_id
          WHERE w.nguoi_dung_id = $1
          ORDER BY w.danh_sach_yeu_thich_id DESC
          LIMIT $2 OFFSET $3`,
@@ -100,13 +104,11 @@ const getMyWishlist = async (userId, { page, limit }) => {
     };
 };
 
-// --- TÍNH NĂNG HỆ THỐNG: QUÉT VÀ GỬI EMAIL THÔNG BÁO ---
 const processPendingNotifications = async () => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        // Lấy tối đa 50 thông báo chưa gửi để tránh quá tải API Resend
         const pendingRes = await client.query(
             `SELECT t.thong_bao_id, t.loai_thong_bao, nd.thu_dien_tu, nd.ten_dang_nhap, sp.ten_san_pham
              FROM thong_bao_yeu_thich t
@@ -119,8 +121,7 @@ const processPendingNotifications = async () => {
         let sentCount = 0;
         for (const notif of pendingRes.rows) {
             const subject = notif.loai_thong_bao === 'price_drop' ? '🔥 Cảnh báo Giảm giá từ ShopLen' : '📦 Sản phẩm yêu thích đã có hàng!';
-            
-            // Gọi qua Service gửi email bằng Resend
+
             const isSent = await notificationService.sendNotificationEmail({
                 destination: notif.thu_dien_tu,
                 subject: subject,
@@ -130,7 +131,6 @@ const processPendingNotifications = async () => {
             });
 
             if (isSent) {
-                // Đánh dấu đã gửi
                 await client.query(`UPDATE thong_bao_yeu_thich SET da_gui = TRUE WHERE thong_bao_id = $1`, [notif.thong_bao_id]);
                 sentCount++;
             }
