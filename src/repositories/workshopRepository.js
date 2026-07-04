@@ -9,6 +9,9 @@ const normalizeText = (value) => (value === undefined || value === null ? '' : S
 const slugifyText = (value) => normalizeText(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 const processWorkshopSessions = (sessions) => {
+    const now = new Date(); 
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     return sessions.map(s => {
         const price = Number(s.price);
         const capacity = Number(s.capacity);
@@ -25,6 +28,14 @@ const processWorkshopSessions = (sessions) => {
             finalPrice = Math.max(0, finalPrice);
         }
 
+        let currentStatus = s.status;
+        const startDateString = new Date(s.start_date);
+        const startDate = new Date(startDateString.getFullYear(), startDateString.getMonth(), startDateString.getDate());
+
+        if (currentStatus === 'open' && today >= startDate) {
+            currentStatus = 'closed';
+        }
+
         return {
             variant_id: s.variant_id,
             sku: s.sku,
@@ -37,8 +48,9 @@ const processWorkshopSessions = (sessions) => {
             booked_slots: booked,
             available_slots: available,
             start_date: s.start_date,
-            end_date: s.end_date,
-            status: (available <= 0) ? 'full' : s.status,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            status: (available <= 0) ? 'full' : currentStatus,
             images: s.images || []
         };
     });
@@ -85,7 +97,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
 
     const workshopIds = workshopsRes.rows.map(ws => ws.workshop_id);
     const sessionsRes = await pool.query(`
-        SELECT htb.hoi_thao_id AS workshop_id, htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.ngay_ket_thuc AS end_date, htb.trang_thai AS status,
+        SELECT htb.hoi_thao_id AS workshop_id, htb.bien_the_id AS variant_id, htb.ngay_bat_dau AS start_date, htb.gio_bat_dau AS start_time, htb.gio_ket_thuc AS end_time, htb.trang_thai AS status,
                bt.sku, bt.slug, bt.gia AS price, bt.mau_sac AS session_name, tk.so_luong_ton AS capacity,
                COALESCE((SELECT SUM(so_luong) FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id=dh.don_hang_id WHERE ct.bien_the_id=htb.bien_the_id AND dh.trang_thai!='cancelled'), 0)::int AS booked_slots,
                COALESCE(json_agg(json_build_object('image_url', vi.duong_dan_anh, 'sort_order', vi.thu_tu_hien_thi) ORDER BY vi.thu_tu_hien_thi ASC) FILTER (WHERE vi.hinh_anh_id IS NOT NULL), '[]') AS images,
@@ -100,7 +112,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
         LEFT JOIN hinh_anh_bien_the vi ON bt.bien_the_id = vi.bien_the_id
         WHERE htb.hoi_thao_id = ANY($1::int[])
-        GROUP BY htb.hoi_thao_id, htb.bien_the_id, htb.ngay_bat_dau, htb.ngay_ket_thuc, htb.trang_thai, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton, bt.san_pham_id`, 
+        GROUP BY htb.hoi_thao_id, htb.bien_the_id, htb.ngay_bat_dau, htb.gio_bat_dau, htb.gio_ket_thuc, htb.trang_thai, bt.sku, bt.slug, bt.gia, bt.mau_sac, tk.so_luong_ton, bt.san_pham_id`, 
         [workshopIds]
     );
 
@@ -124,7 +136,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
         sessionsMap.get(s.workshop_id).push({
             variant_id: s.variant_id, sku: s.sku, slug: s.slug, session_name: s.session_name,
             price, discount, final_price: finalPrice, total_capacity: capacity, booked_slots: booked,
-            available_slots: available, start_date: s.start_date, end_date: s.end_date,
+            available_slots: available, start_date: s.start_date, start_time: s.start_time, end_time: s.end_time,
             status: (available <= 0) ? 'full' : s.status, images: s.images
         });
     });
@@ -132,7 +144,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
     return {
         workshops: workshopsRes.rows.map(ws => {
             const sessions = sessionsMap.get(ws.workshop_id) || [];
-            return { ...ws, sessions };
+            return { ...ws, overall_status: (ws.status === 'active' && sessions.some(s => s.status === 'open')) ? 'open' : 'closed', sessions };
         }),
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit }
     };
@@ -156,7 +168,8 @@ const getWorkshopDetail = async (workshopId) => {
         SELECT 
             htb.bien_the_id AS variant_id, 
             htb.ngay_bat_dau AS start_date, 
-            htb.ngay_ket_thuc AS end_date, 
+            htb.gio_bat_dau AS start_time, 
+            htb.gio_ket_thuc AS end_time, 
             htb.trang_thai AS status,
             bt.sku, 
             bt.slug, 
@@ -190,7 +203,8 @@ const getWorkshopDetail = async (workshopId) => {
         GROUP BY 
             htb.bien_the_id, 
             htb.ngay_bat_dau, 
-            htb.ngay_ket_thuc, 
+            htb.gio_bat_dau, 
+            htb.gio_ket_thuc, 
             htb.trang_thai, 
             bt.sku, 
             bt.slug, 
@@ -202,6 +216,7 @@ const getWorkshopDetail = async (workshopId) => {
     );
 
     workshop.sessions = processWorkshopSessions(sRes.rows);
+    workshop.overall_status = (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed';
     return workshop;
 };
 
@@ -243,8 +258,8 @@ const createWorkshop = async (payload) => {
             await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [variantId, sessionCapacity]);
             
             await client.query(
-                `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5)`,
-                [workshopId, variantId, session.start_date, session.end_date, session.status || 'open']
+                `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, gio_bat_dau, gio_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5, $6)`,
+                [workshopId, variantId, session.start_date, session.start_time, session.end_time, session.status || 'open']
             );
 
             if (Array.isArray(session.images)) {
@@ -283,21 +298,23 @@ const updateWorkshop = async (workshopId, payload) => {
             for (const session of sessions) {
                 const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
 
-                const checkOwnership = await client.query(
-                    `SELECT 1 FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
-                    [workshopId, session.variant_id]
-                );
-
-                if (checkOwnership.rows.length === 0) {
-                    throw { statusCode: 400, message: `Ca học (variant_id: ${session.variant_id}) không thuộc về Workshop này!` };
-                }
-
                 if (session.variant_id) {
-                    await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
+                    const checkOwnership = await client.query(
+                        `SELECT 1 FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
+                        [workshopId, session.variant_id]
+                    );
 
+                    if (checkOwnership.rows.length === 0) {
+                        throw { statusCode: 400, message: `Ca học (variant_id: ${session.variant_id}) không thuộc về Workshop này!` };
+                    }
+
+                    await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
                     await client.query(`UPDATE ton_kho SET so_luong_ton = $1 WHERE bien_the_id = $2`, [sessionCapacity, session.variant_id]);
                     
-                    await client.query(`UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, ngay_ket_thuc = $2, trang_thai = $3 WHERE bien_the_id = $4`, [session.start_date, session.end_date, session.status, session.variant_id]);
+                    await client.query(
+                        `UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, gio_bat_dau = $2, gio_ket_thuc = $3, trang_thai = $4 WHERE bien_the_id = $5`, 
+                        [session.start_date, session.start_time, session.end_time, session.status, session.variant_id]
+                    );
 
                     if (Array.isArray(session.images)) {
                         await client.query(`DELETE FROM hinh_anh_bien_the WHERE bien_the_id = $1`, [session.variant_id]);
@@ -319,7 +336,11 @@ const updateWorkshop = async (workshopId, payload) => {
                     const newVariantId = variantRes.rows[0].bien_the_id;
 
                     await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [newVariantId, sessionCapacity]);
-                    await client.query(`INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5)`, [workshopId, newVariantId, session.start_date, session.end_date, session.status || 'open']);
+                    
+                    await client.query(
+                        `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, gio_bat_dau, gio_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5, $6)`, 
+                        [workshopId, newVariantId, session.start_date, session.start_time, session.end_time, session.status || 'open']
+                    );
                     
                     if (Array.isArray(session.images)) {
                         for (let i = 0; i < session.images.length; i++) {

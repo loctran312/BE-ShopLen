@@ -79,8 +79,9 @@ router.get('/:id', getWorkshopDetail);
  *                 - session_name: "Ca Sáng (Thứ 7)"
  *                   price: 350000
  *                   total_capacity: 15
- *                   start_date: "2026-10-15T08:00:00Z"
- *                   end_date: "2026-10-15T11:30:00Z"
+ *                   start_date: "2026-10-15"
+ *                   start_time: "08:00:00"
+ *                   end_time: "11:30:00"
  *                   status: "open"
  *                   images: []
  *     responses:
@@ -116,12 +117,13 @@ router.post('/', requireAdmin, createWorkshop);
  *               category_id: 7
  *               status: "active"
  *               sessions:
- *                 - variant_id: 12
+ *                 - variant_id: 10
  *                   session_name: "Ca Sáng (Thứ 7)"
  *                   price: 350000
  *                   total_capacity: 20
- *                   start_date: "2026-10-15T08:00:00Z"
- *                   end_date: "2026-10-15T11:30:00Z"
+ *                   start_date: "2026-10-15"
+ *                   start_time: "08:00:00"
+ *                   end_time: "11:30:00"
  *                   status: "open"
  *                   images: []
  *     responses:
