@@ -562,7 +562,6 @@ SELECT hoi_thao_bien_the_id AS id,
        hoi_thao_id AS workshop_id,
        bien_the_id AS variant_id,
        ngay_bat_dau AS start_date,
-       ngay_ket_thuc AS end_date,
        trang_thai AS status,
        ngay_tao AS created_at
 FROM hoi_thao_bien_the;
