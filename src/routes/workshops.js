@@ -15,8 +15,7 @@ const router = express.Router();
  * /workshops/filter:
  *   post:
  *     summary: Lọc workshop theo nhiều tiêu chí
- *     tags:
- *       - Workshops
+ *     tags: [Workshops]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -41,8 +40,7 @@ router.post('/filter', filterWorkshops);
  * /workshops/{id}:
  *   get:
  *     summary: Lấy chi tiết workshop
- *     tags:
- *       - Workshops
+ *     tags: [Workshops]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -62,8 +60,7 @@ router.get('/:id', getWorkshopDetail);
  * /workshops:
  *   post:
  *     summary: Tạo workshop mới - ADMIN
- *     tags:
- *       - Workshops
+ *     tags: [Workshops]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -74,14 +71,14 @@ router.get('/:id', getWorkshopDetail);
  *             type: object
  *             example:
  *               title: "Workshop Đan Khăn Len Mùa Đông"
- *               description: "Hướng dẫn người mới..."
+ *               description: "Hướng dẫn người mới đan khăn len..."
  *               location: "The Coffee House, Quận 1, TP.HCM"
  *               category_id: 7
  *               status: "active"
  *               sessions:
  *                 - session_name: "Ca Sáng (Thứ 7)"
  *                   price: 350000
- *                   capacity: 15
+ *                   total_capacity: 15
  *                   start_date: "2026-10-15T08:00:00Z"
  *                   end_date: "2026-10-15T11:30:00Z"
  *                   status: "open"
@@ -97,8 +94,7 @@ router.post('/', requireAdmin, createWorkshop);
  * /workshops/{id}:
  *   put:
  *     summary: Cập nhật thông tin workshop - ADMIN
- *     tags:
- *       - Workshops
+ *     tags: [Workshops]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -119,7 +115,15 @@ router.post('/', requireAdmin, createWorkshop);
  *               location: "The Coffee House, Quận 1, TP.HCM"
  *               category_id: 7
  *               status: "active"
- *               sessions: []
+ *               sessions:
+ *                 - variant_id: 12
+ *                   session_name: "Ca Sáng (Thứ 7)"
+ *                   price: 350000
+ *                   total_capacity: 20
+ *                   start_date: "2026-10-15T08:00:00Z"
+ *                   end_date: "2026-10-15T11:30:00Z"
+ *                   status: "open"
+ *                   images: []
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -131,8 +135,7 @@ router.put('/:id', requireAdmin, updateWorkshop);
  * /workshops/{id}:
  *   delete:
  *     summary: Xóa workshop - ADMIN
- *     tags:
- *       - Workshops
+ *     tags: [Workshops]
  *     security:
  *       - bearerAuth: []
  *     parameters:

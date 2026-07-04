@@ -232,6 +232,8 @@ const createWorkshop = async (payload) => {
             const baseSlug = slugifyText(`${title} ${session.session_name}`);
             const slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
 
+            const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
+
             const variantRes = await client.query(
                 `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co)
                  VALUES ($1, $2, $3, $4, $5, '1 Buổi') RETURNING bien_the_id`,
@@ -239,7 +241,8 @@ const createWorkshop = async (payload) => {
             );
             const variantId = variantRes.rows[0].bien_the_id;
 
-            await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [variantId, session.capacity || 0]);
+            await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [variantId, sessionCapacity]);
+            
             await client.query(
                 `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5)`,
                 [workshopId, variantId, session.start_date, session.end_date, session.status || 'open']
@@ -279,9 +282,22 @@ const updateWorkshop = async (workshopId, payload) => {
 
         if (Array.isArray(sessions)) {
             for (const session of sessions) {
+                const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
+
+                const checkOwnership = await client.query(
+                    `SELECT 1 FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
+                    [workshopId, session.variant_id]
+                );
+
+                if (checkOwnership.rows.length === 0) {
+                    throw { statusCode: 400, message: `Ca học (variant_id: ${session.variant_id}) không thuộc về Workshop này!` };
+                }
+
                 if (session.variant_id) {
                     await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
-                    await client.query(`UPDATE ton_kho SET so_luong_ton = $1 WHERE bien_the_id = $2`, [session.capacity, session.variant_id]);
+
+                    await client.query(`UPDATE ton_kho SET so_luong_ton = $1 WHERE bien_the_id = $2`, [sessionCapacity, session.variant_id]);
+                    
                     await client.query(`UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, ngay_ket_thuc = $2, trang_thai = $3 WHERE bien_the_id = $4`, [session.start_date, session.end_date, session.status, session.variant_id]);
 
                     if (Array.isArray(session.images)) {
@@ -302,7 +318,8 @@ const updateWorkshop = async (workshopId, payload) => {
                         [productId, sku, slug, session.price, session.session_name]
                     );
                     const newVariantId = variantRes.rows[0].bien_the_id;
-                    await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [newVariantId, session.capacity || 0]);
+
+                    await client.query(`INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2)`, [newVariantId, sessionCapacity]);
                     await client.query(`INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, ngay_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5)`, [workshopId, newVariantId, session.start_date, session.end_date, session.status || 'open']);
                     
                     if (Array.isArray(session.images)) {
