@@ -132,7 +132,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
     return {
         workshops: workshopsRes.rows.map(ws => {
             const sessions = sessionsMap.get(ws.workshop_id) || [];
-            return { ...ws, overall_status: (ws.status === 'active' && sessions.some(s => s.status === 'open')) ? 'open' : 'closed', sessions };
+            return { ...ws, sessions };
         }),
         pagination: { total_items: totalItems, total_pages: Math.max(1, Math.ceil(totalItems / limit)), current_page: page, limit }
     };
@@ -202,7 +202,6 @@ const getWorkshopDetail = async (workshopId) => {
     );
 
     workshop.sessions = processWorkshopSessions(sRes.rows);
-    workshop.overall_status = (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed';
     return workshop;
 };
 
