@@ -43,6 +43,7 @@ const getMyWishlist = async (userId, { page, limit }) => {
 
     const wishlistRes = await pool.query(
         `SELECT w.san_pham_id AS product_id, 
+                ht.hoi_thao_id AS workshop_id,
                 sp.ten_san_pham AS product_name, 
                 sp.trang_thai_san_pham AS status,
                 sp.loai_san_pham_id AS type_id,
@@ -66,6 +67,7 @@ const getMyWishlist = async (userId, { page, limit }) => {
          FROM danh_sach_yeu_thich w
          JOIN san_pham sp ON w.san_pham_id = sp.san_pham_id
          LEFT JOIN loai_san_pham lsp ON sp.loai_san_pham_id = lsp.loai_san_pham_id
+         LEFT JOIN hoi_thao ht ON sp.san_pham_id = ht.san_pham_id
          WHERE w.nguoi_dung_id = $1
          ORDER BY w.danh_sach_yeu_thich_id DESC
          LIMIT $2 OFFSET $3`,
