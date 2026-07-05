@@ -411,35 +411,46 @@ const createBuyNowOrder = async (userId, payload) => {
     }
 };
 
-const getUserOrders = async (userId, { page, limit }) => {
-	const offset = (page - 1) * limit;
+const getUserOrders = async (userId, { page, limit, tab }) => {
+    const offset = (page - 1) * limit;
+    const params = [userId];
+    let statusCondition = '';
 
-	const countRes = await pool.query('SELECT COUNT(*)::int AS total FROM don_hang WHERE nguoi_dung_id = $1', [userId]);
-	const totalItems = countRes.rows[0].total;
+    if (tab === 'history') {
+        statusCondition = `AND trang_thai IN ('completed', 'cancelled')`;
+    } else if (tab === 'ongoing') {
+        statusCondition = `AND trang_thai NOT IN ('completed', 'cancelled')`;
+    }
 
-	const ordersRes = await pool.query(
-		`SELECT don_hang_id AS order_id, 
+    const countRes = await pool.query(
+        `SELECT COUNT(*)::int AS total FROM don_hang WHERE nguoi_dung_id = $1 ${statusCondition}`, 
+        params
+    );
+    const totalItems = countRes.rows[0].total;
+
+    const ordersRes = await pool.query(
+        `SELECT don_hang_id AS order_id, 
                 trang_thai AS status, 
                 tong_tien AS total_amount, 
                 so_tien_giam AS discount_amount, 
                 ten_nguoi_nhan AS customer_name, 
                 dia_chi_giao_hang AS shipping_address
          FROM don_hang
-         WHERE nguoi_dung_id = $1
+         WHERE nguoi_dung_id = $1 ${statusCondition}
          ORDER BY don_hang_id DESC
          LIMIT $2 OFFSET $3`,
-		[userId, limit, offset]
-	);
+        [userId, limit, offset]
+    );
 
-	return {
-		orders: ordersRes.rows,
-		pagination: {
-			total_items: totalItems,
-			total_pages: Math.max(1, Math.ceil(totalItems / limit)),
-			current_page: page,
-			limit,
-		},
-	};
+    return {
+        orders: ordersRes.rows,
+        pagination: {
+            total_items: totalItems,
+            total_pages: Math.max(1, Math.ceil(totalItems / limit)),
+            current_page: page,
+            limit,
+        },
+    };
 };
 
 const getOrderDetail = async (orderId, userId = null) => {

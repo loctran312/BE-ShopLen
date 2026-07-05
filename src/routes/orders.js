@@ -94,7 +94,7 @@ router.get('/shipping-fees', requireAuth, getShippingFees);
  * @swagger
  * /orders/my-orders:
  *   get:
- *     summary: Lịch sử mua hàng cá nhân
+ *     summary: Lịch sử mua hàng cá nhân (Hỗ trợ lọc theo Tab)
  *     tags: [Orders]
  *     security:
  *       - bearerAuth: []
@@ -107,6 +107,12 @@ router.get('/shipping-fees', requireAuth, getShippingFees);
  *         name: limit
  *         schema:
  *           type: integer
+ *       - in: query
+ *         name: tab
+ *         description: Loại đơn hàng cần lấy (ongoing = Đang xử lý/giao hàng, history = Đã hoàn thành/Hủy). Bỏ trống để lấy tất cả.
+ *         schema:
+ *           type: string
+ *           enum: [ongoing, history]
  *     responses:
  *       200:
  *         description: Lấy lịch sử đơn hàng thành công
