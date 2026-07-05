@@ -171,28 +171,23 @@ const updateAdminConfig = async (id, payload) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-        
-        // 1. Kiểm tra xem phần thưởng có tồn tại không
+
         const existRes = await client.query(`SELECT * FROM cau_hinh_qua_quay WHERE cau_hinh_qua_quay_id = $1`, [id]);
         if (existRes.rows.length === 0) {
             throw { statusCode: 404, message: 'Cấu hình phần thưởng không tồn tại' };
         }
         const current = existRes.rows[0];
 
-        // 2. Trích xuất dữ liệu mới (Nếu không truyền lên thì giữ nguyên giá trị cũ)
         const newLoaiQua = payload.loai_qua !== undefined ? payload.loai_qua : current.loai_qua;
         const newGiaTri = payload.gia_tri !== undefined ? payload.gia_tri : current.gia_tri;
         const newTyLe = payload.ty_le_thang !== undefined ? payload.ty_le_thang : current.ty_le_thang;
         const newSoLuong = payload.so_luong_con_lai !== undefined ? payload.so_luong_con_lai : current.so_luong_con_lai;
         const newTrangThai = payload.trang_thai !== undefined ? payload.trang_thai : current.trang_thai;
 
-        // 3. LOGIC LÕI: Nếu trạng thái là 'active', phải kiểm tra xem tỷ lệ mới có làm lố 100% không.
-        // Truyền 'id' vào để loại trừ chính nó ra khỏi phép tính tổng.
         if (newTrangThai === 'active') {
             await checkTotalProbability(client, id, newTyLe);
         }
 
-        // 4. Thực thi Update
         await client.query(
             `UPDATE cau_hinh_qua_quay 
              SET loai_qua = $1, gia_tri = $2, ty_le_thang = $3, so_luong_con_lai = $4, trang_thai = $5
