@@ -94,10 +94,11 @@ const getMyOrders = async (req, res) => {
 		const userId = req.user.user_id;
 		const page = parsePositiveInteger(req.query.page || 1, 'page');
 		const limit = parsePositiveInteger(req.query.limit || 10, 'limit');
-
+        
         const tab = req.query.tab; 
+        const type = req.query.type;
 
-		const { orders, pagination } = await orderRepository.getUserOrders(userId, { page, limit, tab });
+		const { orders, pagination } = await orderRepository.getUserOrders(userId, { page, limit, tab, type });
 
 		return res.json({
 			success: true,

@@ -411,19 +411,37 @@ const createBuyNowOrder = async (userId, payload) => {
     }
 };
 
-const getUserOrders = async (userId, { page, limit, tab }) => {
+const getUserOrders = async (userId, { page, limit, tab, type }) => {
     const offset = (page - 1) * limit;
     const params = [userId];
-    let statusCondition = '';
+    let conditions = [];
 
     if (tab === 'history') {
-        statusCondition = `AND trang_thai IN ('completed', 'cancelled')`;
+        conditions.push(`trang_thai IN ('completed', 'cancelled')`);
     } else if (tab === 'ongoing') {
-        statusCondition = `AND trang_thai NOT IN ('completed', 'cancelled')`;
+        conditions.push(`trang_thai NOT IN ('completed', 'cancelled')`);
     }
 
+    if (type === 'workshop') {
+        conditions.push(`EXISTS (
+            SELECT 1 FROM chi_tiet_don_hang ct
+            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            WHERE ct.don_hang_id = don_hang.don_hang_id AND sp.loai_san_pham_id = 3
+        )`);
+    } else if (type === 'physical') {
+        conditions.push(`EXISTS (
+            SELECT 1 FROM chi_tiet_don_hang ct
+            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            WHERE ct.don_hang_id = don_hang.don_hang_id AND sp.loai_san_pham_id != 3
+        )`);
+    }
+
+    const whereString = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
+
     const countRes = await pool.query(
-        `SELECT COUNT(*)::int AS total FROM don_hang WHERE nguoi_dung_id = $1 ${statusCondition}`, 
+        `SELECT COUNT(*)::int AS total FROM don_hang WHERE nguoi_dung_id = $1 ${whereString}`, 
         params
     );
     const totalItems = countRes.rows[0].total;
@@ -434,9 +452,10 @@ const getUserOrders = async (userId, { page, limit, tab }) => {
                 tong_tien AS total_amount, 
                 so_tien_giam AS discount_amount, 
                 ten_nguoi_nhan AS customer_name, 
-                dia_chi_giao_hang AS shipping_address
+                dia_chi_giao_hang AS shipping_address,
+                ngay_tao AS created_at
          FROM don_hang
-         WHERE nguoi_dung_id = $1 ${statusCondition}
+         WHERE nguoi_dung_id = $1 ${whereString}
          ORDER BY don_hang_id DESC
          LIMIT $2 OFFSET $3`,
         [userId, limit, offset]

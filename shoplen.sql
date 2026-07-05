@@ -275,6 +275,7 @@ CREATE TABLE don_hang (
   sdt_nguoi_nhan VARCHAR(15) NOT NULL,
   phi_van_chuyen NUMERIC(10,2) DEFAULT 0,
   phuong_thuc_giao_hang VARCHAR(50),
+  ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
   FOREIGN KEY (shipper_id) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE SET NULL,
   FOREIGN KEY (phieu_giam_gia_id) REFERENCES phieu_giam_gia(phieu_giam_gia_id),
