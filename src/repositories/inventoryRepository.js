@@ -6,6 +6,8 @@ const getInventoryOverview = async ({ page, limit, stock_status, keyword }) => {
     let paramIndex = 1;
     let whereClauses = [];
 
+    whereClauses.push(`sp.loai_san_pham_id <> 3`);
+
     if (keyword) {
         whereClauses.push(`(b.sku ILIKE $${paramIndex} OR sp.ten_san_pham ILIKE $${paramIndex})`);
         params.push(`%${keyword}%`);
