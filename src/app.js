@@ -20,6 +20,8 @@ const wishlistRoutes = require('./routes/wishlist');
 const inventoryRoutes = require('./routes/inventory');
 const shipperRoutes = require('./routes/shippers');
 const loyaltyRoutes = require('./routes/loyalty');
+const spinRoutes = require('./routes/spin');
+const dashboardRoutes = require('./routes/dashboard');
 
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');
 const errorMiddleware = require('./middlewares/errorMiddleware');
@@ -68,6 +70,8 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api', shipperRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
+app.use('/api/spin', spinRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.get('/api/docs-page', (req, res) => {
     res.type('html').send(renderDocsPage());
