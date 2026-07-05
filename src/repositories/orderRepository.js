@@ -495,6 +495,7 @@ const getOrderDetail = async (orderId, userId = null) => {
             bt.mau_sac AS color,
             bt.kich_co AS size,
             sp.san_pham_id AS product_id,
+            ht.hoi_thao_id AS workshop_id, -- ĐÃ BỔ SUNG: Trả về workshop_id nếu món hàng là lớp học
             sp.mo_ta AS description,
             c.ten_danh_muc AS category_name,
             pt.ten_loai AS type_name,
@@ -510,6 +511,7 @@ const getOrderDetail = async (orderId, userId = null) => {
          LEFT JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
          LEFT JOIN danh_muc c ON sp.danh_muc_id = c.danh_muc_id
          LEFT JOIN loai_san_pham pt ON sp.loai_san_pham_id = pt.loai_san_pham_id
+         LEFT JOIN hoi_thao ht ON sp.san_pham_id = ht.san_pham_id -- ĐÃ BỔ SUNG: Nối bảng hội thảo
          WHERE ct.don_hang_id = $1`,
 		[orderId]
 	);
