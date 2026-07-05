@@ -147,5 +147,63 @@ const acceptOrder = async (req, res) => {
     }
 };
 
+const updateDeliveryStatus = async (req, res) => {
+    try {
+        const shipperId = req.user.user_id;
+        const orderId = req.params.order_id;
+        const payload = req.body;
+
+        if (!payload.status) {
+            return res.status(400).json({ success: false, message: 'Thiếu trạng thái giao hàng (status)' });
+        }
+
+        await shipperRepository.updateDeliveryStatus(shipperId, orderId, payload);
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: payload.status === 'success' ? "Xác nhận giao hàng thành công!" : "Đã ghi nhận giao hàng thất bại."
+        });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ success: false, message: error.message || "Lỗi máy chủ" });
+    }
+};
+
+const getMyDeliveries = async (req, res) => {
+    try {
+        const shipperId = req.user.user_id;
+        const status = req.query.status; // Truyền 'accepted' để lấy đơn đang giao
+        
+        const data = await shipperRepository.getMyDeliveries(shipperId, status);
+        return res.status(200).json({ 
+            success: true, 
+            message: "Lấy danh sách công việc giao hàng thành công", 
+            data: { deliveries: data }
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ: " + error.message });
+    }
+};
+
+const getDeliveryDetail = async (req, res) => {
+    try {
+        const shipperId = req.user.user_id;
+        const orderId = req.params.order_id;
+        
+        const order = await shipperRepository.getDeliveryDetail(shipperId, orderId);
+        
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Đơn hàng không tồn tại hoặc bạn không được phân công giao đơn này." });
+        }
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Lấy chi tiết đơn giao thành công", 
+            data: { order } 
+        });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Lỗi máy chủ: " + error.message });
+    }
+};
+
 module.exports = { getShippers, createShipper, updateShipperStatus, updateShipperLocation,
-    getProfile, updateProfile, getAvailableOrders, acceptOrder };
+    getProfile, updateProfile, getAvailableOrders, acceptOrder, updateDeliveryStatus, getMyDeliveries, getDeliveryDetail };

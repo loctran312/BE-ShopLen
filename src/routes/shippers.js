@@ -1,7 +1,7 @@
 const express = require('express');
 const { requireAuth, requireAdmin, requireShipper } = require('../middlewares/authMiddleware');
 const { getShippers, createShipper, updateShipperStatus, updateShipperLocation, 
-        getProfile, updateProfile, getAvailableOrders, acceptOrder } = require('../controllers/shipperController');
+        getProfile, updateProfile, getAvailableOrders, acceptOrder, updateDeliveryStatus, getMyDeliveries, getDeliveryDetail } = require('../controllers/shipperController');
 
 const router = express.Router();
 
@@ -213,5 +213,76 @@ router.get('/shipper/available-orders', requireAuth, requireShipper, getAvailabl
  *         description: Đơn hàng đã bị người khác nhận
  */
 router.put('/shipper/orders/:order_id/accept', requireAuth, requireShipper, acceptOrder);
+
+/**
+ * @swagger
+ * /shipper/orders/{order_id}/delivery-status:
+ *   put:
+ *     summary: Xác nhận kết quả giao hàng - SHIPPER
+ *     tags: [Shippers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: order_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *           example:
+ *             status: "success"
+ *             proof_image: "https://link-anh-chup-goi-hang.com"
+ *             failed_reason: ""
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
+router.put('/shipper/orders/:order_id/delivery-status', requireAuth, requireShipper, updateDeliveryStatus);
+
+/**
+ * @swagger
+ * /shipper/my-deliveries:
+ *   get:
+ *     summary: Lấy danh sách các đơn hàng đã nhận/lịch sử giao - SHIPPER
+ *     tags: [Shippers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: Trạng thái giao hàng (accepted, delivered, failed). Bỏ trống để lấy tất cả.
+ *         example: "accepted"
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách thành công
+ */
+router.get('/shipper/my-deliveries', requireAuth, requireShipper, getMyDeliveries);
+
+/**
+ * @swagger
+ * /shipper/orders/{order_id}:
+ *   get:
+ *     summary: Xem chi tiết một đơn hàng được phân công - SHIPPER
+ *     tags: [Shippers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: order_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Lấy chi tiết đơn giao thành công
+ */
+router.get('/shipper/orders/:order_id', requireAuth, requireShipper, getDeliveryDetail);
 
 module.exports = router;

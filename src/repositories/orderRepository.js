@@ -236,7 +236,8 @@ const createBuyNowOrder = async (userId, payload) => {
             FROM bien_the_san_pham bt
             JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
             LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
-            WHERE bt.bien_the_id = $1 FOR UPDATE
+            WHERE bt.bien_the_id = $1 
+            FOR UPDATE OF bt
         `, [variant_id]);
 
         if (itemRes.rows.length === 0) throw { statusCode: 404, message: 'Sản phẩm hoặc Ca học không tồn tại' };
