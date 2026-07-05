@@ -284,6 +284,13 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
                 await client.query(`UPDATE thong_tin_shipper SET tien_cod_dang_giu = tien_cod_dang_giu + $1 WHERE nguoi_dung_id = $2`, [codAmount, shipperId]);
             }
 
+            await client.query(`
+                INSERT INTO luot_quay (nguoi_dung_id, so_luot)
+                SELECT nguoi_dung_id, 1 FROM don_hang WHERE don_hang_id = $1
+                ON CONFLICT (nguoi_dung_id) 
+                DO UPDATE SET so_luot = LEAST(luot_quay.so_luot + 1, 3)
+            `, [orderId]);
+
         } else if (status === 'failed') {
             if (!failed_reason) throw { statusCode: 400, message: 'Vui lòng cung cấp lý do giao thất bại' };
             
@@ -339,7 +346,6 @@ const getMyDeliveries = async (shipperId, statusFilter) => {
 };
 
 const getDeliveryDetail = async (shipperId, orderId) => {
-    // 1. Lấy thông tin tổng quan đơn hàng
     const orderQuery = `
         SELECT 
             dh.don_hang_id AS order_id,
