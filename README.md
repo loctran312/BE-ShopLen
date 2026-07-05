@@ -286,6 +286,3 @@ ISC
 ## Tác giả
 
 - **GitHub**: [loctran312](https://github.com/loctran312)
-
-
-<!-- update status order, workshop user -->

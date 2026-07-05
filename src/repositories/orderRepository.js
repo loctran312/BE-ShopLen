@@ -563,20 +563,43 @@ const updateOrderStatus = async (orderId, newStatus) => {
 	try {
 		await client.query('BEGIN');
 
+        const checkRes = await client.query(
+            `SELECT trang_thai FROM don_hang WHERE don_hang_id = $1 FOR UPDATE`, 
+            [orderId]
+        );
+
+        if (checkRes.rows.length === 0) {
+            throw { statusCode: 404, message: 'Đơn hàng không tồn tại' };
+        }
+
+        const currentStatus = checkRes.rows[0].trang_thai;
+
+        if (currentStatus !== 'pending') {
+            throw { 
+                statusCode: 400, 
+                message: `Đơn hàng đã qua khâu chờ duyệt (hiện đang: ${currentStatus}). Admin không được phép can thiệp.` 
+            };
+        }
+
+        if (newStatus !== 'processing' && newStatus !== 'cancelled') {
+            throw { 
+                statusCode: 400, 
+                message: 'Từ trạng thái chờ duyệt (pending), Admin chỉ được phép chuyển sang Đang xử lý (processing) hoặc Hủy đơn (cancelled).' 
+            };
+        }
+
 		const result = await client.query(
 			`UPDATE don_hang SET trang_thai = $1 WHERE don_hang_id = $2 RETURNING don_hang_id`,
 			[newStatus, orderId]
 		);
 
-		if (result.rows.length > 0) {
-			await client.query(
-				`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, $2)`,
-				[orderId, newStatus]
-			);
-		}
+		await client.query(
+			`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, $2)`,
+			[orderId, newStatus]
+		);
 
 		await client.query('COMMIT');
-		return result.rows.length > 0;
+		return true;
 	} catch (error) {
 		await client.query('ROLLBACK');
 		throw error;

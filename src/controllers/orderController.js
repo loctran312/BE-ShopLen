@@ -248,20 +248,18 @@ const updateOrderStatus = async (req, res) => {
 		const orderId = req.params.id;
 		const { status } = req.body;
 
-		const validStatuses = ['pending', 'processing', 'shipping', 'completed', 'cancelled'];
-		if (!validStatuses.includes(status)) {
-			return res.status(400).json({ success: false, message: 'Trạng thái không hợp lệ' });
-		}
+        if (!status) {
+            return res.status(400).json({ success: false, message: 'Thiếu trạng thái cần cập nhật (status)' });
+        }
 
-		const isUpdated = await orderRepository.updateOrderStatus(orderId, status);
+		await orderRepository.updateOrderStatus(orderId, status);
 
-		if (!isUpdated) {
-			return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
-		}
-
-		return res.json({ success: true, message: 'Cập nhật trạng thái đơn hàng thành công' });
+		return res.json({ 
+            success: true, 
+            message: status === 'processing' ? 'Đã duyệt đơn hàng thành công, sẵn sàng giao cho Shipper!' : 'Đã hủy đơn hàng thành công.' 
+        });
 	} catch (error) {
-		return res.status(500).json({ success: false, message: 'Lỗi máy chủ' });
+		return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
 	}
 };
 
