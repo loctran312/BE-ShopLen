@@ -266,9 +266,6 @@ const startGoogleLogin = async (req, res) => {
     const state = createGoogleStateToken(redirectTo);
     const googleOAuthUrl = buildGoogleOAuthUrl(state);
 
-    console.log('[AUTH][GOOGLE_START] redirect_uri =', GOOGLE_REDIRECT_URI);
-    console.log('[AUTH][GOOGLE_START] auth_url =', googleOAuthUrl);
-
     return res.redirect(googleOAuthUrl);
   } catch (error) {
     return res.status(500).json({ message: 'Không thể bắt đầu đăng nhập Google' });
@@ -335,7 +332,6 @@ await client.query('BEGIN');
     }));
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('[AUTH][GOOGLE_CALLBACK] Error:', error.message);
 
     return res.redirect(buildGoogleFrontendRedirectUrl({
       error: 'google_login_failed',
@@ -388,7 +384,6 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[AUTH][LOGIN] Error:', error);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
@@ -438,7 +433,6 @@ const refreshToken = async (req, res) => {
       refresh_token: newRefreshToken,
     });
   } catch (error) {
-    console.error('[AUTH][REFRESH_TOKEN] Error:', error);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   }
 }
@@ -536,7 +530,6 @@ const forgotPassword = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('[AUTH][FORGOT_PASSWORD] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
@@ -611,7 +604,6 @@ const verifyResetOtp = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('[AUTH][VERIFY_RESET_OTP] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
@@ -689,7 +681,6 @@ const resetPassword = async (req, res) => {
     return res.status(200).json({ message: 'Đặt lại mật khẩu thành công' });
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});
-    console.error('[AUTH][RESET_PASSWORD] Error:', error.message);
     return res.status(500).json({ message: 'Lỗi máy chủ' });
   } finally {
     client.release();
