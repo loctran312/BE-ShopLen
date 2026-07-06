@@ -20,7 +20,7 @@ const wishlistRoutes = require('./routes/wishlist');
 const inventoryRoutes = require('./routes/inventory');
 const shipperRoutes = require('./routes/shippers');
 const loyaltyRoutes = require('./routes/loyalty');
-const spinRoutes = require('./routes/spin');
+const spinRoutes = require('./routes/spins');
 const dashboardRoutes = require('./routes/dashboard');
 
 const { apiDocs, renderDocsPage } = require('./docs/apiDocs');

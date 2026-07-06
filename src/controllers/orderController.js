@@ -147,8 +147,8 @@ const repurchaseOrder = async (req, res) => {
 		let skippedCount = 0;
 
 		for (const item of itemsToAdd) {
-			const variantId = item.bien_the_id;
-			const quantity = item.so_luong;
+			const variantId = item.variant_id;
+			const quantity = item.quantity;
 
 			if (!variantId) {
 				skippedCount++;
