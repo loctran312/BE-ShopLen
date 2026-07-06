@@ -158,24 +158,41 @@ const getShipperProfile = async (userId) => {
     return result.rows[0];
 };
 
-const updateShipperProfile = async (userId, { full_name, phone, personal_address }) => {
+const updateShipperProfile = async (userId, payload) => {
+    const { full_name, phone, personal_address, avatar, cccd, license_plate } = payload;
     const client = await pool.connect();
+    
     try {
         await client.query("BEGIN");
-        
-        if (full_name || phone) {
-            const nameParts = full_name ? full_name.trim().split(' ') : [];
-            const ten = nameParts.length > 0 ? nameParts.pop() : undefined;
-            const ho = nameParts.length > 0 ? nameParts.join(' ') : undefined;
+
+        if (full_name !== undefined || phone !== undefined || avatar !== undefined) {
+            let ho, ten;
+            if (full_name) {
+                const nameParts = full_name.trim().split(' ');
+                ten = nameParts.pop();
+                ho = nameParts.join(' ');
+            }
 
             await client.query(
-                `UPDATE nguoi_dung SET ho = COALESCE($1, ho), ten = COALESCE($2, ten), so_dien_thoai = COALESCE($3, so_dien_thoai) WHERE nguoi_dung_id = $4`,
-                [ho, ten, phone, userId]
+                `UPDATE nguoi_dung 
+                 SET ho = COALESCE($1, ho), 
+                     ten = COALESCE($2, ten), 
+                     so_dien_thoai = COALESCE($3, so_dien_thoai),
+                     avatar = COALESCE($4, avatar)
+                 WHERE nguoi_dung_id = $5`,
+                [ho, ten, phone, avatar, userId]
             );
         }
 
-        if (personal_address) {
-            await client.query(`UPDATE thong_tin_shipper SET dia_chi_ca_nhan = $1 WHERE nguoi_dung_id = $2`, [personal_address, userId]);
+        if (personal_address !== undefined || cccd !== undefined || license_plate !== undefined) {
+            await client.query(
+                `UPDATE thong_tin_shipper 
+                 SET dia_chi_ca_nhan = COALESCE($1, dia_chi_ca_nhan),
+                     cccd = COALESCE($2, cccd),
+                     bien_so_xe = COALESCE($3, bien_so_xe)
+                 WHERE nguoi_dung_id = $4`,
+                [personal_address, cccd, license_plate, userId]
+            );
         }
 
         await client.query("COMMIT");

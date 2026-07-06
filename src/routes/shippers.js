@@ -156,7 +156,7 @@ router.get('/shipper/profile', requireAuth, requireShipper, getProfile);
  * @swagger
  * /shipper/profile:
  *   put:
- *     summary: Cập nhật thông tin cá nhân - SHIPPER
+ *     summary: Cập nhật thông tin cá nhân mở rộng - SHIPPER
  *     tags:
  *       - Shippers
  *     security:
@@ -171,9 +171,14 @@ router.get('/shipper/profile', requireAuth, requireShipper, getProfile);
  *               full_name: "Nguyễn Văn Giao Nhanh"
  *               phone: "0988888881"
  *               personal_address: "888 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+ *               avatar: "https://link-anh-moi.com/avatar.jpg"
+ *               cccd: "079090123456"
+ *               license_plate: "59A1-99999"
  *     responses:
  *       200:
  *         description: Cập nhật thông tin cá nhân thành công
+ *       400:
+ *         description: CCCD đã tồn tại trong hệ thống
  */
 router.put('/shipper/profile', requireAuth, requireShipper, updateProfile);
 

@@ -114,6 +114,9 @@ const updateProfile = async (req, res) => {
         await shipperRepository.updateShipperProfile(userId, req.body);
         return res.status(200).json({ success: true, message: "Cập nhật thông tin cá nhân thành công" });
     } catch (error) {
+        if (error.code === '23505') {
+            return res.status(400).json({ success: false, message: "Số CCCD này đã tồn tại trong hệ thống." });
+        }
         return res.status(500).json({ success: false, message: "Lỗi máy chủ: " + error.message });
     }
 };
