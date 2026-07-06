@@ -9,7 +9,6 @@ const router = express.Router();
  * /admin/dashboard:
  *   get:
  *     summary: Xem chỉ số tổng quan hệ thống - ADMIN
- *     description: Trả về Doanh thu (hôm nay, tuần, tháng), tình trạng đơn hàng, thống kê user, cảnh báo kho và top 5 sản phẩm. Đã tối ưu múi giờ Việt Nam.
  *     tags: [Admin Dashboard]
  *     security:
  *       - bearerAuth: []
@@ -27,12 +26,29 @@ const router = express.Router();
  *                     today: 1500000
  *                     this_week: 12500000
  *                     this_month: 45000000
+ *                     growth_vs_last_week: 15.5
+ *                     revenue_chart:
+ *                       - date: "2026-07-01"
+ *                         value: 1200000
+ *                       - date: "2026-07-02"
+ *                         value: 0
+ *                   top_orders_today:
+ *                     - order_id: "DH-20260706-0001"
+ *                       customer_name: "Trần Hữu Lộc"
+ *                       total_amount: 850000
  *                   orders_count:
  *                     pending: 15
  *                     processing: 5
  *                     shipping: 12
  *                     completed: 350
- *                     cancelled: 10
+ *                     growth_vs_last_week: -5.2
+ *                   workshop_stats:
+ *                     bookings_today: 12
+ *                     upcoming_count: 5
+ *                     growth_vs_last_week: 25.0
+ *                     top_workshops:
+ *                       - title: "Workshop Đan Khăn"
+ *                         total_bookings: 45
  *                   users:
  *                     active_customers: 1240
  *                     active_shippers: 18
@@ -43,8 +59,6 @@ const router = express.Router();
  *                   top_selling_products:
  *                     - product_name: "Cuộn len Milk Cotton"
  *                       total_sold: 450
- *                     - product_name: "Combo kim móc"
- *                       total_sold: 210
  */
 router.get('/', requireAuth, requireAdmin, getDashboardInfo);
 

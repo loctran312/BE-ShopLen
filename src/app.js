@@ -71,7 +71,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api', shipperRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/spin', spinRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/admin/dashboard', dashboardRoutes);
 
 app.get('/api/docs-page', (req, res) => {
     res.type('html').send(renderDocsPage());
