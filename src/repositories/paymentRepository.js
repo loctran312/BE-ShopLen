@@ -18,18 +18,6 @@ const updatePaymentStatus = async (orderId, status, transId = null) => {
         }
         await client.query(updatePaymentQuery, queryParams);
 
-        // Nếu thanh toán thành công (paid), tự động chuyển trạng thái đơn hàng sang 'processing'
-        if (status === 'paid') {
-            await client.query(
-                `UPDATE don_hang SET trang_thai = 'processing' WHERE don_hang_id = $1`,
-                [orderId]
-            );
-            await client.query(
-                `INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'processing')`,
-                [orderId]
-            );
-        }
-
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK');

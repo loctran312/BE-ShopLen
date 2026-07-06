@@ -110,6 +110,41 @@ const getMyOrders = async (req, res) => {
 	}
 };
 
+const cancelMyOrder = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const orderId = req.params.id;
+
+        const order = await orderRepository.getOrderDetail(orderId, userId);
+        
+        if (!order) return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
+        if (order.status !== 'pending') return res.status(400).json({ success: false, message: 'Bạn chỉ có thể hủy những đơn hàng đang chờ duyệt (pending).' });
+
+        let refundSuccess = false;
+
+        if (order.payment && order.payment.payment_method === 'MOMO' && order.payment.payment_status === 'paid') {
+            const amountToRefund = Math.round(Number(order.total_amount));
+            const refundResult = await momoService.refundPayment(orderId, amountToRefund, order.payment.reference_code);
+            
+            if (refundResult.resultCode === 0) {
+                refundSuccess = true;
+            } else {
+                return res.status(400).json({ success: false, message: `MoMo từ chối hoàn tiền tự động: ${refundResult.message}. Vui lòng liên hệ hỗ trợ.` });
+            }
+        }
+
+        await orderRepository.cancelUserOrder(orderId, refundSuccess, userId);
+
+        let msg = refundSuccess 
+            ? 'Hủy đơn hàng thành công. Tiền sẽ được hoàn về ví MoMo của bạn trong chốc lát.'
+            : 'Hủy đơn hàng thành công.';
+
+        return res.json({ success: true, message: msg });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: 'Lỗi hệ thống khi hủy đơn: ' + error.message });
+    }
+};
+
 const getMyOrderDetail = async (req, res) => {
 	try {
 		const userId = req.user.user_id;
@@ -296,6 +331,7 @@ module.exports = {
 	createOrder,
     createBuyNowOrder,
 	getMyOrders,
+	cancelMyOrder,
 	getMyOrderDetail,
 	repurchaseOrder,
 	getAllOrdersAdmin,

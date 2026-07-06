@@ -4,6 +4,7 @@ const {
     createOrder, 
     getMyOrders, 
     getMyOrderDetail, 
+    cancelMyOrder,
     repurchaseOrder,
     getAllOrdersAdmin, 
     getOrderDetailAdmin, 
@@ -144,6 +145,26 @@ router.get('/my-orders', requireAuth, getMyOrders);
  *         description: Lấy chi tiết đơn hàng thành công
  */
 router.get('/my-orders/:id', requireAuth, getMyOrderDetail);
+
+/**
+ * @swagger
+ * /orders/my-orders/{id}/cancel:
+ *   post:
+ *     summary: Khách hàng tự Hủy đơn & Tự động hoàn tiền MoMo
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Hủy đơn và hoàn kho/hoàn tiền thành công
+ */
+router.post('/my-orders/:id/cancel', requireAuth, cancelMyOrder);
 
 /**
  * @swagger

@@ -417,59 +417,74 @@ const getUserOrders = async (userId, { page, limit, tab, type }) => {
     let conditions = [];
 
     if (tab === 'history') {
-        conditions.push(`trang_thai IN ('completed', 'cancelled')`);
+        conditions.push(`dh.trang_thai IN ('completed', 'cancelled')`);
     } else if (tab === 'ongoing') {
-        conditions.push(`trang_thai NOT IN ('completed', 'cancelled')`);
+        conditions.push(`dh.trang_thai NOT IN ('completed', 'cancelled')`);
     }
-
     if (type === 'workshop') {
-        conditions.push(`EXISTS (
-            SELECT 1 FROM chi_tiet_don_hang ct
-            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
-            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
-            WHERE ct.don_hang_id = don_hang.don_hang_id AND sp.loai_san_pham_id = 3
-        )`);
+        conditions.push(`EXISTS (SELECT 1 FROM chi_tiet_don_hang ct JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id WHERE ct.don_hang_id = dh.don_hang_id AND sp.loai_san_pham_id = 3)`);
     } else if (type === 'physical') {
-        conditions.push(`EXISTS (
-            SELECT 1 FROM chi_tiet_don_hang ct
-            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
-            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
-            WHERE ct.don_hang_id = don_hang.don_hang_id AND sp.loai_san_pham_id != 3
-        )`);
+        conditions.push(`EXISTS (SELECT 1 FROM chi_tiet_don_hang ct JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id WHERE ct.don_hang_id = dh.don_hang_id AND sp.loai_san_pham_id != 3)`);
     }
 
     const whereString = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
-
-    const countRes = await pool.query(
-        `SELECT COUNT(*)::int AS total FROM don_hang WHERE nguoi_dung_id = $1 ${whereString}`, 
-        params
-    );
-    const totalItems = countRes.rows[0].total;
+    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM don_hang dh WHERE dh.nguoi_dung_id = $1 ${whereString}`, params);
 
     const ordersRes = await pool.query(
-        `SELECT don_hang_id AS order_id, 
-                trang_thai AS status, 
-                tong_tien AS total_amount, 
-                so_tien_giam AS discount_amount, 
-                ten_nguoi_nhan AS customer_name, 
-                dia_chi_giao_hang AS shipping_address,
-                ngay_tao AS created_at
-         FROM don_hang
-         WHERE nguoi_dung_id = $1 ${whereString}
-         ORDER BY don_hang_id DESC
-         LIMIT $2 OFFSET $3`,
+        `SELECT dh.don_hang_id AS order_id, dh.trang_thai AS status, dh.tong_tien AS total_amount, dh.so_tien_giam AS discount_amount, dh.ten_nguoi_nhan AS customer_name, dh.dia_chi_giao_hang AS shipping_address, dh.ngay_tao AS created_at,
+                tt.phuong_thuc AS payment_method, tt.trang_thai AS payment_status
+         FROM don_hang dh
+         LEFT JOIN thanh_toan tt ON dh.don_hang_id = tt.don_hang_id
+         WHERE dh.nguoi_dung_id = $1 ${whereString}
+         ORDER BY dh.don_hang_id DESC LIMIT $2 OFFSET $3`,
         [userId, limit, offset]
     );
 
-    return {
-        orders: ordersRes.rows,
-        pagination: {
-            total_items: totalItems,
-            total_pages: Math.max(1, Math.ceil(totalItems / limit)),
-            current_page: page,
-            limit,
-        },
-    };
+    return { orders: ordersRes.rows, pagination: { total_items: countRes.rows[0].total, total_pages: Math.max(1, Math.ceil(countRes.rows[0].total / limit)), current_page: page, limit } };
+};
+
+const cancelUserOrder = async (orderId, refundSuccess, userId) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        await client.query(`SELECT don_hang_id FROM don_hang WHERE don_hang_id = $1 FOR UPDATE`, [orderId]);
+
+        await client.query(`UPDATE don_hang SET trang_thai = 'cancelled' WHERE don_hang_id = $1`, [orderId]);
+        await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'cancelled')`, [orderId]);
+
+        if (refundSuccess) {
+            await client.query(`UPDATE thanh_toan SET trang_thai = 'refunded' WHERE don_hang_id = $1`, [orderId]);
+        }
+
+        const itemsRes = await client.query(`
+            SELECT ct.bien_the_id, ct.so_luong, sp.loai_san_pham_id 
+            FROM chi_tiet_don_hang ct
+            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            WHERE ct.don_hang_id = $1
+        `, [orderId]);
+
+        for (const item of itemsRes.rows) {
+            if (item.loai_san_pham_id !== 3) {
+                const stockRes = await client.query(
+                    `UPDATE ton_kho SET so_luong_ton = so_luong_ton + $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`, 
+                    [item.so_luong, item.bien_the_id]
+                );
+                await client.query(
+                    `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien) 
+                     VALUES ($1, $2, $3, 'hoan_tra', $4, 'Khách hàng tự hủy đơn (Hoàn tồn kho)', $5)`,
+                    [item.bien_the_id, item.so_luong, stockRes.rows[0].so_luong_ton, orderId, userId]
+                );
+            }
+        }
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 const getOrderDetail = async (orderId, userId = null) => {
@@ -657,6 +672,7 @@ module.exports = {
 	createOrder,
     createBuyNowOrder,
 	getUserOrders,
+    cancelUserOrder,
 	getOrderDetail,
 	getAllOrdersAdmin,
 	updateOrderStatus,
