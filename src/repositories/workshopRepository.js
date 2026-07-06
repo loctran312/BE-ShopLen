@@ -409,10 +409,93 @@ const deleteWorkshop = async (workshopId) => {
     }
 };
 
+const getMyWorkshops = async (userId, { status, page, limit }) => {
+    const offset = (page - 1) * limit;
+    const params = [userId];
+    let statusCondition = '';
+    let paramIndex = 2;
+
+    const nowVietnam = `CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh'`;
+    const startDateTime = `(htb.ngay_bat_dau::date + htb.gio_bat_dau)`;
+    const endDateTime = `(htb.ngay_bat_dau::date + htb.gio_ket_thuc)`;
+
+    if (status === 'upcoming') {
+        statusCondition = `AND ${nowVietnam} < ${startDateTime}`;
+    } else if (status === 'ongoing') {
+        statusCondition = `AND ${nowVietnam} >= ${startDateTime} AND ${nowVietnam} <= ${endDateTime}`;
+    } else if (status === 'past') {
+        statusCondition = `AND ${nowVietnam} > ${endDateTime}`;
+    }
+
+    const countQuery = `
+        SELECT COUNT(*)::int AS total
+        FROM don_hang dh
+        JOIN chi_tiet_don_hang ct ON dh.don_hang_id = ct.don_hang_id
+        JOIN hoi_thao_bien_the htb ON ct.bien_the_id = htb.bien_the_id
+        WHERE dh.nguoi_dung_id = $1 AND dh.trang_thai != 'cancelled' ${statusCondition}
+    `;
+    const countRes = await pool.query(countQuery, params);
+    const totalItems = countRes.rows[0].total;
+
+    const query = `
+        SELECT 
+            dh.don_hang_id AS order_id,
+            dh.ngay_tao AS purchase_date,
+            ht.hoi_thao_id AS workshop_id,
+            ht.tieu_de AS title,
+            ht.dia_diem AS location,
+            htb.bien_the_id AS variant_id,
+            bt.mau_sac AS session_name,
+            htb.ngay_bat_dau AS start_date,
+            htb.gio_bat_dau AS start_time,
+            htb.gio_ket_thuc AS end_time,
+            ct.so_luong AS ticket_count,
+            CASE
+                WHEN ${nowVietnam} < ${startDateTime} THEN 'upcoming'
+                WHEN ${nowVietnam} > ${endDateTime} THEN 'past'
+                ELSE 'ongoing'
+            END AS attendance_status,
+            (
+                SELECT duong_dan_anh 
+                FROM hinh_anh_bien_the vi 
+                WHERE vi.bien_the_id = htb.bien_the_id 
+                ORDER BY thu_tu_hien_thi ASC LIMIT 1
+            ) AS image_url
+        FROM don_hang dh
+        JOIN chi_tiet_don_hang ct ON dh.don_hang_id = ct.don_hang_id
+        JOIN hoi_thao_bien_the htb ON ct.bien_the_id = htb.bien_the_id
+        JOIN hoi_thao ht ON htb.hoi_thao_id = ht.hoi_thao_id
+        JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id
+        WHERE dh.nguoi_dung_id = $1 AND dh.trang_thai != 'cancelled' ${statusCondition}
+        ORDER BY 
+            CASE 
+                WHEN ${nowVietnam} < ${startDateTime} THEN 1 -- Sắp diễn ra xếp trên cùng
+                WHEN ${nowVietnam} > ${endDateTime} THEN 3 -- Đã diễn ra xếp cuối
+                ELSE 2 -- Đang diễn ra
+            END ASC,
+            ${startDateTime} ASC
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `;
+    
+    params.push(limit, offset);
+    const { rows } = await pool.query(query, params);
+
+    return {
+        workshops: rows,
+        pagination: {
+            total_items: totalItems,
+            total_pages: Math.max(1, Math.ceil(totalItems / limit)),
+            current_page: page,
+            limit
+        }
+    };
+};
+
 module.exports = {
     filterWorkshopsAdmin, 
     getWorkshopDetail, 
     createWorkshop, 
     updateWorkshop, 
-    deleteWorkshop
+    deleteWorkshop,
+    getMyWorkshops
 };

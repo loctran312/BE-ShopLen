@@ -60,10 +60,26 @@ const deleteWorkshop = async (req, res) => {
     }
 };
 
+const getMyWorkshops = async (req, res) => {
+    try {
+        const userId = req.user.user_id;
+        const page = parsePositiveInteger(req.query.page || 1, 'page');
+        const limit = parsePositiveInteger(req.query.limit || 10, 'limit');
+
+        const status = req.query.status;
+
+        const result = await workshopRepository.getMyWorkshops(userId, { status, page, limit });
+        return res.json({ success: true, message: 'Lấy danh sách Workshop của bạn thành công', data: result });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+    }
+};
+
 module.exports = {
     filterWorkshops,
     getWorkshopDetail,
     createWorkshop,
     updateWorkshop,
-    deleteWorkshop
+    deleteWorkshop,
+    getMyWorkshops
 };
