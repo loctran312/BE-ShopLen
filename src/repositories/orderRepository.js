@@ -431,8 +431,24 @@ const getUserOrders = async (userId, { page, limit, tab, type }) => {
     const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM don_hang dh WHERE dh.nguoi_dung_id = $1 ${whereString}`, params);
 
     const ordersRes = await pool.query(
-        `SELECT dh.don_hang_id AS order_id, dh.trang_thai AS status, dh.tong_tien AS total_amount, dh.so_tien_giam AS discount_amount, dh.ten_nguoi_nhan AS customer_name, dh.dia_chi_giao_hang AS shipping_address, dh.ngay_tao AS created_at,
-                tt.phuong_thuc AS payment_method, tt.trang_thai AS payment_status
+        `SELECT dh.don_hang_id AS order_id, 
+                dh.trang_thai AS status, 
+                dh.tong_tien AS total_amount, 
+                dh.so_tien_giam AS discount_amount, 
+                dh.ten_nguoi_nhan AS customer_name, 
+                dh.dia_chi_giao_hang AS shipping_address, 
+                dh.ngay_tao AS created_at,
+                tt.phuong_thuc AS payment_method, 
+                tt.trang_thai AS payment_status,
+                CASE 
+                    WHEN EXISTS (
+                        SELECT 1 FROM chi_tiet_don_hang ct 
+                        JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id 
+                        JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id 
+                        WHERE ct.don_hang_id = dh.don_hang_id AND sp.loai_san_pham_id = 3
+                    ) THEN 'workshop'
+                    ELSE 'physical'
+                END AS type
          FROM don_hang dh
          LEFT JOIN thanh_toan tt ON dh.don_hang_id = tt.don_hang_id
          WHERE dh.nguoi_dung_id = $1 ${whereString}
@@ -440,7 +456,15 @@ const getUserOrders = async (userId, { page, limit, tab, type }) => {
         [userId, limit, offset]
     );
 
-    return { orders: ordersRes.rows, pagination: { total_items: countRes.rows[0].total, total_pages: Math.max(1, Math.ceil(countRes.rows[0].total / limit)), current_page: page, limit } };
+    return { 
+        orders: ordersRes.rows, 
+        pagination: { 
+            total_items: countRes.rows[0].total, 
+            total_pages: Math.max(1, Math.ceil(countRes.rows[0].total / limit)), 
+            current_page: page, 
+            limit 
+        } 
+    };
 };
 
 const cancelUserOrder = async (orderId, refundSuccess, userId) => {
