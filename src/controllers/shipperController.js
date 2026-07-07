@@ -1,5 +1,6 @@
 const shipperRepository = require("../repositories/shipperRepository");
 const { parsePositiveInteger } = require('../utils/pagination');
+const { uploadImageToImgBB } = require('../utils/imgbb');
 
 // --- ADMIN API ---
 const getShippers = async (req, res) => {
@@ -111,7 +112,15 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
     try {
         const userId = req.user.user_id;
-        await shipperRepository.updateShipperProfile(userId, req.body);
+        const payload = { ...req.body };
+
+        if (payload.avatar && payload.avatar.startsWith('data:image')) {
+            const resolvedUrl = await uploadImageToImgBB(payload.avatar, `shipper_${userId}_${Date.now()}`);
+            payload.avatar = resolvedUrl;
+        }
+
+        await shipperRepository.updateShipperProfile(userId, payload);
+        
         return res.status(200).json({ success: true, message: "Cập nhật thông tin cá nhân thành công" });
     } catch (error) {
         if (error.code === '23505') {
