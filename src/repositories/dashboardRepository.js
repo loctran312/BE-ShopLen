@@ -75,6 +75,7 @@ const getDashboardMetrics = async () => {
                 COUNT(*) FILTER (WHERE so_luong_ton = 0)::int AS out_of_stock,
                 COUNT(*) FILTER (WHERE so_luong_ton > 0 AND so_luong_ton <= 20)::int AS low_stock
             FROM ton_kho
+            WHERE san_pham_id IN (SELECT san_pham_id FROM san_pham WHERE loai_san_pham_id <> 3)
         `),
 
         pool.query(`
