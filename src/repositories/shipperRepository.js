@@ -100,21 +100,28 @@ const updateShipperStatusByAdmin = async (shipperIdStr, status) => {
     await pool.query("UPDATE nguoi_dung SET trang_thai = $1 WHERE nguoi_dung_id = $2", [status.toLowerCase(), rows[0].nguoi_dung_id]);
 };
 
-const updateShipperWorkingCity = async (shipperId, newCityId) => {
+const updateShipperWorkingCity = async (shipperIdStr, newCityId) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const res = await client.query(
-            `UPDATE thong_tin_shipper SET ma_tinh_hoat_dong = $1 WHERE nguoi_dung_id = $2`,
-            [newCityId, shipperId]
+        const { rows } = await client.query(
+            "SELECT nguoi_dung_id FROM thong_tin_shipper WHERE ma_shipper = $1", 
+            [shipperIdStr]
         );
         
-        if (res.rowCount === 0) {
+        if (rows.length === 0) {
             const error = new Error('Không tìm thấy thông tin Shipper này');
             error.statusCode = 404;
             throw error;
         }
+
+        const realUserId = rows[0].nguoi_dung_id;
+
+        await client.query(
+            `UPDATE thong_tin_shipper SET ma_tinh_hoat_dong = $1 WHERE nguoi_dung_id = $2`,
+            [newCityId, realUserId]
+        );
         
         await client.query('COMMIT');
     } catch (error) {
