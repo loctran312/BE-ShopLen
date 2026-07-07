@@ -29,7 +29,7 @@ const getAllUsers = async ({ page, limit }) => {
   const offset = (page - 1) * limit;
 
   const [countResult, usersResult] = await Promise.all([
-    pool.query('SELECT COUNT(*)::int AS total_items FROM nguoi_dung'),
+    pool.query("SELECT COUNT(*)::int AS total_items FROM nguoi_dung WHERE vai_tro != 'shipper'"),
     pool.query(
       `SELECT nguoi_dung_id AS user_id,
               ten_dang_nhap AS username,
@@ -40,6 +40,7 @@ const getAllUsers = async ({ page, limit }) => {
               trang_thai AS status,
               vai_tro AS role
        FROM nguoi_dung
+       WHERE vai_tro != 'shipper'
        ORDER BY nguoi_dung_id DESC
        LIMIT $1 OFFSET $2`,
       [limit, offset]
@@ -140,7 +141,8 @@ const filterUsersAdmin = async (filters) => {
     const offset = (page - 1) * limit;
     const params = [];
     let paramIndex = 1;
-    let whereClauses = [];
+
+    let whereClauses = ["vai_tro != 'shipper'"];
 
     if (keyword) {
         whereClauses.push(`(ten_dang_nhap ILIKE $${paramIndex} OR thu_dien_tu ILIKE $${paramIndex} OR so_dien_thoai ILIKE $${paramIndex} OR ho ILIKE $${paramIndex} OR ten ILIKE $${paramIndex})`);
