@@ -72,10 +72,12 @@ const getDashboardMetrics = async () => {
 
         pool.query(`
             SELECT 
-                COUNT(*) FILTER (WHERE so_luong_ton = 0)::int AS out_of_stock,
-                COUNT(*) FILTER (WHERE so_luong_ton > 0 AND so_luong_ton <= 20)::int AS low_stock
-            FROM ton_kho
-            WHERE san_pham_id IN (SELECT san_pham_id FROM san_pham WHERE loai_san_pham_id != 3)
+                COUNT(*) FILTER (WHERE tk.so_luong_ton = 0)::int AS out_of_stock,
+                COUNT(*) FILTER (WHERE tk.so_luong_ton > 0 AND tk.so_luong_ton <= 20)::int AS low_stock
+            FROM ton_kho tk
+            JOIN bien_the_san_pham bt ON tk.bien_the_id = bt.bien_the_id
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            WHERE sp.loai_san_pham_id != 3
         `),
 
         pool.query(`
