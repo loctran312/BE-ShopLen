@@ -5,7 +5,6 @@ const updatePaymentStatus = async (orderId, status, transId = null) => {
     try {
         await client.query('BEGIN');
 
-        // Cập nhật bảng thanh_toan
         let updatePaymentQuery = `UPDATE thanh_toan SET trang_thai = $1`;
         const queryParams = [status];
         
@@ -17,6 +16,29 @@ const updatePaymentStatus = async (orderId, status, transId = null) => {
             queryParams.push(orderId);
         }
         await client.query(updatePaymentQuery, queryParams);
+
+        if (status === 'paid') {
+            const typeRes = await client.query(`
+                SELECT sp.loai_san_pham_id 
+                FROM chi_tiet_don_hang ct
+                JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+                JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+                WHERE ct.don_hang_id = $1
+                LIMIT 1
+            `, [orderId]);
+
+            if (typeRes.rows.length > 0 && typeRes.rows[0].loai_san_pham_id === 3) {
+                await client.query(`UPDATE don_hang SET trang_thai = 'completed' WHERE don_hang_id = $1`, [orderId]);
+                await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'completed')`, [orderId]);
+                
+                await client.query(`
+                    INSERT INTO luot_quay (nguoi_dung_id, so_luot)
+                    SELECT nguoi_dung_id, 1 FROM don_hang WHERE don_hang_id = $1
+                    ON CONFLICT (nguoi_dung_id) 
+                    DO UPDATE SET so_luot = LEAST(luot_quay.so_luot + 1, 3)
+                `, [orderId]);
+            }
+        }
 
         await client.query('COMMIT');
     } catch (error) {
