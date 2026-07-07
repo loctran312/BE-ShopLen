@@ -73,15 +73,20 @@ const getDashboardMetrics = async () => {
         pool.query(`
             SELECT 
                 COUNT(*) FILTER (WHERE so_luong_ton = 0)::int AS out_of_stock,
-                COUNT(*) FILTER (WHERE so_luong_ton > 0 AND so_luong_ton <= 5)::int AS low_stock
+                COUNT(*) FILTER (WHERE so_luong_ton > 0 AND so_luong_ton <= 20)::int AS low_stock
             FROM ton_kho
         `),
 
         pool.query(`
             SELECT sp.ten_san_pham AS product_name, SUM(ct.so_luong)::int AS total_sold
-            FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            FROM chi_tiet_don_hang ct 
+            JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id 
+            JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id 
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
             WHERE sp.loai_san_pham_id != 3 AND dh.trang_thai = 'completed'
-            GROUP BY sp.san_pham_id, sp.ten_san_pham ORDER BY total_sold DESC LIMIT 5
+            GROUP BY sp.san_pham_id, sp.ten_san_pham 
+            ORDER BY total_sold DESC 
+            LIMIT 10
         `),
 
         pool.query(`
