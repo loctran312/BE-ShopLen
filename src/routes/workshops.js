@@ -38,6 +38,35 @@ router.post('/filter', filterWorkshops);
 
 /**
  * @swagger
+ * /workshops/my-workshops:
+ *   get:
+ *     summary: Lấy danh sách Workshop học viên đã mua
+ *     tags: [Workshops]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: status
+ *         description: Trạng thái (upcoming = Sắp diễn ra, ongoing = Đang diễn ra, past = Đã kết thúc)
+ *         schema:
+ *           type: string
+ *           enum: [upcoming, ongoing, past]
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách vé thành công
+ */
+router.get('/my-workshops', requireAuth, getMyWorkshops);
+
+/**
+ * @swagger
  * /workshops/{id}:
  *   get:
  *     summary: Lấy chi tiết workshop
@@ -152,34 +181,5 @@ router.put('/:id', requireAdmin, updateWorkshop);
  *         description: Xóa thành công
  */
 router.delete('/:id', requireAdmin, deleteWorkshop);
-
-/**
- * @swagger
- * /workshops/my-workshops:
- *   get:
- *     summary: Lấy danh sách Workshop học viên đã mua
- *     tags: [Workshops]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *       - in: query
- *         name: status
- *         description: Trạng thái (upcoming = Sắp diễn ra, ongoing = Đang diễn ra, past = Đã kết thúc)
- *         schema:
- *           type: string
- *           enum: [upcoming, ongoing, past]
- *     responses:
- *       200:
- *         description: Lấy danh sách vé thành công
- */
-router.get('/my-workshops', requireAuth, getMyWorkshops);
 
 module.exports = router;
