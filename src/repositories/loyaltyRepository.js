@@ -47,6 +47,18 @@ const deleteAdminReward = async (rewardId) => {
 const getAdminRewards = async ({ page, limit }) => {
     const offset = (page - 1) * limit;
 
+    await pool.query(`
+        UPDATE muc_doi_diem
+        SET trang_thai = 'inactive'
+        WHERE trang_thai = 'active' 
+          AND phieu_giam_gia_id IN (
+              SELECT phieu_giam_gia_id 
+              FROM phieu_giam_gia 
+              WHERE ngay_ket_thuc < CURRENT_TIMESTAMP 
+                 OR (so_luong IS NOT NULL AND da_dung >= so_luong)
+          )
+    `);
+
     const countRes = await pool.query('SELECT COUNT(*)::int AS total FROM muc_doi_diem');
     const totalItems = countRes.rows[0].total;
 
