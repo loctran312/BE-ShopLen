@@ -31,17 +31,40 @@ const createAdminReward = async (voucherId, requiredPoints) => {
 };
 
 const deleteAdminReward = async (rewardId) => {
-    const res = await pool.query(
-        `DELETE FROM muc_doi_diem WHERE muc_doi_id = $1 RETURNING muc_doi_id`,
-        [rewardId]
-    );
-    
-    if (res.rowCount === 0) {
-        const error = new Error('Không tìm thấy gói đổi điểm này để xóa.');
-        error.statusCode = 404;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const checkUsed = await client.query(
+            `SELECT 1 FROM lich_su_diem WHERE loai_giao_dich = 'redeem' AND tham_chieu_id IN (
+                SELECT p.ma FROM muc_doi_diem md 
+                JOIN phieu_giam_gia p ON md.phieu_giam_gia_id = p.phieu_giam_gia_id 
+                WHERE md.muc_doi_id = $1
+            ) LIMIT 1`,
+            [rewardId]
+        );
+
+        if (checkUsed.rows.length > 0) {
+            throw { statusCode: 400, message: 'Không thể xóa gói đổi điểm này vì đã có khách hàng sử dụng.' };
+        }
+
+        const res = await client.query(
+            `DELETE FROM muc_doi_diem WHERE muc_doi_id = $1 RETURNING muc_doi_id`,
+            [rewardId]
+        );
+        
+        if (res.rowCount === 0) {
+            throw { statusCode: 404, message: 'Không tìm thấy gói đổi điểm này để xóa.' };
+        }
+
+        await client.query('COMMIT');
+        return true;
+    } catch (error) {
+        await client.query('ROLLBACK');
         throw error;
+    } finally {
+        client.release();
     }
-    return true;
 };
 
 const getAdminRewards = async ({ page, limit }) => {
