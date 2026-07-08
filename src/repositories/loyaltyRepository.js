@@ -93,7 +93,14 @@ const updateRewardStatus = async (rewardId, status) => {
 const getUserRewards = async ({ page, limit }) => {
     const offset = (page - 1) * limit;
 
-    const countRes = await pool.query(`SELECT COUNT(*)::int AS total FROM muc_doi_diem WHERE trang_thai = 'active'`);
+    const countRes = await pool.query(`
+        SELECT COUNT(*)::int AS total 
+        FROM muc_doi_diem md
+        JOIN phieu_giam_gia p ON md.phieu_giam_gia_id = p.phieu_giam_gia_id
+        WHERE md.trang_thai = 'active'
+          AND (p.ngay_ket_thuc IS NULL OR p.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+          AND (p.so_luong IS NULL OR p.da_dung < p.so_luong)
+    `);
     const totalItems = countRes.rows[0].total;
 
     const { rows } = await pool.query(
@@ -106,6 +113,8 @@ const getUserRewards = async ({ page, limit }) => {
          FROM muc_doi_diem md
          JOIN phieu_giam_gia p ON md.phieu_giam_gia_id = p.phieu_giam_gia_id
          WHERE md.trang_thai = 'active'
+           AND (p.ngay_ket_thuc IS NULL OR p.ngay_ket_thuc >= CURRENT_TIMESTAMP)
+           AND (p.so_luong IS NULL OR p.da_dung < p.so_luong)
          ORDER BY md.diem_yeu_cau ASC
          LIMIT $1 OFFSET $2`,
         [limit, offset]
@@ -113,7 +122,12 @@ const getUserRewards = async ({ page, limit }) => {
 
     return {
         rewards: rows,
-        pagination: { total_items: totalItems, total_pages: Math.ceil(totalItems / limit), current_page: page, limit }
+        pagination: { 
+            total_items: totalItems, 
+            total_pages: Math.max(1, Math.ceil(totalItems / limit)), 
+            current_page: page, 
+            limit 
+        }
     };
 };
 
