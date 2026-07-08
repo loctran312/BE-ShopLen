@@ -190,7 +190,7 @@ const redeemVoucher = async (userId, rewardId) => {
         );
 
         await client.query('COMMIT');
-        return { voucher_code, points_deducted: diem_yeu_cau, remaining_points: currentPoints - diem_yeu_cau };
+        return { voucher_id: phieu_giam_gia_id, voucher_code, points_deducted: diem_yeu_cau, remaining_points: currentPoints - diem_yeu_cau };
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
