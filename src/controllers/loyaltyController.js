@@ -23,6 +23,19 @@ const createReward = async (req, res) => {
     }
 };
 
+const deleteReward = async (req, res) => {
+    try {
+        const rewardId = req.params.id;
+        await loyaltyRepository.deleteAdminReward(rewardId);
+        return res.json({ success: true, message: 'Xóa gói đổi điểm thành công' });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || 'Lỗi máy chủ khi xóa gói đổi điểm' 
+        });
+    }
+};
+
 const getAdminRewardsList = async (req, res) => {
     try {
         const page = parsePositiveInteger(req.query.page || 1, 'page');
@@ -98,6 +111,7 @@ const redeemReward = async (req, res) => {
 
 module.exports = {
     createReward,
+    deleteReward,
     getAdminRewardsList,
     toggleRewardStatus,
     getUserRewardsList,

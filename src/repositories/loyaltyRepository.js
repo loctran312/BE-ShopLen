@@ -15,7 +15,7 @@ const createAdminReward = async (voucherId, requiredPoints) => {
 
         const res = await pool.query(
             `INSERT INTO muc_doi_diem (phieu_giam_gia_id, diem_yeu_cau, trang_thai) 
-             VALUES ($1, $2, 'active') 
+             VALUES ($1, $2, 'inactive') 
              RETURNING muc_doi_id AS reward_id, phieu_giam_gia_id AS voucher_id, diem_yeu_cau AS required_points, trang_thai AS status, ngay_tao AS created_at`,
             [voucherId, requiredPoints]
         );
@@ -28,6 +28,20 @@ const createAdminReward = async (voucherId, requiredPoints) => {
         }
         throw error;
     }
+};
+
+const deleteAdminReward = async (rewardId) => {
+    const res = await pool.query(
+        `DELETE FROM muc_doi_diem WHERE muc_doi_id = $1 RETURNING muc_doi_id`,
+        [rewardId]
+    );
+    
+    if (res.rowCount === 0) {
+        const error = new Error('Không tìm thấy gói đổi điểm này để xóa.');
+        error.statusCode = 404;
+        throw error;
+    }
+    return true;
 };
 
 const getAdminRewards = async ({ page, limit }) => {
@@ -187,6 +201,7 @@ const redeemVoucher = async (userId, rewardId) => {
 
 module.exports = {
     createAdminReward,
+    deleteAdminReward,
     getAdminRewards,
     updateRewardStatus,
     getUserRewards,

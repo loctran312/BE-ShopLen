@@ -123,6 +123,30 @@ router.get('/admin/rewards', requireAuth, requireAdmin, loyaltyController.getAdm
  */
 router.put('/admin/rewards/:id/status', requireAuth, requireAdmin, loyaltyController.toggleRewardStatus);
 
+/**
+ * @swagger
+ * /loyalty/admin/rewards/{id}:
+ *   delete:
+ *     summary: Xóa gói đổi điểm - ADMIN
+ *     tags:
+ *       - Loyalty
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID của gói đổi điểm
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ *       404:
+ *         description: Không tìm thấy gói đổi điểm
+ */
+router.delete('/admin/rewards/:id', requireAuth, requireAdmin, loyaltyController.deleteReward);
+
 
 // ==========================================
 // USER
