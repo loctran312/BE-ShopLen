@@ -285,7 +285,10 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
         await client.query('BEGIN');
 
         const checkRes = await client.query(
-            `SELECT trang_thai_giao, tien_thu_ho FROM phan_cong_giao_hang WHERE don_hang_id = $1 AND shipper_id = $2 FOR UPDATE`,
+            `SELECT pc.trang_thai_giao, pc.tien_thu_ho, dh.tong_tien, dh.nguoi_dung_id 
+             FROM phan_cong_giao_hang pc
+             JOIN don_hang dh ON pc.don_hang_id = dh.don_hang_id
+             WHERE pc.don_hang_id = $1 AND pc.shipper_id = $2 FOR UPDATE`,
             [orderId, shipperId]
         );
 
@@ -294,11 +297,10 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
         }
 
         if (status === 'success') {
-            await client.query(
-                `UPDATE phan_cong_giao_hang SET trang_thai_giao = 'delivered', hinh_anh_bang_chung = $1, ngay_hoan_thanh = CURRENT_TIMESTAMP WHERE don_hang_id = $2`,
-                [proof_image || null, orderId]
-            );
+            const customerId = checkRes.rows[0].nguoi_dung_id;
+            const totalAmount = checkRes.rows[0].tong_tien;
 
+            await client.query(`UPDATE phan_cong_giao_hang SET trang_thai_giao = 'delivered', hinh_anh_bang_chung = $1, ngay_hoan_thanh = CURRENT_TIMESTAMP WHERE don_hang_id = $2`, [proof_image || null, orderId]);
             await client.query(`UPDATE don_hang SET trang_thai = 'completed' WHERE don_hang_id = $1`, [orderId]);
             await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'completed')`, [orderId]);
 
@@ -311,9 +313,23 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
             await client.query(`
                 INSERT INTO luot_quay (nguoi_dung_id, so_luot)
                 SELECT nguoi_dung_id, 1 FROM don_hang WHERE don_hang_id = $1
-                ON CONFLICT (nguoi_dung_id) 
-                DO UPDATE SET so_luot = LEAST(luot_quay.so_luot + 1, 3)
+                ON CONFLICT (nguoi_dung_id) DO UPDATE SET so_luot = LEAST(luot_quay.so_luot + 1, 3)
             `, [orderId]);
+
+            const pointsEarned = Math.floor(Number(totalAmount) / 10000);
+            if (pointsEarned > 0) {
+                await client.query(`
+                    INSERT INTO diem_tich_luy (nguoi_dung_id, tong_diem) 
+                    VALUES ($1, $2)
+                    ON CONFLICT (nguoi_dung_id) 
+                    DO UPDATE SET tong_diem = diem_tich_luy.tong_diem + EXCLUDED.tong_diem
+                `, [customerId, pointsEarned]);
+
+                await client.query(`
+                    INSERT INTO lich_su_diem (nguoi_dung_id, so_diem, loai_giao_dich, tham_chieu_id, mo_ta)
+                    VALUES ($1, $2, 'earn', $3, $4)
+                `, [customerId, pointsEarned, orderId, `Tích ${pointsEarned} điểm từ đơn hàng ${orderId}`]);
+            }
 
         } else if (status === 'failed') {
             if (!failed_reason) throw { statusCode: 400, message: 'Vui lòng cung cấp lý do giao thất bại' };
