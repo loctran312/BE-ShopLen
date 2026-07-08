@@ -96,6 +96,9 @@ app.use((req, res) => {
     });
 });
 
+const initCronJobs = require('./services/cronJobs');
+initCronJobs();
+
 app.use(errorMiddleware);
 
 module.exports = app;

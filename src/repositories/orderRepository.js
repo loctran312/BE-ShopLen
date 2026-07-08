@@ -165,6 +165,8 @@ const createOrder = async (userId, payload) => {
             ]
         );
 
+        const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
+
         for (const item of cartItems) {
             await client.query(
                 `INSERT INTO chi_tiet_don_hang (don_hang_id, bien_the_id, ten_san_pham, gia, so_luong)
@@ -172,16 +174,18 @@ const createOrder = async (userId, payload) => {
                 [orderId, item.bien_the_id, item.ten_san_pham, item.finalPrice, item.so_luong]
             );
 
-            const stockUpdateRes = await client.query(
-                `UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
-                [item.so_luong, item.bien_the_id]
-            );
-            
-            await client.query(
-                `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
-                 VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho khi khách đặt hàng', $5)`,
-                [item.bien_the_id, -item.so_luong, stockUpdateRes.rows[0].so_luong_ton, orderId, userId]
-            );
+            if (paymentMethod === 'COD') {
+                const stockUpdateRes = await client.query(
+                    `UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
+                    [item.so_luong, item.bien_the_id]
+                );
+                
+                await client.query(
+                    `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
+                     VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho khi đặt hàng COD', $5)`,
+                    [item.bien_the_id, -item.so_luong, stockUpdateRes.rows[0].so_luong_ton, orderId, userId]
+                );
+            }
         }
 
         if (voucherId) {
@@ -194,10 +198,12 @@ const createOrder = async (userId, payload) => {
             );
         }
 
-        const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
         await client.query(`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`, [orderId, paymentMethod]);
         await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'pending')`, [orderId]);
-        await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
+        
+        if (paymentMethod === 'COD') {
+            await client.query(`DELETE FROM gio_hang WHERE nguoi_dung_id = $1`, [userId]);
+        }
 
         await client.query('COMMIT');
         return { order_id: orderId, total_amount: totalAmount, payment_method: paymentMethod };
@@ -357,6 +363,7 @@ const createBuyNowOrder = async (userId, payload) => {
 
         const totalAmount = subTotal + shippingFee - discountAmount;
         const orderId = await generateOrderId(client);
+        const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
 
         await client.query(
             `INSERT INTO don_hang (don_hang_id, nguoi_dung_id, tong_tien, phieu_giam_gia_id, so_tien_giam, phuong_xa_id, dia_chi_giao_hang, ten_nguoi_nhan, sdt_nguoi_nhan, trang_thai, phi_van_chuyen, phuong_thuc_giao_hang)
@@ -375,14 +382,15 @@ const createBuyNowOrder = async (userId, payload) => {
             [orderId, variant_id, item.ten_san_pham, finalPrice, quantity]
         );
 
-        if (item.loai_san_pham_id !== 3) {
+        // LOGIC MỚI: Chỉ trừ tồn kho Mua Ngay nếu là sản phẩm vật lý và chọn COD
+        if (item.loai_san_pham_id !== 3 && paymentMethod === 'COD') {
             const stockUpdateRes = await client.query(
                 `UPDATE ton_kho SET so_luong_ton = so_luong_ton - $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`,
                 [quantity, variant_id]
             );
             await client.query(
                 `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien)
-                 VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho (Chế độ Mua Ngay)', $5)`,
+                 VALUES ($1, $2, $3, 'xuat_ban', $4, 'Hệ thống tự động trừ kho (Mua Ngay COD)', $5)`,
                 [variant_id, -quantity, stockUpdateRes.rows[0].so_luong_ton, orderId, userId]
             );
         }
@@ -397,7 +405,6 @@ const createBuyNowOrder = async (userId, payload) => {
             );
         }
 
-        const paymentMethod = payload.phuong_thuc_thanh_toan === 'MOMO' ? 'MOMO' : 'COD';
         await client.query(`INSERT INTO thanh_toan (don_hang_id, phuong_thuc, trang_thai) VALUES ($1, $2, 'pending')`, [orderId, paymentMethod]);
         await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'pending')`, [orderId]);
 
