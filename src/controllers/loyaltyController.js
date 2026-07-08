@@ -70,13 +70,15 @@ const toggleRewardStatus = async (req, res) => {
 
 const getUserRewardsList = async (req, res) => {
     try {
-        const page = parsePositiveInteger(req.query.page || 1, 'page');
-        const limit = parsePositiveInteger(req.query.limit || 10, 'limit');
+        const userId = req.user.user_id;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
 
-        const data = await loyaltyRepository.getUserRewards({ page, limit });
-        return res.status(200).json({ success: true, message: 'Lấy danh sách phần thưởng thành công', data });
+        const result = await loyaltyRepository.getUserRewards(userId, { page, limit });
+        
+        return res.json({ success: true, data: result });
     } catch (error) {
-        return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 

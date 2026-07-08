@@ -102,7 +102,7 @@ const updateRewardStatus = async (rewardId, status) => {
 // USER
 // ==========================================
 
-const getUserRewards = async ({ page, limit }) => {
+const getUserRewards = async (userId, { page, limit }) => {
     const offset = (page - 1) * limit;
 
     const countRes = await pool.query(`
@@ -112,7 +112,13 @@ const getUserRewards = async ({ page, limit }) => {
         WHERE md.trang_thai = 'active'
           AND (p.ngay_ket_thuc IS NULL OR p.ngay_ket_thuc >= CURRENT_TIMESTAMP)
           AND (p.so_luong IS NULL OR p.da_dung < p.so_luong)
-    `);
+          AND NOT EXISTS (
+              SELECT 1 FROM nguoi_dung_phieu_giam_gia ndp
+              WHERE ndp.phieu_giam_gia_id = p.phieu_giam_gia_id 
+                AND ndp.nguoi_dung_id = $1
+          )
+    `, [userId]);
+    
     const totalItems = countRes.rows[0].total;
 
     const { rows } = await pool.query(
@@ -127,9 +133,14 @@ const getUserRewards = async ({ page, limit }) => {
          WHERE md.trang_thai = 'active'
            AND (p.ngay_ket_thuc IS NULL OR p.ngay_ket_thuc >= CURRENT_TIMESTAMP)
            AND (p.so_luong IS NULL OR p.da_dung < p.so_luong)
+           AND NOT EXISTS (
+               SELECT 1 FROM nguoi_dung_phieu_giam_gia ndp
+               WHERE ndp.phieu_giam_gia_id = p.phieu_giam_gia_id 
+                 AND ndp.nguoi_dung_id = $1
+           )
          ORDER BY md.diem_yeu_cau ASC
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
+         LIMIT $2 OFFSET $3`,
+        [userId, limit, offset]
     );
 
     return {
