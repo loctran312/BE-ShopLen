@@ -57,6 +57,7 @@ router.get('/', getAvailableVouchers);
  *             example:
  *               code: "WELCOME10"
  *               order_value: 250000
+ *               shipping_method_id: "GH_NHANH"
  *     responses:
  *       200:
  *         description: Trả về số tiền được giảm

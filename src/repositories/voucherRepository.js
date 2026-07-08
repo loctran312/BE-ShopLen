@@ -48,15 +48,15 @@ const getAvailableVouchers = async ({ page, limit }) => {
 };
 
 const getVoucherByCode = async (code) => {
-	return pool.query(
-		`SELECT phieu_giam_gia_id AS voucher_id, ma AS code, ten_phieu AS voucher_name, 
+    return pool.query(
+        `SELECT phieu_giam_gia_id AS voucher_id, ma AS code, ten_phieu AS voucher_name, 
                 kieu_giam_gia AS discount_type, gia_tri AS value, gia_tri_toi_thieu AS minimum_value, 
                 giam_toi_da AS max_discount, so_luong AS quantity, da_dung AS used_count, 
                 ngay_bat_dau AS start_date, ngay_ket_thuc AS end_date
          FROM phieu_giam_gia
-         WHERE ma = $1`,
-		[code]
-	);
+         WHERE UPPER(ma) = UPPER($1)`,
+        [code]
+    );
 };
 
 const getUserVoucherUsage = async (userId, voucherId) => {
@@ -158,14 +158,18 @@ const deleteVoucher = async (id) => {
 };
 
 const saveVoucherToAccount = async (userId, voucherId) => {
-    const result = await pool.query(
-        `INSERT INTO nguoi_dung_phieu_giam_gia (nguoi_dung_id, phieu_giam_gia_id, so_lan_su_dung)
-         VALUES ($1, $2, 0)
-         ON CONFLICT (phieu_giam_gia_id, nguoi_dung_id) DO NOTHING
-         RETURNING id`,
+    const check = await pool.query(
+        `SELECT 1 FROM nguoi_dung_phieu_giam_gia WHERE nguoi_dung_id = $1 AND phieu_giam_gia_id = $2`, 
         [userId, voucherId]
     );
-    return result.rowCount > 0;
+    if (check.rows.length > 0) return false;
+
+    await pool.query(
+        `INSERT INTO nguoi_dung_phieu_giam_gia (nguoi_dung_id, phieu_giam_gia_id, so_lan_su_dung)
+         VALUES ($1, $2, 0)`,
+        [userId, voucherId]
+    );
+    return true;
 };
 
 const getMySavedVouchers = async (userId) => {

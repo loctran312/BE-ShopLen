@@ -22,7 +22,7 @@ const getAvailableVouchers = async (req, res) => {
 const applyVoucher = async (req, res) => {
     try {
         const userId = req.user.user_id;
-        const code = req.body.code ? req.body.code.trim() : null;
+        const code = req.body.code ? req.body.code.trim().toUpperCase() : null;
         const orderValue = Number(req.body.order_value);
         const shippingMethodId = req.body.shipping_method_id;
 

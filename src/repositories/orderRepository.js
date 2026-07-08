@@ -115,8 +115,8 @@ const createOrder = async (userId, payload) => {
 
         if (payload.phieu_giam_gia_code) {
             const voucherRes = await client.query(
-                `SELECT * FROM phieu_giam_gia WHERE ma = $1 FOR UPDATE`,
-                [payload.phieu_giam_gia_code]
+                `SELECT * FROM phieu_giam_gia WHERE UPPER(ma) = UPPER($1) FOR UPDATE`,
+                [payload.phieu_giam_gia_code.trim()]
             );
 
             if (voucherRes.rows.length === 0) throw { statusCode: 404, message: 'Mã giảm giá không tồn tại' };
@@ -319,8 +319,8 @@ const createBuyNowOrder = async (userId, payload) => {
 
         if (payload.phieu_giam_gia_code) {
             const voucherRes = await client.query(
-                `SELECT * FROM phieu_giam_gia WHERE ma = $1 FOR UPDATE`,
-                [payload.phieu_giam_gia_code]
+                `SELECT * FROM phieu_giam_gia WHERE UPPER(ma) = UPPER($1) FOR UPDATE`,
+                [payload.phieu_giam_gia_code.trim()]
             );
 
             if (voucherRes.rows.length === 0) throw { statusCode: 404, message: 'Mã giảm giá không tồn tại' };
