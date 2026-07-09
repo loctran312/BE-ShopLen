@@ -57,6 +57,26 @@ const processWorkshopSessions = (sessions) => {
 };
 
 const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) => {
+    await pool.query(`
+        UPDATE hoi_thao_bien_the 
+        SET trang_thai = 'closed'
+        WHERE trang_thai = 'open' 
+          AND (ngay_bat_dau::date + gio_bat_dau) <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')
+    `);
+
+    await pool.query(`
+        UPDATE san_pham 
+        SET trang_thai_san_pham = 'inactive'
+        WHERE loai_san_pham_id = 3 AND trang_thai_san_pham = 'active'
+          AND NOT EXISTS (
+              SELECT 1 
+              FROM hoi_thao ht
+              JOIN hoi_thao_bien_the htb ON ht.hoi_thao_id = htb.hoi_thao_id
+              WHERE ht.san_pham_id = san_pham.san_pham_id
+                AND htb.trang_thai = 'open'
+          )
+    `);
+
     const offset = (page - 1) * limit;
     const params = [];
     let paramIndex = 1;
