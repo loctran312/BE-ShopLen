@@ -64,23 +64,6 @@ router.post('/admin/rewards', requireAuth, requireAdmin, loyaltyController.creat
  *     responses:
  *       200:
  *         description: Lấy danh sách thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               example:
- *                 success: true
- *                 data:
- *                   rewards:
- *                     - reward_id: 1
- *                       required_points: 200
- *                       status: active
- *                       created_at: "2026-07-02T07:10:00Z"
- *                       voucher_id: 5
- *                       voucher_code: "LOYALTY200"
- *                       voucher_name: "Giảm 20K"
- *                       discount_type: "fixed"
- *                       discount_value: "20000.00"
  */
 router.get('/admin/rewards', requireAuth, requireAdmin, loyaltyController.getAdminRewardsList);
 
@@ -177,43 +160,6 @@ router.delete('/admin/rewards/:id', requireAuth, requireAdmin, loyaltyController
  *     responses:
  *       200:
  *         description: Lấy danh sách thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     rewards:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           reward_id:
- *                             type: integer
- *                           required_points:
- *                             type: integer
- *                           voucher_code:
- *                             type: string
- *                           voucher_name:
- *                             type: string
- *                           discount_type:
- *                             type: string
- *                           discount_value:
- *                             type: string
- *               example:
- *                 success: true
- *                 data:
- *                   rewards:
- *                     - reward_id: 1
- *                       required_points: 200
- *                       voucher_code: "LOYALTY200"
- *                       voucher_name: "Giảm 20K cho KH thân thiết"
- *                       discount_type: "fixed"
- *                       discount_value: "20000.00"
  */
 router.get('/rewards', requireAuth, loyaltyController.getUserRewardsList);
 
@@ -242,41 +188,6 @@ router.get('/rewards', requireAuth, loyaltyController.getUserRewardsList);
  *     responses:
  *       200:
  *         description: Lấy lịch sử thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: object
- *                   properties:
- *                     history:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           history_id:
- *                             type: integer
- *                           points_changed:
- *                             type: integer
- *                           transaction_type:
- *                             type: string
- *                           reference_code:
- *                             type: string
- *                           description:
- *                             type: string
- *               example:
- *                 success: true
- *                 data:
- *                   history:
- *                     - history_id: 5
- *                       points_changed: 150
- *                       transaction_type: "earn"
- *                       reference_code: "DH-20260620-0001"
- *                       description: "Tích điểm từ đơn hàng"
- *                       created_at: "2026-06-20T15:30:00Z"
  */
 router.get('/history', requireAuth, loyaltyController.getPointHistory);
 
@@ -306,31 +217,6 @@ router.get('/history', requireAuth, loyaltyController.getPointHistory);
  *     responses:
  *       200:
  *         description: Đổi điểm thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     voucher_code:
- *                       type: string
- *                     points_deducted:
- *                       type: integer
- *                     remaining_points:
- *                       type: integer
- *               example:
- *                 success: true
- *                 message: "Đổi điểm lấy Voucher thành công"
- *                 data:
- *                   voucher_code: "LOYALTY200"
- *                   points_deducted: 200
- *                   remaining_points: 300
  *       400:
  *         description: Không đủ điểm hoặc đã sở hữu voucher này
  */

@@ -135,20 +135,6 @@ router.put('/admin/shippers/:shipper_id/location', requireAuth, requireAdmin, up
  *     responses:
  *       200:
  *         description: Lấy thông tin cá nhân thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               example:
- *                 success: true
- *                 data:
- *                   profile:
- *                     user_id: 13
- *                     first_name: "Nguyễn Văn Giao"
- *                     last_name: "Nhanh"
- *                     shipper_code: "SHP013"
- *                     personal_address: "888 Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
- *                     working_city_id: "HCM"
  */
 router.get('/shipper/profile', requireAuth, requireShipper, getProfile);
 
