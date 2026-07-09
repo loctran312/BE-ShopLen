@@ -67,4 +67,17 @@ const updateAdminConfig = async (req, res) => {
     }
 };
 
-module.exports = { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig };
+const deleteAdminConfig = async (req, res) => {
+    try {
+        const id = req.params.id;
+        await spinRepository.deleteAdminConfig(id);
+        return res.json({ success: true, message: 'Xóa phần thưởng thành công' });
+    } catch (error) {
+        return res.status(error.statusCode || 500).json({ 
+            success: false, 
+            message: error.message || 'Lỗi máy chủ' 
+        });
+    }
+};
+
+module.exports = { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig, deleteAdminConfig };

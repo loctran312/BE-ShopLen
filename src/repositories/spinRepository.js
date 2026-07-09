@@ -128,16 +128,25 @@ const getAdminConfigs = async () => {
     return res.rows;
 };
 
-const checkTotalProbability = async (client, excludeId = null, newProb) => {
-    let query = `SELECT COALESCE(SUM(ty_le_thang), 0) AS total FROM cau_hinh_qua_quay WHERE trang_thai = 'active'`;
-    let params = [];
+const checkTotalProbability = async (client, excludeId = null, newProbability = 0) => {
+    let query = `SELECT SUM(ty_le_thang) AS total FROM cau_hinh_qua_quay WHERE trang_thai = 'active'`;
+    const params = [];
+
     if (excludeId) {
         query += ` AND cau_hinh_qua_quay_id != $1`;
         params.push(excludeId);
     }
+
     const res = await client.query(query, params);
-    const total = Number(res.rows[0].total) + Number(newProb);
-    if (total > 100) throw { statusCode: 400, message: `Lỗi: Tổng tỷ lệ thắng vượt quá 100% (Hiện tại sẽ là ${total}%)` };
+    const currentTotal = Number(res.rows[0].total) || 0;
+    const addedProbability = Number(newProbability);
+
+    if (currentTotal + addedProbability > 100) {
+        throw { 
+            statusCode: 400, 
+            message: `Tổng tỷ lệ thắng của các phần thưởng đang hoạt động (active) không được vượt quá 100%. Đang dùng: ${currentTotal}%, Bạn muốn thêm: ${addedProbability}%.` 
+        };
+    }
 };
 
 const createAdminConfig = async (payload) => {
@@ -205,4 +214,25 @@ const updateAdminConfig = async (id, payload) => {
     }
 };
 
-module.exports = { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig };
+const deleteAdminConfig = async (id) => {
+    try {
+        const res = await pool.query(
+            `DELETE FROM cau_hinh_qua_quay WHERE cau_hinh_qua_quay_id = $1 RETURNING cau_hinh_qua_quay_id`, 
+            [id]
+        );
+        if (res.rowCount === 0) {
+            throw { statusCode: 404, message: 'Cấu hình phần thưởng không tồn tại' };
+        }
+        return true;
+    } catch (error) {
+        if (error.code === '23503') {
+            throw { 
+                statusCode: 400, 
+                message: 'Không thể xóa phần thưởng này vì đã có người quay trúng. Vui lòng chuyển trạng thái sang Tạm ẩn (inactive).' 
+            };
+        }
+        throw error;
+    }
+};
+
+module.exports = { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig, deleteAdminConfig };

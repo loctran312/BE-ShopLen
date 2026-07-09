@@ -1,6 +1,6 @@
 const express = require('express');
 const { requireAuth, requireAdmin } = require('../middlewares/authMiddleware');
-const { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig } = require('../controllers/spinController');
+const { getSpinInfo, playSpin, getSpinHistory, getAdminConfigs, createAdminConfig, addTurnsToAllUsers, updateAdminConfig, deleteAdminConfig } = require('../controllers/spinController');
 
 const router = express.Router();
 
@@ -42,7 +42,7 @@ router.post('/play', requireAuth, playSpin);
  * @swagger
  * /spin/history:
  *   get:
- *     summary: Lịch sử quay thưởng của cá nhân
+ *     summary: Xem lịch sử quay thưởng cá nhân
  *     tags: [Spins]
  *     security:
  *       - bearerAuth: []
@@ -51,15 +51,15 @@ router.post('/play', requireAuth, playSpin);
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
+ *         default: 1
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 10
+ *         default: 10
  *     responses:
  *       200:
- *         description: Lấy danh sách lịch sử thành công
+ *         description: Lấy lịch sử thành công
  */
 router.get('/history', requireAuth, getSpinHistory);
 
@@ -75,7 +75,7 @@ router.get('/history', requireAuth, getSpinHistory);
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Lấy danh sách cấu hình thành công
+ *         description: Lấy danh sách thành công
  */
 router.get('/admin/configs', requireAuth, requireAdmin, getAdminConfigs);
 
@@ -83,8 +83,8 @@ router.get('/admin/configs', requireAuth, requireAdmin, getAdminConfigs);
  * @swagger
  * /spin/admin/configs:
  *   post:
- *     summary: Thêm phần thưởng mới vào Vòng quay - ADMIN
- *     description: Tự động kiểm tra để đảm bảo tổng tỷ lệ thắng của toàn hệ thống không vượt quá 100%.
+ *     summary: Tạo cấu hình phần thưởng mới - ADMIN
+ *     description: Tổng tỷ lệ thắng của các ô active không được vượt quá 100%.
  *     tags: [Spins]
  *     security:
  *       - bearerAuth: []
@@ -94,17 +94,15 @@ router.get('/admin/configs', requireAuth, requireAdmin, getAdminConfigs);
  *         application/json:
  *           schema:
  *             type: object
- *     example:
- *       loai_qua: "voucher"
- *       gia_tri: 2  # ID của voucher trong bảng phieu_giam_gia, hoặc số điểm thưởng
- *       ty_le_thang: 15.5
- *       so_luong_con_lai: 100
- *       trang_thai: "active"
+ *             example:
+ *               loai_qua: "voucher"
+ *               gia_tri: "50000"
+ *               ty_le_thang: 5.5
+ *               so_luong_con_lai: 50
+ *               trang_thai: "active"
  *     responses:
  *       201:
- *         description: Thêm cấu hình thành công
- *       400:
- *         description: Tổng tỷ lệ thắng đã vượt mức 100%
+ *         description: Tạo cấu hình thành công
  */
 router.post('/admin/configs', requireAuth, requireAdmin, createAdminConfig);
 
@@ -135,20 +133,20 @@ router.post('/admin/add-turns', requireAuth, requireAdmin, addTurnsToAllUsers);
  *     parameters:
  *       - in: path
  *         name: id
+ *         description: ID của cấu hình quà tặng
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID của cấu hình quà tặng
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *     example:
- *       ty_le_thang: 25.0
- *       so_luong_con_lai: 50
- *       trang_thai: "active"
+ *             example:
+ *               ty_le_thang: 25.0
+ *               so_luong_con_lai: 200
+ *               trang_thai: "active"
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -156,5 +154,31 @@ router.post('/admin/add-turns', requireAuth, requireAdmin, addTurnsToAllUsers);
  *         description: Tổng tỷ lệ thắng đã vượt mức 100%
  */
 router.put('/admin/configs/:id', requireAuth, requireAdmin, updateAdminConfig);
+
+/**
+ * @swagger
+ * /spin/admin/configs/{id}:
+ *   delete:
+ *     summary: Xóa cấu hình phần thưởng - ADMIN
+ *     description: Hệ thống sẽ chặn lệnh xóa nếu phần thưởng này đã có người quay trúng để bảo vệ lịch sử. Lúc đó chỉ có thể dùng lệnh Cập nhật để đưa về inactive.
+ *     tags: [Spins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         description: ID của cấu hình quà tặng
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ *       400:
+ *         description: Báo lỗi dính dữ liệu lịch sử
+ *       404:
+ *         description: Không tìm thấy phần thưởng
+ */
+router.delete('/admin/configs/:id', requireAuth, requireAdmin, deleteAdminConfig);
 
 module.exports = router;
