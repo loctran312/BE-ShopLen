@@ -96,13 +96,13 @@ router.get('/admin/configs', requireAuth, requireAdmin, getAdminConfigs);
  *             type: object
  *             example:
  *               loai_qua: "voucher"
- *               gia_tri: "50000"
+ *               gia_tri: 1
  *               ty_le_thang: 5.5
  *               so_luong_con_lai: 50
  *               trang_thai: "active"
  *     responses:
  *       201:
- *         description: Tạo cấu hình thành công
+ *         description: Tạo cấu hình thành công. Nếu loai_qua là 'voucher', điền ID của voucher vào field gia_tri. Nếu là 'point', điền số điểm. so_luong_con_lai = 0 thì phần thưởng sẽ không xuất hiện trên vòng quay. Nếu trang_thai = 'inactive' thì phần thưởng sẽ không xuất hiện trên vòng quay.
  */
 router.post('/admin/configs', requireAuth, requireAdmin, createAdminConfig);
 

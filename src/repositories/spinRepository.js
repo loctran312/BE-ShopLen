@@ -11,9 +11,11 @@ const getSpinInfo = async (userId) => {
     const turnRes = await pool.query(`SELECT so_luot FROM luot_quay WHERE nguoi_dung_id = $1`, [userId]);
     
     const rewardsRes = await pool.query(
-        `SELECT cau_hinh_qua_quay_id AS reward_id, loai_qua AS type, gia_tri AS value, so_luong_con_lai AS remaining 
-         FROM cau_hinh_qua_quay 
-         WHERE trang_thai = 'active'`
+        `SELECT c.cau_hinh_qua_quay_id AS reward_id, c.loai_qua AS type, c.gia_tri AS value, c.so_luong_con_lai AS remaining,
+                p.ma AS voucher_code, p.ten_phieu AS voucher_name
+         FROM cau_hinh_qua_quay c
+         LEFT JOIN phieu_giam_gia p ON c.loai_qua = 'voucher' AND c.gia_tri = p.phieu_giam_gia_id
+         WHERE c.trang_thai = 'active'`
     );
 
     return {
@@ -38,21 +40,35 @@ const playSpin = async (userId) => {
              FOR UPDATE`
         );
 
+        const ownedVouchersRes = await client.query(`SELECT phieu_giam_gia_id FROM nguoi_dung_phieu_giam_gia WHERE nguoi_dung_id = $1`, [userId]);
+        const ownedVouchers = new Set(ownedVouchersRes.rows.map(r => r.phieu_giam_gia_id));
+
+        const noneReward = rewardsRes.rows.find(r => r.loai_qua === 'none');
+
+        for (let reward of rewardsRes.rows) {
+            if (reward.loai_qua === 'voucher' && ownedVouchers.has(reward.gia_tri)) {
+                if (noneReward) {
+                    noneReward.ty_le_thang = Number(noneReward.ty_le_thang) + Number(reward.ty_le_thang);
+                }
+                reward.ty_le_thang = 0; 
+            }
+        }
+
         let rand = Math.random() * 100;
         let cumulativeProb = 0;
         let wonReward = null;
 
         for (const reward of rewardsRes.rows) {
             cumulativeProb += Number(reward.ty_le_thang);
-            if (rand <= cumulativeProb) {
+            if (rand <= cumulativeProb && Number(reward.ty_le_thang) > 0) {
                 wonReward = reward;
                 break;
             }
         }
 
         if (!wonReward) {
-            wonReward = rewardsRes.rows.find(r => r.loai_qua === 'none');
-            if (!wonReward) throw { statusCode: 500, message: 'Hệ thống phần thưởng chưa được cấu hình chuẩn' };
+            wonReward = noneReward;
+            if (!wonReward) throw { statusCode: 500, message: 'Hệ thống phần thưởng chưa được cấu hình chuẩn (Thiếu ô none)' };
         }
 
         await client.query(`UPDATE luot_quay SET so_luot = so_luot - 1 WHERE nguoi_dung_id = $1`, [userId]);
@@ -88,6 +104,12 @@ const playSpin = async (userId) => {
             if (vcRes.rows.length > 0) {
                 rewardDetail.message = `Chúc mừng bạn trúng Voucher: ${vcRes.rows[0].ten_phieu}`;
                 rewardDetail.voucher_code = vcRes.rows[0].ma;
+                
+                await client.query(
+                    `INSERT INTO nguoi_dung_phieu_giam_gia (nguoi_dung_id, phieu_giam_gia_id, so_lan_su_dung) VALUES ($1, $2, 0)
+                     ON CONFLICT DO NOTHING`, 
+                    [userId, wonReward.gia_tri]
+                );
             }
         } else {
             rewardDetail.message = `Chúc bạn may mắn lần sau!`;
@@ -124,7 +146,12 @@ const getSpinHistory = async (userId, { page, limit }) => {
 // --- ADMIN API ---
 
 const getAdminConfigs = async () => {
-    const res = await pool.query(`SELECT * FROM cau_hinh_qua_quay ORDER BY cau_hinh_qua_quay_id ASC`);
+    const res = await pool.query(`
+        SELECT c.*, p.ma AS voucher_code, p.ten_phieu AS voucher_name 
+        FROM cau_hinh_qua_quay c
+        LEFT JOIN phieu_giam_gia p ON c.loai_qua = 'voucher' AND c.gia_tri = p.phieu_giam_gia_id
+        ORDER BY c.cau_hinh_qua_quay_id ASC
+    `);
     return res.rows;
 };
 
