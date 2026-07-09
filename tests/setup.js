@@ -1,0 +1,26 @@
+// Set test environment variables before any modules are loaded
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test_secret_key_for_jest_only';
+process.env.JWT_EXPIRES_IN = '1d';
+process.env.JWT_REFRESH_EXPIRES_IN = '7d';
+process.env.PORT = 3001;
+process.env.FRONTEND_URL = 'http://localhost:5173';
+process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';
+process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3001/api/auth/google/callback';
+process.env.GOOGLE_FRONTEND_REDIRECT_URI = 'http://localhost:5173/auth/login';
+process.env.GOOGLE_OAUTH_STATE_EXPIRES_IN = '10m';
+process.env.PASSWORD_RESET_OTP_EXPIRY_MINUTES = '10';
+process.env.PASSWORD_RESET_SESSION_EXPIRES_IN = '15m';
+process.env.IMGBB_API_KEY = 'test-imgbb-key';
+process.env.RESEND_API_KEY = 'test-resend-key';
+process.env.RESEND_FROM = 'ShopLen <onboarding@resend.dev>';
+process.env.MOMO_PARTNER_CODE = 'MOMO';
+process.env.MOMO_ACCESS_KEY = 'test-momo-access-key';
+process.env.MOMO_SECRET_KEY = 'test-momo-secret-key';
+process.env.MOMO_REDIRECT_URL = 'http://localhost:3001/api/payment/momo/return';
+process.env.MOMO_IPN_URL = 'http://localhost:3001/api/payment/momo/ipn';
+process.env.MOMO_API_ENDPOINT = 'https://test-payment.momo.vn/v2/gateway/api/create';
+process.env.MOMO_REFUND_ENDPOINT = 'https://test-payment.momo.vn/v2/gateway/api/refund';
+process.env.MOMO_SUCCESS_REDIRECT_URI = 'http://localhost:5173/payment/success';
+process.env.MOMO_FAILED_REDIRECT_URI = 'http://localhost:5173/payment/failed';
