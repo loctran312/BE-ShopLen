@@ -341,6 +341,28 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
 
             await client.query(`UPDATE don_hang SET trang_thai = 'cancelled' WHERE don_hang_id = $1`, [orderId]);
             await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'cancelled')`, [orderId]);
+
+            const itemsRes = await client.query(`
+                SELECT ct.bien_the_id, ct.so_luong, sp.loai_san_pham_id 
+                FROM chi_tiet_don_hang ct
+                JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+                JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+                WHERE ct.don_hang_id = $1
+            `, [orderId]);
+
+            for (const item of itemsRes.rows) {
+                if (item.loai_san_pham_id !== 3) {
+                    const stockRes = await client.query(
+                        `UPDATE ton_kho SET so_luong_ton = so_luong_ton + $1 WHERE bien_the_id = $2 RETURNING so_luong_ton`, 
+                        [item.so_luong, item.bien_the_id]
+                    );
+                    await client.query(
+                        `INSERT INTO lich_su_ton_kho (bien_the_id, so_luong_thay_doi, so_luong_sau_khi_doi, loai_giao_dich, tham_chieu_id, ghi_chu, nguoi_thuc_hien) 
+                         VALUES ($1, $2, $3, 'hoan_tra', $4, 'Giao hàng thất bại (Hoàn tồn kho)', $5)`,
+                        [item.bien_the_id, item.so_luong, stockRes.rows[0].so_luong_ton, orderId, shipperId]
+                    );
+                }
+            }
         } else {
             throw { statusCode: 400, message: 'Trạng thái không hợp lệ (chỉ nhận success hoặc failed)' };
         }
