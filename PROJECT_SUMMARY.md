@@ -377,6 +377,7 @@ All endpoints are prefixed with `/api`.
 | POST | `/admin/configs` | Admin | Add reward |
 | POST | `/admin/add-turns` | Admin | Add turns to all users |
 | PUT | `/admin/configs/:id` | Admin | Update config |
+| DELETE | `/admin/configs/:id` | Admin | Delete config |
 
 ### 6.13. Vouchers (`/api/vouchers`)
 
