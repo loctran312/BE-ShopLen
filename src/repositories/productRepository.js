@@ -400,71 +400,90 @@ const getAllProductTypes = async () => pool.query('SELECT loai_san_pham_id AS ty
 const getAllProducts = async ({ page, limit }) => buildProductsList({ page, limit });
 const getProductDetail = async (productId) => buildProductDetail(productId);
 
-const createProduct = async (payload) => {
+const createProduct = async (payloads) => {
+    if (!Array.isArray(payloads) || payloads.length === 0) {
+        const error = new Error('Dữ liệu đầu vào phải là một mảng các sản phẩm và không được rỗng');
+        error.statusCode = 400;
+        throw error;
+    }
+
     const client = await pool.connect();
     try {
-        const typeId = normalizeCategoryOrTypeId(payload.type_id, 'type_id');
-        const categoryId = normalizeCategoryOrTypeId(payload.category_id, 'category_id');
-        const productName = normalizeText(payload.product_name);
-        const description = normalizeText(payload.description) || null;
-        const productStatus = validateProductStatus(payload.product_status);
-
-        if (!productName) {
-            const error = new Error('product_name không được để trống');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (!Array.isArray(payload.variants) || payload.variants.length === 0) {
-            const error = new Error('variants phải là một mảng không rỗng');
-            error.statusCode = 400;
-            throw error;
-        }
-
-        const [typeExists, categoryExists] = await Promise.all([getProductTypeById(typeId), getCategoryById(categoryId)]);
-        if (typeExists.rows.length === 0) { const error = new Error('type_id không tồn tại'); error.statusCode = 400; throw error; }
-        if (categoryExists.rows.length === 0) { const error = new Error('category_id không tồn tại'); error.statusCode = 400; throw error; }
-
-        const normalizedVariants = payload.variants.map((variant, index) => normalizeVariantPayload(variant, index));
-        const preparedVariants = [];
-
-        for (let index = 0; index < normalizedVariants.length; index += 1) {
-            const variant = normalizedVariants[index];
-            const baseSlug = variant.slug || buildVariantBaseSlug(productName, variant);
-            const resolvedSlug = await generateUniqueVariantSlug(baseSlug);
-            const uploadedImages = await uploadVariantImages(variant.images, resolvedSlug, index);
-
-            preparedVariants.push({
-                ...variant, slug: resolvedSlug, images: uploadedImages, stock_quantity: variant.stock_quantity === null ? 0 : variant.stock_quantity,
-            });
-        }
-
         await client.query('BEGIN');
-        const productResult = await client.query(
-            `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham) VALUES ($1, $2, $3, $4, $5) RETURNING san_pham_id AS product_id`,
-            [typeId, categoryId, productName, description, productStatus]
-        );
-        const productId = productResult.rows[0].product_id;
+        const createdProductIds = [];
 
-        for (const variant of preparedVariants) {
-            const sku = generateSKU('SP', productId);
-            const variantResult = await client.query(
-                `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES ($1, $2, $3, $4, $5, $6) RETURNING bien_the_id`,
-                [productId, sku, variant.slug, variant.price, variant.color, variant.size]
+        for (let i = 0; i < payloads.length; i++) {
+            const payload = payloads[i];
+            const typeId = normalizeCategoryOrTypeId(payload.type_id, `Sản phẩm thứ ${i + 1}: type_id`);
+            const categoryId = normalizeCategoryOrTypeId(payload.category_id, `Sản phẩm thứ ${i + 1}: category_id`);
+            const productName = normalizeText(payload.product_name);
+            const description = normalizeText(payload.description) || null;
+            const productStatus = validateProductStatus(payload.product_status);
+
+            if (!productName) {
+                const error = new Error(`Sản phẩm thứ ${i + 1}: product_name không được để trống`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            if (!Array.isArray(payload.variants) || payload.variants.length === 0) {
+                const error = new Error(`Sản phẩm thứ ${i + 1}: variants phải là một mảng không rỗng`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            const [typeExists, categoryExists] = await Promise.all([getProductTypeById(typeId), getCategoryById(categoryId)]);
+            if (typeExists.rows.length === 0) { const error = new Error(`Sản phẩm thứ ${i + 1}: type_id không tồn tại`); error.statusCode = 400; throw error; }
+            if (categoryExists.rows.length === 0) { const error = new Error(`Sản phẩm thứ ${i + 1}: category_id không tồn tại`); error.statusCode = 400; throw error; }
+
+            const normalizedVariants = payload.variants.map((variant, index) => normalizeVariantPayload(variant, index));
+            const preparedVariants = [];
+
+            for (let index = 0; index < normalizedVariants.length; index += 1) {
+                const variant = normalizedVariants[index];
+                const baseSlug = variant.slug || buildVariantBaseSlug(productName, variant);
+                const resolvedSlug = await generateUniqueVariantSlug(baseSlug);
+                const uploadedImages = await uploadVariantImages(variant.images, `${resolvedSlug}-P${i}`, index);
+
+                preparedVariants.push({
+                    ...variant, slug: resolvedSlug, images: uploadedImages, stock_quantity: variant.stock_quantity === null ? 0 : variant.stock_quantity,
+                });
+            }
+
+            const productResult = await client.query(
+                `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham) VALUES ($1, $2, $3, $4, $5) RETURNING san_pham_id AS product_id`,
+                [typeId, categoryId, productName, description, productStatus]
             );
-            const createdVariant = variantResult.rows[0];
-            await upsertVariantInventory(client, createdVariant.bien_the_id, variant.stock_quantity);
+            const productId = productResult.rows[0].product_id;
+            createdProductIds.push(productId);
 
-            if (Array.isArray(variant.images) && variant.images.length > 0) {
-                await replaceVariantImages(client, createdVariant.bien_the_id, variant.images);
+            for (const variant of preparedVariants) {
+                const sku = generateSKU('SP', productId);
+                const variantResult = await client.query(
+                    `INSERT INTO bien_the_san_pham (san_pham_id, sku, slug, gia, mau_sac, kich_co) VALUES ($1, $2, $3, $4, $5, $6) RETURNING bien_the_id`,
+                    [productId, sku, variant.slug, variant.price, variant.color, variant.size]
+                );
+                const createdVariant = variantResult.rows[0];
+                await upsertVariantInventory(client, createdVariant.bien_the_id, variant.stock_quantity);
+
+                if (Array.isArray(variant.images) && variant.images.length > 0) {
+                    await replaceVariantImages(client, createdVariant.bien_the_id, variant.images);
+                }
             }
         }
+
         await client.query('COMMIT');
-        return await buildProductDetail(productId);
+        
+        const finalProducts = [];
+        for (const id of createdProductIds) {
+            finalProducts.push(await buildProductDetail(id));
+        }
+        return finalProducts;
+
     } catch (error) {
         await client.query('ROLLBACK').catch(() => {});
         if (!error.statusCode) error.statusCode = error.code === '23505' ? 400 : 400;
-        if (error.code === '23505') error.message = 'SKU hoặc slug đã tồn tại';
+        if (error.code === '23505') error.message = 'SKU hoặc slug đã tồn tại trong quá trình tạo hàng loạt';
         throw error;
     } finally {
         client.release();

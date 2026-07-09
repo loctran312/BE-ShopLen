@@ -83,13 +83,15 @@ const getProductDetail = async (req, res) => {
 
 const createProduct = async (req, res) => {
 	try {
-		const product = await productRepository.createProduct(req.body);
+        const payload = Array.isArray(req.body) ? req.body : [req.body];
+
+		const products = await productRepository.createProduct(payload);
 
 		return res.status(201).json({
 			success: true,
-			message: 'Tạo sản phẩm thành công',
+			message: `Tạo thành công ${products.length} sản phẩm`,
 			data: {
-				product,
+				products,
 			},
 		});
 	} catch (error) {

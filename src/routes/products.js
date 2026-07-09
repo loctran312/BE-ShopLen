@@ -54,7 +54,7 @@ router.get('/types', getAllProductTypes);
  * @swagger
  * /products:
  *   post:
- *     summary: Tạo sản phẩm mới kèm biến thể và ảnh - ADMIN
+ *     summary: Tạo hàng loạt sản phẩm kèm biến thể và ảnh - ADMIN
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -63,24 +63,53 @@ router.get('/types', getAllProductTypes);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
+ *             type: array
+ *             items:
+ *               type: object
+ *               properties:
+ *                 type_id:
+ *                   type: integer
+ *                 category_id:
+ *                   type: integer
+ *                 product_name:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 product_status:
+ *                   type: string
+ *                 variants:
+ *                   type: array
+ *                   items:
+ *                     type: object
  *             example:
- *               type_id: 1
- *               category_id: 2
- *               product_name: "Cuộn len Cotton Milk 50g"
- *               description: "Len sợi mềm mại, an toàn cho da em bé."
- *               product_status: "active"
- *               variants:
- *                 - sku: "LEN-CM-RED-50G"
- *                   price: 15000
- *                   color: "Đỏ"
- *                   size: "50g"
- *               images:
- *                 - image_url: "https://example.com/images/len-red.jpg"
- *               sort_order: 1
+ *               - type_id: 1
+ *                 category_id: 2
+ *                 product_name: "Cuộn len Cotton Milk 50g"
+ *                 description: "Len sợi mềm mại, an toàn cho da em bé."
+ *                 product_status: "active"
+ *                 variants:
+ *                   - sku: "LEN-CM-RED-50G"
+ *                     price: 15000
+ *                     color: "Đỏ"
+ *                     size: "50g"
+ *                     stock_quantity: 100
+ *                     images:
+ *                       - image_url: "https://example.com/images/len-red.jpg"
+ *                         sort_order: 1
+ *               - type_id: 1
+ *                 category_id: 3
+ *                 product_name: "Kim móc len 2 đầu"
+ *                 description: "Kim móc hợp kim nhôm"
+ *                 product_status: "active"
+ *                 variants:
+ *                   - price: 25000
+ *                     color: "Vàng"
+ *                     size: "3.0/4.0mm"
+ *                     stock_quantity: 50
+ *                 images: []
  *     responses:
  *       201:
- *         description: Tạo sản phẩm thành công
+ *         description: Tạo danh sách sản phẩm thành công
  */
 router.post('/', requireAdmin, createProduct);
 
