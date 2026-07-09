@@ -181,10 +181,18 @@ const markPasswordResetTokenUsed = async (client, tokenId) => client.query(
   [tokenId]
 );
 
-const incrementResetTokenAttempts = async (client, tokenId) => client.query(
-  'UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1',
-  [tokenId]
-);
+const incrementResetTokenAttempts = async (client, tokenId) => {
+  const res = await client.query(
+    'UPDATE ma_dat_lai_mat_khau SET so_lan_thu = so_lan_thu + 1 WHERE ma_id = $1 RETURNING so_lan_thu',
+    [tokenId]
+  );
+  
+  if (res.rows[0].so_lan_thu >= 5) {
+     await client.query('UPDATE ma_dat_lai_mat_khau SET het_han_luc = NOW() WHERE ma_id = $1', [tokenId]);
+     throw { statusCode: 403, message: 'Bạn đã nhập sai quá 5 lần. Mã OTP này đã bị hủy để bảo mật.' };
+  }
+  return res.rows[0];
+};
 
 module.exports = {
   getUserByEmail,
