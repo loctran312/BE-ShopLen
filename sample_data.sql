@@ -3,23 +3,6 @@
 -- =========================
 
 -- ----------------------------------------
--- 0. DỮ LIỆU ĐỊA CHÍNH (TINH_THANH & PHUONG_XA)
--- ----------------------------------------
-INSERT INTO tinh_thanh (ma_tinh, ten_tinh) VALUES 
-('HCM', 'Hồ Chí Minh'), 
-('HN', 'Hà Nội'), 
-('DN', 'Đà Nẵng'), 
-('HP', 'Hải Phòng'), 
-('CT', 'Cần Thơ');
-
-INSERT INTO phuong_xa (phuong_xa_id, ten_phuong_xa, ma_tinh) VALUES 
-(1, 'Phường Bến Nghé', 'HCM'), (2, 'Phường Bến Thành', 'HCM'), (3, 'Phường Đa Kao', 'HCM'), (4, 'Phường Phạm Ngũ Lão', 'HCM'), (5, 'Phường Tân Định', 'HCM'),
-(6, 'Phường Tràng Tiền', 'HN'), (7, 'Phường Hàng Bài', 'HN'), (8, 'Phường Hàng Bạc', 'HN'), (9, 'Phường Hàng Bông', 'HN'), (10, 'Phường Cửa Đông', 'HN'),
-(11, 'Phường Hải Châu I', 'DN'), (12, 'Phường Hải Châu II', 'DN'), (13, 'Phường Thạch Thang', 'DN'), (14, 'Phường Thanh Bình', 'DN'), (15, 'Phường Thuận Phước', 'DN'),
-(16, 'Phường Minh Khai', 'HP'), (17, 'Phường Hoàng Văn Thụ', 'HP'), (18, 'Phường Quang Trung', 'HP'), (19, 'Phường Phan Bội Châu', 'HP'), (20, 'Phường Phạm Hồng Thái', 'HP'),
-(21, 'Phường Tân An', 'CT'), (22, 'Phường An Lạc', 'CT'), (23, 'Phường An Cư', 'CT'), (24, 'Phường An Nghiệp', 'CT'), (25, 'Phường An Hòa', 'CT');
-
--- ----------------------------------------
 -- 1. BẢNG: NGUOI_DUNG & PHỤ THUỘC (Tài khoản)
 -- ----------------------------------------
 -- Hệ thống Admin cũ
@@ -41,7 +24,7 @@ INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho,
 (12, 'khachhang11@gmail.com', 'user11', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Đỗ', 'Hoàng Việt', '0989012345', 'customer', 'https://images.unsplash.com/photo-1489980508314-941910ded1f4?w=150'),
 (15, 'khachhang12@gmail.com', 'user12', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Tống', 'Khánh Linh', '0912112233', 'customer', 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150');
 
--- Tài khoản Shipper (Mật khẩu mặc định: Password@123)
+-- Tài khoản Shipper (Mật khẩu mặc định: Admin@123)
 INSERT INTO nguoi_dung (nguoi_dung_id, thu_dien_tu, ten_dang_nhap, mat_khau, ho, ten, so_dien_thoai, vai_tro, trang_thai, avatar) VALUES 
 (13, 'shipperhcm@gmail.com', 'shipperhcm', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Nguyễn', 'Văn Giao', '0988888881', 'shipper', 'active', 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150'),
 (14, 'shipperhn@gmail.com', 'shipperhn', '$2b$10$AJH0x9q4Cr.2s3CVMCEBquSg83rfHN0KF8fbBlbrSglctnnyKhsVu', 'Trần', 'Giao Hàng', '0988888882', 'shipper', 'active', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150');
