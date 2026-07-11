@@ -509,11 +509,15 @@ const updateProduct = async (productId, payload) => {
         if (typeExists.rows.length === 0) { const error = new Error('type_id không tồn tại'); error.statusCode = 400; throw error; }
         if (categoryExists.rows.length === 0) { const error = new Error('category_id không tồn tại'); error.statusCode = 400; throw error; }
 
-        const hasVariantsPayload = Array.isArray(payload.variants);
+        const hasVariantsPayload = payload.variants !== undefined;
         let normalizedVariants = [];
 
         if (hasVariantsPayload) {
-            if (payload.variants.length === 0) { const error = new Error('variants không được để trống khi gửi cập nhật'); error.statusCode = 400; throw error; }
+            if (!Array.isArray(payload.variants) || payload.variants.length === 0) {
+                const error = new Error('variants phải là một mảng không rỗng. Ít nhất phải giữ lại 1 biến thể cho sản phẩm.');
+                error.statusCode = 400; 
+                throw error; 
+            }
             normalizedVariants = payload.variants.map((variant, index) => normalizeVariantPayload(variant, index));
         }
 
@@ -526,9 +530,23 @@ const updateProduct = async (productId, payload) => {
         );
 
         if (hasVariantsPayload) {
+            const existingVariantsRes = await client.query('SELECT bien_the_id FROM bien_the_san_pham WHERE san_pham_id = $1', [productId]);
+            const existingVariantIds = existingVariantsRes.rows.map(r => r.bien_the_id);
+            
+            const incomingVariantIds = preparedVariants.filter(v => v.variant_id !== null).map(v => v.variant_id);
+            
+            const variantsToDelete = existingVariantIds.filter(id => !incomingVariantIds.includes(id));
+
+            if (variantsToDelete.length > 0) {
+                await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM gio_hang WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM bien_the_san_pham WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+            }
+
             for (const variant of preparedVariants) {
                 if (variant.variant_id) {
-                    // Lấy ra GIÁ CŨ và TỒN KHO CŨ để so sánh
                     const currentVariantResult = await client.query(
                         `SELECT bt.bien_the_id AS variant_id, bt.san_pham_id AS product_id, bt.sku, bt.slug, bt.gia AS price, COALESCE(tk.so_luong_ton, 0) AS stock_quantity
                          FROM bien_the_san_pham bt
@@ -556,7 +574,6 @@ const updateProduct = async (productId, payload) => {
 
                     if (uploadedImages !== null) await replaceVariantImages(client, variant.variant_id, uploadedImages);
 
-                    // KIỂM TRA ĐIỀU KIỆN ĐỂ TẠO THÔNG BÁO WISHLIST
                     const oldPrice = Number(currentVariant.price);
                     const newPrice = Number(variant.price);
                     if (newPrice < oldPrice) {
