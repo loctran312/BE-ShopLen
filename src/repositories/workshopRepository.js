@@ -32,6 +32,23 @@ const normalizeTime = (value) => {
     if (!time) return '';
     return time.length === 5 ? `${time}:00` : time;
 };
+const isValidTimeString = (value) => /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(normalizeText(value));
+const validateSessionSchedule = (session, index) => {
+    if (!session.start_time || !session.end_time) {
+        throw { statusCode: 400, message: `Ca học thứ ${index + 1} phải có start_time và end_time hợp lệ!` };
+    }
+
+    const startTime = normalizeTime(session.start_time);
+    const endTime = normalizeTime(session.end_time);
+
+    if (!isValidTimeString(startTime) || !isValidTimeString(endTime)) {
+        throw { statusCode: 400, message: `Ca học thứ ${index + 1} có định dạng start_time hoặc end_time không hợp lệ!` };
+    }
+
+    if (endTime <= startTime) {
+        throw { statusCode: 400, message: `Ca học thứ ${index + 1} phải có end_time lớn hơn start_time!` };
+    }
+};
 const getSessionStartDateTime = (startDate, startTime) => `${formatVietnamDate(startDate)} ${normalizeTime(startTime)}`;
 const getSessionEndDateTime = (startDate, endTime) => `${formatVietnamDate(startDate)} ${normalizeTime(endTime)}`;
 const isSessionStarted = (startDate, startTime) => formatVietnamDateTime(new Date()) >= getSessionStartDateTime(startDate, startTime);
@@ -349,7 +366,10 @@ const createWorkshop = async (payload) => {
         );
         const workshopId = workshopRes.rows[0].hoi_thao_id;
 
-        for (const session of sessions) {
+        for (let index = 0; index < sessions.length; index++) {
+            const session = sessions[index];
+            validateSessionSchedule(session, index);
+
             const sku = generateSKU('WS', productId);
             const baseSlug = slugifyText(`${title} ${session.session_name}`);
             const slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
@@ -420,7 +440,9 @@ const updateWorkshop = async (workshopId, payload) => {
                 await client.query('DELETE FROM bien_the_san_pham WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
             }
 
-            for (const session of sessions) {
+            for (let index = 0; index < sessions.length; index++) {
+                const session = sessions[index];
+                validateSessionSchedule(session, index);
                 const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
 
                 if (session.variant_id) {
