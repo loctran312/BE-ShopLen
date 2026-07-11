@@ -49,6 +49,7 @@ const validateSessionSchedule = (session, index) => {
         throw { statusCode: 400, message: `Ca học thứ ${index + 1} phải có end_time lớn hơn start_time!` };
     }
 };
+const getRequestedSessionValue = (sessionValue, existingValue) => (sessionValue === undefined || sessionValue === null ? existingValue : sessionValue);
 const getSessionStartDateTime = (startDate, startTime) => `${formatVietnamDate(startDate)} ${normalizeTime(startTime)}`;
 const getSessionEndDateTime = (startDate, endTime) => `${formatVietnamDate(startDate)} ${normalizeTime(endTime)}`;
 const isSessionStarted = (startDate, startTime) => formatVietnamDateTime(new Date()) >= getSessionStartDateTime(startDate, startTime);
@@ -447,7 +448,11 @@ const updateWorkshop = async (workshopId, payload) => {
 
                 if (session.variant_id) {
                     const checkOwnership = await client.query(
-                        `SELECT 1 FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
+                        `SELECT htb.ngay_bat_dau, htb.gio_bat_dau, bt.gia AS price, tk.so_luong_ton AS capacity
+                         FROM hoi_thao_bien_the htb
+                         JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id
+                         LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
+                         WHERE htb.hoi_thao_id = $1 AND htb.bien_the_id = $2`,
                         [workshopId, session.variant_id]
                     );
 
@@ -455,21 +460,32 @@ const updateWorkshop = async (workshopId, payload) => {
                         throw { statusCode: 400, message: `Ca học (variant_id: ${session.variant_id}) không thuộc về Workshop này!` };
                     }
 
-                    const existingSessionRes = await client.query(
-                        `SELECT ngay_bat_dau, gio_bat_dau FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
-                        [workshopId, session.variant_id]
-                    );
-                    const existingSession = existingSessionRes.rows[0];
+                    const existingSession = checkOwnership.rows[0];
 
                     if (existingSession && isSessionStarted(existingSession.ngay_bat_dau, existingSession.gio_bat_dau)) {
-                        throw { statusCode: 400, message: 'Workshop đã diễn ra, không thể cập nhật ca học này!' };
+                        const requestedStartDate = session.start_date !== undefined ? formatVietnamDate(session.start_date) : formatVietnamDate(existingSession.ngay_bat_dau);
+                        const requestedStartTime = session.start_time !== undefined ? normalizeTime(session.start_time) : normalizeTime(existingSession.gio_bat_dau);
+                        const requestedPrice = Number(getRequestedSessionValue(session.price, existingSession.price));
+                        const requestedCapacity = Number(getRequestedSessionValue(session.total_capacity ?? session.capacity, existingSession.capacity));
+
+                        if (
+                            requestedStartDate !== formatVietnamDate(existingSession.ngay_bat_dau) ||
+                            requestedStartTime !== normalizeTime(existingSession.gio_bat_dau) ||
+                            requestedPrice !== Number(existingSession.price) ||
+                            requestedCapacity !== Number(existingSession.capacity)
+                        ) {
+                            throw { statusCode: 400, message: 'Workshop đang diễn ra chỉ được cập nhật các thông tin ngoài ngày diễn ra, thời gian bắt đầu, giá tiền và sức chứa!' };
+                        }
                     }
 
-                    await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
+                    const nextPrice = getRequestedSessionValue(session.price, existingSession.price);
+                    const nextCapacity = getRequestedSessionValue(session.total_capacity ?? session.capacity, existingSession.capacity);
+
+                    await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [nextPrice, session.session_name, session.variant_id]);
                     
                     await client.query(
                         `INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2) ON CONFLICT (bien_the_id) DO UPDATE SET so_luong_ton = EXCLUDED.so_luong_ton`, 
-                        [session.variant_id, sessionCapacity]
+                        [session.variant_id, nextCapacity]
                     );
                     
                     await client.query(
@@ -621,9 +637,9 @@ const getMyWorkshops = async (userId, { status, page, limit }) => {
         WHERE dh.nguoi_dung_id = $1 AND dh.trang_thai != 'cancelled' ${statusCondition}
         ORDER BY 
             CASE 
-                WHEN ${nowVietnam} < ${startDateTime} THEN 1 -- Sắp diễn ra xếp trên cùng
-                WHEN ${nowVietnam} > ${endDateTime} THEN 3 -- Đã diễn ra xếp cuối
-                ELSE 2 -- Đang diễn ra
+                WHEN ${nowVietnam} < ${startDateTime} THEN 1
+                WHEN ${nowVietnam} > ${endDateTime} THEN 3
+                ELSE 2
             END ASC,
             ${startDateTime} ASC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
