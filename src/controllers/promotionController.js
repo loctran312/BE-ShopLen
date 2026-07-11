@@ -77,7 +77,7 @@ const updatePromotion = async (req, res) => {
 
         const now = new Date();
         const isStarted = !current.start_date || new Date(current.start_date) <= now;
-        const isEnded = current.end_date && new Date(current.end_date) <= now;
+		const isEnded = current.end_date && new Date(current.end_date) < now;
 
         if (isEnded) {
             return res.status(400).json({ 
@@ -95,8 +95,8 @@ const updatePromotion = async (req, res) => {
                 value: current.value,
                 min_order_value: current.min_order_value,
                 start_date: current.start_date,
-                end_date: current.end_date,
-                status: current.status,
+				end_date: req.body.end_date !== undefined ? req.body.end_date : current.end_date,
+				status: req.body.status !== undefined ? req.body.status : current.status,
                 applicable_products: req.body.applicable_products !== undefined 
                     ? req.body.applicable_products 
                     : current.applicable_products
@@ -107,7 +107,7 @@ const updatePromotion = async (req, res) => {
         
         let message = 'Cập nhật khuyến mãi thành công';
         if (isStarted) {
-            message = 'Cập nhật danh sách sản phẩm thành công. (Các thông tin khác bị khóa do chương trình đang chạy)';
+			message = 'Cập nhật khuyến mãi thành công. (Chỉ cho phép đổi ngày kết thúc, trạng thái và danh sách sản phẩm khi chương trình đang chạy)';
         }
 
         return res.json({ success: true, message, data: { promotion } });
