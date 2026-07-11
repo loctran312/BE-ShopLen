@@ -162,7 +162,7 @@ CREATE TABLE hoi_thao_bien_the (
 );
 
 ALTER TABLE hoi_thao_bien_the ADD CONSTRAINT chk_hoi_thao_trang_thai CHECK (
-  trang_thai IN ('open','closed','cancelled')
+  trang_thai IN ('full', 'open','closed','cancelled')
 );
 
 -- =========================

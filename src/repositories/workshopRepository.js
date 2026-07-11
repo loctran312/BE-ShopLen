@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const { uploadImageToImgBB } = require('../utils/imgbb');
-
+const momoService = require('../services/momoService');
+const TIME_ZONE = 'Asia/Ho_Chi_Minh';
 const generateSKU = (prefix, id) => {
     const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
     return `${prefix}${id}-${randomStr}`;
@@ -8,9 +9,36 @@ const generateSKU = (prefix, id) => {
 const normalizeText = (value) => (value === undefined || value === null ? '' : String(value)).trim();
 const slugifyText = (value) => normalizeText(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
+const formatVietnamDate = (value) => new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+const formatVietnamDateTime = (value) => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    }).formatToParts(new Date(value)).reduce((acc, part) => {
+        if (part.type !== 'literal') acc[part.type] = part.value;
+        return acc;
+    }, {});
+
+    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+};
+const normalizeTime = (value) => {
+    const time = normalizeText(value);
+    if (!time) return '';
+    return time.length === 5 ? `${time}:00` : time;
+};
+const getSessionStartDateTime = (startDate, startTime) => `${formatVietnamDate(startDate)} ${normalizeTime(startTime)}`;
+const getSessionEndDateTime = (startDate, endTime) => `${formatVietnamDate(startDate)} ${normalizeTime(endTime)}`;
+const isSessionStarted = (startDate, startTime) => formatVietnamDateTime(new Date()) >= getSessionStartDateTime(startDate, startTime);
+
 const processWorkshopSessions = (sessions) => {
     const now = new Date(); 
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const nowVietnam = formatVietnamDateTime(now);
 
     return sessions.map(s => {
         const price = Number(s.price);
@@ -28,14 +56,16 @@ const processWorkshopSessions = (sessions) => {
             finalPrice = Math.max(0, finalPrice);
         }
 
-        let currentStatus = s.status;
-        const startDateString = new Date(s.start_date);
-        const startDate = new Date(startDateString.getFullYear(), startDateString.getMonth(), startDateString.getDate());
+        const startDateTime = getSessionStartDateTime(s.start_date, s.start_time);
+        const endDateTime = getSessionEndDateTime(s.start_date, s.end_time);
+        let currentStatus = 'open';
 
-        if (currentStatus === 'open' && today >= startDate) {
+        if (nowVietnam > endDateTime) {
+            currentStatus = 'closed';
+        } else if (nowVietnam >= startDateTime) {
             currentStatus = 'closed';
         }
-
+        
         return {
             variant_id: s.variant_id,
             sku: s.sku,
@@ -54,6 +84,57 @@ const processWorkshopSessions = (sessions) => {
             images: s.images || []
         };
     });
+};
+
+const processVariantDeletionAndRefunds = async (client, variantIds) => {
+    if (!variantIds || variantIds.length === 0) return;
+
+    const now = new Date();
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(now);
+
+    const variantsRes = await client.query(`SELECT bien_the_id, ngay_bat_dau FROM hoi_thao_bien_the WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
+    
+    for (const v of variantsRes.rows) {
+        const startDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(v.ngay_bat_dau));
+        if (startDateStr === todayStr) {
+            throw { statusCode: 400, message: 'Không thể xóa ca học đang có lịch diễn ra trong hôm nay!' };
+        }
+    }
+
+    const ordersRes = await client.query(`
+        SELECT DISTINCT dh.don_hang_id, dh.tong_tien, tt.ma_tham_chieu, tt.phuong_thuc, tt.trang_thai AS payment_status,
+               htb.ngay_bat_dau
+        FROM chi_tiet_don_hang ct
+        JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id
+        LEFT JOIN thanh_toan tt ON dh.don_hang_id = tt.don_hang_id
+        JOIN hoi_thao_bien_the htb ON ct.bien_the_id = htb.bien_the_id
+        WHERE ct.bien_the_id = ANY($1::int[]) 
+          AND dh.trang_thai NOT IN ('cancelled', 'completed')
+    `, [variantIds]);
+
+    for (const order of ordersRes.rows) {
+        const startDateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(order.ngay_bat_dau));
+        
+        if (startDateStr > todayStr) {
+            await client.query(`UPDATE don_hang SET trang_thai = 'cancelled' WHERE don_hang_id = $1`, [order.don_hang_id]);
+            await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'cancelled')`, [order.don_hang_id]);
+            
+            if (order.phuong_thuc === 'MOMO' && order.payment_status === 'paid') {
+                const amountToRefund = Math.round(Number(order.tong_tien));
+                const refundResult = await momoService.refundPayment(order.don_hang_id, amountToRefund, order.ma_tham_chieu);
+                
+                if (refundResult && refundResult.resultCode === 0) {
+                    await client.query(`UPDATE thanh_toan SET trang_thai = 'refunded' WHERE don_hang_id = $1`, [order.don_hang_id]);
+                    await client.query(`
+                        INSERT INTO hoan_tien (don_hang_id, so_tien, ly_do, trang_thai)
+                        VALUES ($1, $2, $3, 'success')
+                    `, [order.don_hang_id, amountToRefund, 'Hệ thống hoàn tiền do Admin xóa Workshop sắp diễn ra']);
+                } else {
+                    throw { statusCode: 500, message: `Lỗi hoàn tiền MoMo cho đơn ${order.don_hang_id}: ${refundResult.message}` };
+                }
+            }
+        }
+    }
 };
 
 const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) => {
@@ -244,7 +325,6 @@ const getWorkshopDetail = async (workshopId) => {
     );
 
     workshop.sessions = processWorkshopSessions(sRes.rows);
-    workshop.overall_status = (workshop.status === 'active' && workshop.sessions.some(s => s.status === 'open')) ? 'open' : 'closed';
     return workshop;
 };
 
@@ -287,7 +367,7 @@ const createWorkshop = async (payload) => {
             
             await client.query(
                 `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, gio_bat_dau, gio_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5, $6)`,
-                [workshopId, variantId, session.start_date, session.start_time, session.end_time, session.status || 'open']
+                [workshopId, variantId, session.start_date, session.start_time, session.end_time, 'open']
             );
 
             if (Array.isArray(session.images)) {
@@ -323,6 +403,23 @@ const updateWorkshop = async (workshopId, payload) => {
         await client.query(`UPDATE san_pham SET danh_muc_id = $1, ten_san_pham = $2, mo_ta = $3, trang_thai_san_pham = $4 WHERE san_pham_id = $5`, [category_id, title, description, status, productId]);
 
         if (Array.isArray(sessions)) {
+            const existingVariantsRes = await client.query('SELECT bien_the_id FROM hoi_thao_bien_the WHERE hoi_thao_id = $1', [workshopId]);
+            const existingVariantIds = existingVariantsRes.rows.map(r => r.bien_the_id);
+            
+            const incomingVariantIds = sessions.filter(s => s.variant_id !== undefined && s.variant_id !== null).map(s => s.variant_id);
+            const variantsToDelete = existingVariantIds.filter(id => !incomingVariantIds.includes(id));
+
+            if (variantsToDelete.length > 0) {
+                await processVariantDeletionAndRefunds(client, variantsToDelete);
+
+                await client.query('DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM gio_hang WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM phieu_giam_gia_san_pham WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM hoi_thao_bien_the WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+                await client.query('DELETE FROM bien_the_san_pham WHERE bien_the_id = ANY($1::int[])', [variantsToDelete]);
+            }
+
             for (const session of sessions) {
                 const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
 
@@ -336,12 +433,26 @@ const updateWorkshop = async (workshopId, payload) => {
                         throw { statusCode: 400, message: `Ca học (variant_id: ${session.variant_id}) không thuộc về Workshop này!` };
                     }
 
+                    const existingSessionRes = await client.query(
+                        `SELECT ngay_bat_dau, gio_bat_dau FROM hoi_thao_bien_the WHERE hoi_thao_id = $1 AND bien_the_id = $2`,
+                        [workshopId, session.variant_id]
+                    );
+                    const existingSession = existingSessionRes.rows[0];
+
+                    if (existingSession && isSessionStarted(existingSession.ngay_bat_dau, existingSession.gio_bat_dau)) {
+                        throw { statusCode: 400, message: 'Workshop đã diễn ra, không thể cập nhật ca học này!' };
+                    }
+
                     await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [session.price, session.session_name, session.variant_id]);
-                    await client.query(`UPDATE ton_kho SET so_luong_ton = $1 WHERE bien_the_id = $2`, [sessionCapacity, session.variant_id]);
                     
                     await client.query(
-                        `UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, gio_bat_dau = $2, gio_ket_thuc = $3, trang_thai = $4 WHERE bien_the_id = $5`, 
-                        [session.start_date, session.start_time, session.end_time, session.status, session.variant_id]
+                        `INSERT INTO ton_kho (bien_the_id, so_luong_ton) VALUES ($1, $2) ON CONFLICT (bien_the_id) DO UPDATE SET so_luong_ton = EXCLUDED.so_luong_ton`, 
+                        [session.variant_id, sessionCapacity]
+                    );
+                    
+                    await client.query(
+                        `UPDATE hoi_thao_bien_the SET trang_thai = $1 WHERE bien_the_id = $2`, 
+                        ['open', session.variant_id]
                     );
 
                     if (Array.isArray(session.images)) {
@@ -367,7 +478,7 @@ const updateWorkshop = async (workshopId, payload) => {
                     
                     await client.query(
                         `INSERT INTO hoi_thao_bien_the (hoi_thao_id, bien_the_id, ngay_bat_dau, gio_bat_dau, gio_ket_thuc, trang_thai) VALUES ($1, $2, $3, $4, $5, $6)`, 
-                        [workshopId, newVariantId, session.start_date, session.start_time, session.end_time, session.status || 'open']
+                        [workshopId, newVariantId, session.start_date, session.start_time, session.end_time, 'open']
                     );
                     
                     if (Array.isArray(session.images)) {
@@ -404,8 +515,7 @@ const deleteWorkshop = async (workshopId) => {
         const variantIds = variantRes.rows.map(row => row.bien_the_id);
 
         if (variantIds.length > 0) {
-            const checkOrders = await client.query(`SELECT 1 FROM chi_tiet_don_hang WHERE bien_the_id = ANY($1::int[]) LIMIT 1`, [variantIds]);
-            if (checkOrders.rows.length > 0) throw { statusCode: 400, message: 'Không thể xóa Workshop đã có học viên đăng ký/mua vé.' };
+            await processVariantDeletionAndRefunds(client, variantIds);
 
             await client.query(`DELETE FROM hinh_anh_bien_the WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
             await client.query(`DELETE FROM ton_kho WHERE bien_the_id = ANY($1::int[])`, [variantIds]);
