@@ -33,13 +33,13 @@ const normalizeTime = (value) => {
     return time.length === 5 ? `${time}:00` : time;
 };
 const isValidTimeString = (value) => /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(normalizeText(value));
-const validateSessionSchedule = (session, index) => {
-    if (!session.start_time || !session.end_time) {
+const validateSessionSchedule = (session, index, existingSession = null) => {
+    const startTime = normalizeTime(session.start_time ?? existingSession?.gio_bat_dau);
+    const endTime = normalizeTime(session.end_time ?? existingSession?.gio_ket_thuc);
+
+    if (!startTime || !endTime) {
         throw { statusCode: 400, message: `Ca học thứ ${index + 1} phải có start_time và end_time hợp lệ!` };
     }
-
-    const startTime = normalizeTime(session.start_time);
-    const endTime = normalizeTime(session.end_time);
 
     if (!isValidTimeString(startTime) || !isValidTimeString(endTime)) {
         throw { statusCode: 400, message: `Ca học thứ ${index + 1} có định dạng start_time hoặc end_time không hợp lệ!` };
@@ -443,8 +443,7 @@ const updateWorkshop = async (workshopId, payload) => {
 
             for (let index = 0; index < sessions.length; index++) {
                 const session = sessions[index];
-                validateSessionSchedule(session, index);
-                const sessionCapacity = session.total_capacity !== undefined ? session.total_capacity : (session.capacity || 0);
+                const sessionCapacityInput = session.total_capacity ?? session.capacity;
 
                 if (session.variant_id) {
                     const checkOwnership = await client.query(
@@ -461,25 +460,24 @@ const updateWorkshop = async (workshopId, payload) => {
                     }
 
                     const existingSession = checkOwnership.rows[0];
+                    const isStarted = isSessionStarted(existingSession.ngay_bat_dau, existingSession.gio_bat_dau);
+                    const nextStartDate = getRequestedSessionValue(session.start_date, existingSession.ngay_bat_dau);
+                    const nextStartTime = getRequestedSessionValue(session.start_time, existingSession.gio_bat_dau);
+                    const nextEndTime = getRequestedSessionValue(session.end_time, existingSession.gio_ket_thuc);
+                    const nextPrice = getRequestedSessionValue(session.price, existingSession.price);
+                    const nextCapacity = getRequestedSessionValue(sessionCapacityInput, existingSession.capacity);
 
-                    if (existingSession && isSessionStarted(existingSession.ngay_bat_dau, existingSession.gio_bat_dau)) {
-                        const requestedStartDate = session.start_date !== undefined ? formatVietnamDate(session.start_date) : formatVietnamDate(existingSession.ngay_bat_dau);
-                        const requestedStartTime = session.start_time !== undefined ? normalizeTime(session.start_time) : normalizeTime(existingSession.gio_bat_dau);
-                        const requestedPrice = Number(getRequestedSessionValue(session.price, existingSession.price));
-                        const requestedCapacity = Number(getRequestedSessionValue(session.total_capacity ?? session.capacity, existingSession.capacity));
+                    validateSessionSchedule(
+                        { start_time: nextStartTime, end_time: nextEndTime },
+                        index,
+                        { gio_bat_dau: nextStartTime, gio_ket_thuc: nextEndTime }
+                    );
 
-                        if (
-                            requestedStartDate !== formatVietnamDate(existingSession.ngay_bat_dau) ||
-                            requestedStartTime !== normalizeTime(existingSession.gio_bat_dau) ||
-                            requestedPrice !== Number(existingSession.price) ||
-                            requestedCapacity !== Number(existingSession.capacity)
-                        ) {
-                            throw { statusCode: 400, message: 'Workshop đang diễn ra chỉ được cập nhật các thông tin ngoài ngày diễn ra, thời gian bắt đầu, giá tiền và sức chứa!' };
+                    if (isStarted) {
+                        if (formatVietnamDate(nextStartDate) !== formatVietnamDate(existingSession.ngay_bat_dau) || normalizeTime(nextStartTime) !== normalizeTime(existingSession.gio_bat_dau) || Number(nextPrice) !== Number(existingSession.price) || Number(nextCapacity) !== Number(existingSession.capacity)) {
+                            throw { statusCode: 400, message: 'Workshop đang diễn ra chỉ được cập nhật giờ kết thúc và các thông tin khác ngoài ngày diễn ra, thời gian bắt đầu, giá tiền và sức chứa!' };
                         }
                     }
-
-                    const nextPrice = getRequestedSessionValue(session.price, existingSession.price);
-                    const nextCapacity = getRequestedSessionValue(session.total_capacity ?? session.capacity, existingSession.capacity);
 
                     await client.query(`UPDATE bien_the_san_pham SET gia = $1, mau_sac = $2 WHERE bien_the_id = $3`, [nextPrice, session.session_name, session.variant_id]);
                     
@@ -489,8 +487,8 @@ const updateWorkshop = async (workshopId, payload) => {
                     );
                     
                     await client.query(
-                        `UPDATE hoi_thao_bien_the SET trang_thai = $1 WHERE bien_the_id = $2`, 
-                        ['open', session.variant_id]
+                        `UPDATE hoi_thao_bien_the SET ngay_bat_dau = $1, gio_bat_dau = $2, gio_ket_thuc = $3, trang_thai = $4 WHERE bien_the_id = $5`, 
+                        [nextStartDate, nextStartTime, nextEndTime, isStarted ? existingSession.gio_ket_thuc ? existingSession.trang_thai : 'open' : 'open', session.variant_id]
                     );
 
                     if (Array.isArray(session.images)) {
@@ -502,6 +500,7 @@ const updateWorkshop = async (workshopId, payload) => {
                         }
                     }
                 } else {
+                    validateSessionSchedule(session, index);
                     const sku = generateSKU('WS', productId);
                     const baseSlug = slugifyText(`${title} ${session.session_name}`);
                     const slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
