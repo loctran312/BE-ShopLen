@@ -6,7 +6,7 @@ const initCronJobs = () => {
         await pool.query(`
             UPDATE don_hang 
             SET trang_thai = 'cancelled' 
-            WHERE trang_thai = 'pending' OR 'processing'
+            WHERE trang_thai <> 'completed'
               AND ngay_tao < NOW() - INTERVAL '3 minutes'
               AND don_hang_id IN (SELECT don_hang_id FROM thanh_toan WHERE phuong_thuc = 'MOMO')
         `);
