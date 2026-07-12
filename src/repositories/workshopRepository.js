@@ -10,6 +10,7 @@ const normalizeText = (value) => (value === undefined || value === null ? '' : S
 const slugifyText = (value) => normalizeText(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 const formatVietnamDate = (value) => new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
+const formatVietnamDateOnly = (value) => formatVietnamDate(value);
 const formatVietnamDateTime = (value) => {
     const parts = new Intl.DateTimeFormat('en-CA', {
         timeZone: TIME_ZONE,
@@ -95,7 +96,7 @@ const processWorkshopSessions = (sessions) => {
             total_capacity: capacity,
             booked_slots: booked,
             available_slots: available,
-            start_date: s.start_date,
+            start_date: formatVietnamDateOnly(s.start_date),
             start_time: s.start_time,
             end_time: s.end_time,
             status: (available <= 0) ? 'full' : currentStatus,
@@ -260,7 +261,7 @@ const filterWorkshopsAdmin = async ({ page = 1, limit = 10, keyword, status }) =
         sessionsMap.get(s.workshop_id).push({
             variant_id: s.variant_id, sku: s.sku, slug: s.slug, session_name: s.session_name,
             price, discount, final_price: finalPrice, total_capacity: capacity, booked_slots: booked,
-            available_slots: available, start_date: s.start_date, start_time: s.start_time, end_time: s.end_time,
+            available_slots: available, start_date: formatVietnamDateOnly(s.start_date), start_time: s.start_time, end_time: s.end_time,
             status: (available <= 0) ? 'full' : s.status, images: s.images
         });
     });
@@ -646,9 +647,13 @@ const getMyWorkshops = async (userId, { status, page, limit }) => {
     
     params.push(limit, offset);
     const { rows } = await pool.query(query, params);
+    const normalizedRows = rows.map(row => ({
+        ...row,
+        start_date: formatVietnamDateOnly(row.start_date)
+    }));
 
     return {
-        workshops: rows,
+        workshops: normalizedRows,
         pagination: {
             total_items: totalItems,
             total_pages: Math.max(1, Math.ceil(totalItems / limit)),
