@@ -30,6 +30,15 @@ const initCronJobs = () => {
         `);
         console.log('Cron Job: Đã dọn dẹp các Workshop hết hạn và đưa về Inactive.');
     });
+
+    cron.schedule('0 * * * *', async () => {
+        await pool.query(`
+            UPDATE khuyen_mai SET trang_thai = 'inactive'
+            WHERE trang_thai = 'active' AND ngay_ket_thuc < CURRENT_DATE
+        `);
+        console.log('Cron Job: Đã dọn dẹp các khuyến mãi hết hạn và đưa về Inactive.');
+    });
+    
 };
 
 module.exports = initCronJobs;
