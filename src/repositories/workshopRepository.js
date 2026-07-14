@@ -448,7 +448,7 @@ const updateWorkshop = async (workshopId, payload) => {
 
                 if (session.variant_id) {
                     const checkOwnership = await client.query(
-                        `SELECT htb.ngay_bat_dau, htb.gio_bat_dau, bt.gia AS price, tk.so_luong_ton AS capacity
+                        `SELECT htb.ngay_bat_dau, htb.gio_bat_dau, htb.gio_ket_thuc, htb.trang_thai, bt.gia AS price, tk.so_luong_ton AS capacity
                          FROM hoi_thao_bien_the htb
                          JOIN bien_the_san_pham bt ON htb.bien_the_id = bt.bien_the_id
                          LEFT JOIN ton_kho tk ON bt.bien_the_id = tk.bien_the_id
@@ -502,6 +502,7 @@ const updateWorkshop = async (workshopId, payload) => {
                     }
                 } else {
                     validateSessionSchedule(session, index);
+                    const sessionCapacity = sessionCapacityInput !== undefined ? sessionCapacityInput : 0;
                     const sku = generateSKU('WS', productId);
                     const baseSlug = slugifyText(`${title} ${session.session_name}`);
                     const slug = `${baseSlug}-${Date.now().toString().slice(-4)}`;
