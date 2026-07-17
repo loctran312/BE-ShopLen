@@ -55,22 +55,25 @@ const getSessionStartDateTime = (startDate, startTime) => `${formatVietnamDate(s
 const getSessionEndDateTime = (startDate, endTime) => `${formatVietnamDate(startDate)} ${normalizeTime(endTime)}`;
 const isSessionStarted = (startDate, startTime) => formatVietnamDateTime(new Date()) >= getSessionStartDateTime(startDate, startTime);
 const ensureUniqueStartTimes = (sessions, workshopLabel = 'Workshop') => {
-    const seenStartTimes = new Map();
+    const seenDateTimeSlots = new Map();
 
     sessions.forEach((session, index) => {
+        const sessionDate = formatVietnamDate(session.start_date);
         const startTime = normalizeTime(session.start_time);
 
-        if (!startTime) return;
+        if (!sessionDate || !startTime) return;
 
-        if (seenStartTimes.has(startTime)) {
-            const firstIndex = seenStartTimes.get(startTime);
+        const dateTimeKey = `${sessionDate}_${startTime}`;
+
+        if (seenDateTimeSlots.has(dateTimeKey)) {
+            const firstIndex = seenDateTimeSlots.get(dateTimeKey);
             throw {
                 statusCode: 400,
-                message: `${workshopLabel} đang bị trùng giờ bắt đầu (${startTime}) giữa ca ${firstIndex + 1} và ca ${index + 1}!`
+                message: `${workshopLabel} bị trùng giờ bắt đầu vào cùng ngày (${sessionDate} lúc ${startTime}) giữa ca ${firstIndex + 1} và ca ${index + 1}!`
             };
         }
 
-        seenStartTimes.set(startTime, index);
+        seenDateTimeSlots.set(dateTimeKey, index);
     });
 };
 
