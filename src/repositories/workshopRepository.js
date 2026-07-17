@@ -54,6 +54,25 @@ const getRequestedSessionValue = (sessionValue, existingValue) => (sessionValue 
 const getSessionStartDateTime = (startDate, startTime) => `${formatVietnamDate(startDate)} ${normalizeTime(startTime)}`;
 const getSessionEndDateTime = (startDate, endTime) => `${formatVietnamDate(startDate)} ${normalizeTime(endTime)}`;
 const isSessionStarted = (startDate, startTime) => formatVietnamDateTime(new Date()) >= getSessionStartDateTime(startDate, startTime);
+const ensureUniqueStartTimes = (sessions, workshopLabel = 'Workshop') => {
+    const seenStartTimes = new Map();
+
+    sessions.forEach((session, index) => {
+        const startTime = normalizeTime(session.start_time);
+
+        if (!startTime) return;
+
+        if (seenStartTimes.has(startTime)) {
+            const firstIndex = seenStartTimes.get(startTime);
+            throw {
+                statusCode: 400,
+                message: `${workshopLabel} đang bị trùng giờ bắt đầu (${startTime}) giữa ca ${firstIndex + 1} và ca ${index + 1}!`
+            };
+        }
+
+        seenStartTimes.set(startTime, index);
+    });
+};
 
 const processWorkshopSessions = (sessions) => {
     const now = new Date(); 
@@ -354,6 +373,8 @@ const createWorkshop = async (payload) => {
     try {
         await client.query('BEGIN');
 
+        ensureUniqueStartTimes(sessions, 'Workshop mới');
+
         const productRes = await client.query(
             `INSERT INTO san_pham (loai_san_pham_id, danh_muc_id, ten_san_pham, mo_ta, trang_thai_san_pham)
              VALUES (3, $1, $2, $3, $4) RETURNING san_pham_id`,
@@ -425,6 +446,8 @@ const updateWorkshop = async (workshopId, payload) => {
         await client.query(`UPDATE san_pham SET danh_muc_id = $1, ten_san_pham = $2, mo_ta = $3, trang_thai_san_pham = $4 WHERE san_pham_id = $5`, [category_id, title, description, status, productId]);
 
         if (Array.isArray(sessions)) {
+            ensureUniqueStartTimes(sessions, 'Workshop');
+
             const existingVariantsRes = await client.query('SELECT bien_the_id FROM hoi_thao_bien_the WHERE hoi_thao_id = $1', [workshopId]);
             const existingVariantIds = existingVariantsRes.rows.map(r => r.bien_the_id);
             
