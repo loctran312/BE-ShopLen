@@ -215,7 +215,7 @@ const getAvailableOrdersForShipper = async (userId) => {
     const query = `
         SELECT 
             dh.don_hang_id AS order_id,
-            'Kho tổng ShopLen, Quận 1' AS pickup_address,
+            'Kho tổng Peacechill, ' || tt.ten_tinh AS pickup_address,
             dh.dia_chi_giao_hang || ', ' || px.ten_phuong_xa || ', ' || tt.ten_tinh AS delivery_address,
             0 AS shipping_fee,
             CASE WHEN th.phuong_thuc = 'COD' THEN dh.tong_tien ELSE 0 END AS cod_amount,
