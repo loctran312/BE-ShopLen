@@ -2,6 +2,10 @@ const pool = require('../config/db');
 const cron = require('node-cron');
 
 const initCronJobs = () => {
+    if (process.env.NODE_ENV === 'test') {
+        return;
+    }
+
     cron.schedule('*/3 * * * *', async () => {
         await pool.query(`
             UPDATE don_hang 

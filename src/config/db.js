@@ -45,8 +45,10 @@ const pool = new Pool(
         }
 );
 
-pool.connect()
-    .then(() => console.log('Connected to PostgreSQL database'))
-    .catch(err => console.error('Error connecting to PostgreSQL database:', err));
+if (process.env.NODE_ENV !== 'test') {
+    pool.connect()
+        .then(() => console.log('Connected to PostgreSQL database'))
+        .catch(err => console.error('Error connecting to PostgreSQL database:', err));
+}
 
 module.exports = pool;
