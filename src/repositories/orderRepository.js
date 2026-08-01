@@ -583,14 +583,16 @@ const getAllOrdersAdmin = async ({ page, limit }) => {
 	const totalItems = countRes.rows[0].total;
 
 	const ordersRes = await pool.query(
-		`SELECT don_hang_id AS order_id, 
-                nguoi_dung_id AS user_id, 
-                trang_thai AS status, 
-                tong_tien AS total_amount, 
-                ten_nguoi_nhan AS customer_name, 
-                sdt_nguoi_nhan AS phone_number
-         FROM don_hang
-         ORDER BY don_hang_id DESC
+		`SELECT dh.don_hang_id AS order_id,
+                dh.nguoi_dung_id AS user_id,
+                dh.trang_thai AS status,
+                dh.tong_tien AS total_amount,
+                dh.ten_nguoi_nhan AS customer_name,
+                dh.sdt_nguoi_nhan AS phone_number,
+                tt.phuong_thuc AS payment_method
+         FROM don_hang dh
+         LEFT JOIN thanh_toan tt ON dh.don_hang_id = tt.don_hang_id
+         ORDER BY dh.don_hang_id DESC
          LIMIT $1 OFFSET $2`,
 		[limit, offset]
 	);
