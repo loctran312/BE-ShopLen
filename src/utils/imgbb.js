@@ -1,17 +1,31 @@
-const IMGBB_UPLOAD_ENDPOINT = 'https://api.imgbb.com/1/upload';
+const cloudinary = require('cloudinary').v2;
 
 const normalizeText = (value) => (value === undefined || value === null ? '' : String(value)).trim();
 
-const getImgbbApiKey = () => {
-  const key = normalizeText(process.env.IMGBB_API_KEY);
+const getCloudinaryConfig = () => {
+  const cloudinaryUrl = normalizeText(process.env.CLOUDINARY_URL);
+  const cloudName = normalizeText(process.env.CLOUDINARY_CLOUD_NAME);
+  const apiKey = normalizeText(process.env.CLOUDINARY_API_KEY);
+  const apiSecret = normalizeText(process.env.CLOUDINARY_API_SECRET);
 
-  if (!key) {
-    const error = new Error('IMGBB_API_KEY chưa được cấu hình');
-    error.statusCode = 500;
-    throw error;
+  if (cloudinaryUrl) {
+    cloudinary.config({ secure: true });
+    return;
   }
 
-  return key;
+  if (cloudName && apiKey && apiSecret) {
+    cloudinary.config({
+      cloud_name: cloudName,
+      api_key: apiKey,
+      api_secret: apiSecret,
+      secure: true,
+    });
+    return;
+  }
+
+  const error = new Error('Cloudinary chưa được cấu hình');
+  error.statusCode = 500;
+  throw error;
 };
 
 const isImgBBUrl = (value) => /^https?:\/\/(i\.ibb\.co|ibb\.co|api\.imgbb\.com)\//i.test(value);
@@ -66,41 +80,38 @@ const uploadImageToImgBB = async (source, name) => {
     return normalizedSource;
   }
 
-  const base64 = await sourceToBase64(normalizedSource);
-  const payload = new URLSearchParams({
-    key: getImgbbApiKey(),
-    image: base64,
-  });
+  getCloudinaryConfig();
 
-  if (name) {
-    payload.set('name', name);
+  try {
+    const safeName = normalizeText(name) || `shoplen-${Date.now()}`;
+    const uploadOptions = {
+      folder: 'shoplen',
+      public_id: `${safeName}-${Date.now()}`,
+      resource_type: 'image',
+      overwrite: false,
+    };
+
+    const result = normalizedSource.startsWith('data:')
+      ? await cloudinary.uploader.upload(normalizedSource, uploadOptions)
+      : await cloudinary.uploader.upload(normalizedSource, uploadOptions);
+
+    if (!result?.secure_url && !result?.url) {
+      const error = new Error('Không thể tải ảnh lên Cloudinary');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return result.secure_url || result.url;
+  } catch (error) {
+    const cloudinaryError = error instanceof Error ? error : new Error('Không thể tải ảnh lên Cloudinary');
+    cloudinaryError.statusCode = cloudinaryError.statusCode || 400;
+    throw cloudinaryError;
   }
-
-  const response = await fetch(IMGBB_UPLOAD_ENDPOINT, {
-    method: 'POST',
-    body: payload,
-  });
-
-  if (!response.ok) {
-    const rawError = await response.text().catch(() => '');
-    const error = new Error(rawError ? `Không thể tải ảnh lên imgBB: ${rawError}` : 'Không thể tải ảnh lên imgBB');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const result = await response.json();
-
-  if (!result?.success || !result?.data?.url) {
-    const error = new Error(result?.error?.message || 'Không thể tải ảnh lên imgBB');
-    error.statusCode = 400;
-    throw error;
-  }
-
-  return result.data.display_url || result.data.url;
 };
 
 module.exports = {
   uploadImageToImgBB,
   isImgBBUrl,
   normalizeText,
+  sourceToBase64,
 };
