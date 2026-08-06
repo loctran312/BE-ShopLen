@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 require('./config/env');
 require('./config/db');
@@ -52,6 +53,10 @@ app.get('/health', (req, res) => {
         message: 'Server is running',
         timestamp: new Date().toISOString(),
     });
+});
+
+app.get('/loaderio-7ec1102c428dec2c57cbb0e4562b6c8a.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio-7ec1102c428dec2c57cbb0e4562b6c8a.txt'));
 });
 
 app.use('/api/auth', authRoutes);
