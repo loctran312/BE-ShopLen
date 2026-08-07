@@ -119,9 +119,11 @@ const cancelMyOrder = async (req, res) => {
         
         if (!order) return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
 
-        const canCancel = order.status === 'pending' || (order.status === 'processing' && order.payment?.payment_method === 'MOMO' && order.payment?.payment_status === 'paid');
+        const isMomoPaidProcessing = order.status === 'processing' && order.payment?.payment_method === 'MOMO' && order.payment?.payment_status === 'paid';
+        const isCompletedWorkshop = order.status === 'completed' && order.type === 'workshop';
+        const canCancel = order.status === 'pending' || isMomoPaidProcessing || isCompletedWorkshop;
         if (!canCancel) {
-            return res.status(400).json({ success: false, message: 'Bạn chỉ có thể hủy những đơn hàng đang chờ duyệt (pending) hoặc đơn MoMo đã thanh toán đang xử lý (processing).' });
+            return res.status(400).json({ success: false, message: 'Bạn chỉ có thể hủy đơn hàng đang chờ duyệt (pending), đơn MoMo đã thanh toán đang xử lý (processing), hoặc đơn workshop đã hoàn thành.' });
         }
 
         let refundSuccess = false;

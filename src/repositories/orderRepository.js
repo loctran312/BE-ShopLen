@@ -568,10 +568,25 @@ const getOrderDetail = async (orderId, userId = null) => {
 		[orderId]
 	);
 
+	order.type = await getOrderType(orderId);
 	order.items = detailRes.rows;
 	order.payment = paymentRes.rows.length > 0 ? paymentRes.rows[0] : null;
 
 	return order;
+};
+
+const getOrderType = async (orderId) => {
+	const typeRes = await pool.query(
+		`SELECT CASE WHEN EXISTS (
+			SELECT 1 FROM chi_tiet_don_hang ct
+			JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id
+			JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+			WHERE ct.don_hang_id = $1 AND sp.loai_san_pham_id = 3
+		) THEN 'workshop' ELSE 'physical' END AS type`,
+		[orderId]
+	);
+
+	return typeRes.rows.length > 0 ? typeRes.rows[0].type : 'physical';
 };
 
 // --- ADMIN ---
