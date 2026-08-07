@@ -62,7 +62,6 @@ const refundPayment = async (orderId, amount, transId) => {
     const requestId = `REQ-${refundOrderId}`;
     const description = `Hoan tien don hang ${orderId}`;
 
-    // Format rawSignature (Dùng refundOrderId đã chế)
     const rawSignature = `accessKey=${MOMO_CONFIG.accessKey}&amount=${cleanAmount}&description=${description}&orderId=${refundOrderId}&partnerCode=${MOMO_CONFIG.partnerCode}&requestId=${requestId}&transId=${transId}`;
     
     const signature = createSignature(rawSignature);

@@ -231,6 +231,28 @@ describe('controllers/orderController', () => {
       );
     });
 
+    it('allows refund for a paid MoMo order in processing status', async () => {
+      orderRepository.getOrderDetail.mockResolvedValue({
+        order_id: 'DH-20260709-0003',
+        status: 'processing',
+        total_amount: 300000,
+        payment: { payment_method: 'MOMO', payment_status: 'paid', reference_code: '9876543210' },
+      });
+      momoService.refundPayment.mockResolvedValue({ resultCode: 0 });
+      orderRepository.cancelUserOrder.mockResolvedValue();
+
+      const req = { user: { user_id: USER_ID }, params: { id: 'DH-20260709-0003' } };
+      const res = mockRes();
+
+      await orderController.cancelMyOrder(req, res);
+
+      expect(momoService.refundPayment).toHaveBeenCalledWith('DH-20260709-0003', 300000, '9876543210');
+      expect(orderRepository.cancelUserOrder).toHaveBeenCalledWith('DH-20260709-0003', true, USER_ID);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ message: expect.stringContaining('Tiền sẽ được hoàn') })
+      );
+    });
+
     it('returns 404 when order does not exist', async () => {
       orderRepository.getOrderDetail.mockResolvedValue(null);
 
@@ -256,7 +278,7 @@ describe('controllers/orderController', () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Bạn chỉ có thể hủy những đơn hàng đang chờ duyệt (pending).' })
+        expect.objectContaining({ message: expect.stringContaining('Bạn chỉ có thể hủy những đơn hàng') })
       );
     });
 

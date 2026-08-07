@@ -118,7 +118,11 @@ const cancelMyOrder = async (req, res) => {
         const order = await orderRepository.getOrderDetail(orderId, userId);
         
         if (!order) return res.status(404).json({ success: false, message: 'Đơn hàng không tồn tại' });
-        if (order.status !== 'pending') return res.status(400).json({ success: false, message: 'Bạn chỉ có thể hủy những đơn hàng đang chờ duyệt (pending).' });
+
+        const canCancel = order.status === 'pending' || (order.status === 'processing' && order.payment?.payment_method === 'MOMO' && order.payment?.payment_status === 'paid');
+        if (!canCancel) {
+            return res.status(400).json({ success: false, message: 'Bạn chỉ có thể hủy những đơn hàng đang chờ duyệt (pending) hoặc đơn MoMo đã thanh toán đang xử lý (processing).' });
+        }
 
         let refundSuccess = false;
 
