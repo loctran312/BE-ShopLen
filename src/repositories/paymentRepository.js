@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { computeOrderProfitSnapshot } = require('../utils/costing');
 
 const updatePaymentStatus = async (orderId, status, transId = null) => {
     const client = await pool.connect();
@@ -57,6 +58,14 @@ const updatePaymentStatus = async (orderId, status, transId = null) => {
             const newOrderStatus = hasWorkshop ? 'completed' : 'processing';
             await client.query(`UPDATE don_hang SET trang_thai = $1 WHERE don_hang_id = $2`, [newOrderStatus, orderId]);
             await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, $2)`, [orderId, newOrderStatus]);
+
+            if (newOrderStatus === 'completed') {
+                const { totalRevenue, totalProfit, profitMargin } = await computeOrderProfitSnapshot(client, orderId);
+                await client.query(
+                    `UPDATE don_hang SET tong_doanh_thu = $1, tong_loi_nhuan = $2, ty_le_loi_nhuan = $3 WHERE don_hang_id = $4`,
+                    [totalRevenue, totalProfit, profitMargin, orderId]
+                );
+            }
 
             await client.query(`
                 INSERT INTO luot_quay (nguoi_dung_id, so_luot)

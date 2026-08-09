@@ -69,6 +69,8 @@ SELECT bien_the_id AS variant_id,
        gia AS price,
        mau_sac AS color,
        kich_co AS size,
+       gia_von_binh_quan AS average_cost,
+       gia_nhap_gan_nhat AS latest_unit_cost,
        ngay_tao AS created_at
 FROM bien_the_san_pham;
 
@@ -87,6 +89,8 @@ SELECT lich_su_id AS history_id,
        tham_chieu_id AS reference_code,
        ghi_chu AS note,
        nguoi_thuc_hien AS performed_by,
+       gia_nhap AS unit_cost,
+       thanh_tien AS total_cost,
        ngay_tao AS created_at
 FROM lich_su_ton_kho;
 
@@ -189,7 +193,10 @@ SELECT don_hang_id AS order_id,
        phuong_xa_id AS ward_id,
        dia_chi_giao_hang AS shipping_address,
        ten_nguoi_nhan AS recipient_name,
-       sdt_nguoi_nhan AS recipient_phone
+       sdt_nguoi_nhan AS recipient_phone,
+       tong_doanh_thu AS total_revenue,
+       tong_loi_nhuan AS total_profit,
+       ty_le_loi_nhuan AS profit_margin
 FROM don_hang;
 
 CREATE VIEW order_details AS

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
+const { computeOrderProfitSnapshot } = require('../utils/costing');
 
 // ---ADMIN ---
 
@@ -303,6 +304,12 @@ const updateDeliveryStatus = async (shipperId, orderId, payload) => {
             await client.query(`UPDATE phan_cong_giao_hang SET trang_thai_giao = 'delivered', hinh_anh_bang_chung = $1, ngay_hoan_thanh = CURRENT_TIMESTAMP WHERE don_hang_id = $2`, [proof_image || null, orderId]);
             await client.query(`UPDATE don_hang SET trang_thai = 'completed' WHERE don_hang_id = $1`, [orderId]);
             await client.query(`INSERT INTO lich_su_trang_thai_don_hang (don_hang_id, trang_thai) VALUES ($1, 'completed')`, [orderId]);
+
+            const { totalRevenue, totalProfit, profitMargin } = await computeOrderProfitSnapshot(client, orderId);
+            await client.query(
+                `UPDATE don_hang SET tong_doanh_thu = $1, tong_loi_nhuan = $2, ty_le_loi_nhuan = $3 WHERE don_hang_id = $4`,
+                [totalRevenue, totalProfit, profitMargin, orderId]
+            );
 
             const codAmount = checkRes.rows[0].tien_thu_ho;
             if (Number(codAmount) > 0) {

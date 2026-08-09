@@ -95,6 +95,8 @@ CREATE TABLE bien_the_san_pham (
   gia NUMERIC(10,2) NOT NULL CHECK (gia >= 0),
   mau_sac VARCHAR(50),
   kich_co VARCHAR(50),
+  gia_von_binh_quan NUMERIC(10,2) CHECK (gia_von_binh_quan IS NULL OR gia_von_binh_quan >= 0),
+  gia_nhap_gan_nhat NUMERIC(10,2) CHECK (gia_nhap_gan_nhat IS NULL OR gia_nhap_gan_nhat >= 0),
   ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (san_pham_id) REFERENCES san_pham(san_pham_id)
 );
@@ -116,6 +118,8 @@ CREATE TABLE lich_su_ton_kho (
   tham_chieu_id VARCHAR(100), 
   ghi_chu TEXT,
   nguoi_thuc_hien INT, 
+  gia_nhap NUMERIC(10,2) CHECK (gia_nhap IS NULL OR gia_nhap >= 0),
+  thanh_tien NUMERIC(12,2) CHECK (thanh_tien IS NULL OR thanh_tien >= 0),
   ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (bien_the_id) REFERENCES bien_the_san_pham(bien_the_id) ON DELETE CASCADE,
   FOREIGN KEY (nguoi_thuc_hien) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE SET NULL
@@ -275,6 +279,9 @@ CREATE TABLE don_hang (
   sdt_nguoi_nhan VARCHAR(15) NOT NULL,
   phi_van_chuyen NUMERIC(10,2) DEFAULT 0,
   phuong_thuc_giao_hang VARCHAR(50),
+  tong_doanh_thu NUMERIC(12,2),
+  tong_loi_nhuan NUMERIC(12,2),
+  ty_le_loi_nhuan NUMERIC(6,2),
   ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (nguoi_dung_id) REFERENCES nguoi_dung(nguoi_dung_id),
   FOREIGN KEY (shipper_id) REFERENCES nguoi_dung(nguoi_dung_id) ON DELETE SET NULL,

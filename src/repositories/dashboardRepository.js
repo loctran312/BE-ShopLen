@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { WORKSHOP_TYPE_ID } = require('../utils/costing');
 
 const calculateGrowth = (current, previous) => {
     const cur = Number(current) || 0;
@@ -17,13 +18,13 @@ const generateLast7Days = () => {
     return dates;
 };
 
-const getDashboardMetrics = async () => {
+const getDashboardMetrics = async ({ velocityLimit = 20 } = {}) => {
     const vnTime = `(CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')`;
 
     const [
         revenueRes, chartRes, topOrdersRes, ordersRes, 
         usersRes, inventoryRes, topProductsRes, workshopRes, 
-        upcomingWsRes, topWsRes
+        upcomingWsRes, topWsRes, financialRes, velocityRes
     ] = await Promise.all([
         pool.query(`
             SELECT 
@@ -111,13 +112,69 @@ const getDashboardMetrics = async () => {
             FROM chi_tiet_don_hang ct JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id JOIN bien_the_san_pham bt ON ct.bien_the_id = bt.bien_the_id JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
             WHERE sp.loai_san_pham_id = 3 AND dh.trang_thai = 'completed'
             GROUP BY sp.san_pham_id, sp.ten_san_pham ORDER BY total_bookings DESC LIMIT 5
-        `)
+        `),
+
+        pool.query(`
+            SELECT 
+                COALESCE(SUM(tong_doanh_thu), 0) AS total_revenue,
+                COALESCE(SUM(tong_loi_nhuan), 0) AS total_profit
+            FROM don_hang
+            WHERE trang_thai = 'completed'
+        `),
+
+        pool.query(`
+            SELECT 
+                bt.bien_the_id AS variant_id,
+                sp.ten_san_pham AS product_name,
+                COALESCE(tk.so_luong_ton, 0)::int AS current_stock,
+                COALESCE(sold.total_sold, 0)::int AS total_sold_this_month,
+                EXTRACT(DAY FROM ${vnTime})::int AS current_day_of_month
+            FROM bien_the_san_pham bt
+            JOIN san_pham sp ON bt.san_pham_id = sp.san_pham_id
+            LEFT JOIN ton_kho tk ON tk.bien_the_id = bt.bien_the_id
+            LEFT JOIN (
+                SELECT ct.bien_the_id, SUM(ct.so_luong) AS total_sold
+                FROM chi_tiet_don_hang ct
+                JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id
+                WHERE dh.trang_thai = 'completed'
+                  AND DATE_TRUNC('month', dh.ngay_tao AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh') = DATE_TRUNC('month', ${vnTime})
+                GROUP BY ct.bien_the_id
+            ) sold ON sold.bien_the_id = bt.bien_the_id
+            WHERE sp.loai_san_pham_id != ${WORKSHOP_TYPE_ID}
+            ORDER BY COALESCE(sold.total_sold, 0) DESC, COALESCE(tk.so_luong_ton, 0) DESC
+            LIMIT $1
+        `, [velocityLimit])
     ]);
 
     const last7Days = generateLast7Days();
     const chartData = last7Days.map(date => {
         const found = chartRes.rows.find(row => row.date === date);
         return { date, value: found ? found.value : 0 };
+    });
+
+    const totalRevenue = Number(financialRes.rows[0].total_revenue);
+    const totalProfit = Number(financialRes.rows[0].total_profit);
+    const profitMargin = totalRevenue === 0 ? null : Number(((totalProfit / totalRevenue) * 100).toFixed(2));
+
+    const productVelocity = velocityRes.rows.map((row) => {
+        const currentStock = row.current_stock;
+        const totalSoldThisMonth = row.total_sold_this_month;
+        const currentDayOfMonth = row.current_day_of_month;
+        const averageDailySales = currentDayOfMonth > 0
+            ? Number((totalSoldThisMonth / currentDayOfMonth).toFixed(2))
+            : 0;
+        const daysOfStock = averageDailySales > 0
+            ? Number((currentStock / averageDailySales).toFixed(1))
+            : null;
+
+        return {
+            variant_id: row.variant_id,
+            product_name: row.product_name,
+            current_stock: currentStock,
+            total_sold_this_month: totalSoldThisMonth,
+            average_daily_sales: averageDailySales,
+            days_of_stock: daysOfStock
+        };
     });
 
     return {
@@ -144,7 +201,13 @@ const getDashboardMetrics = async () => {
         },
         users: usersRes.rows[0],
         inventory_alerts: inventoryRes.rows[0],
-        top_selling_products: topProductsRes.rows
+        top_selling_products: topProductsRes.rows,
+        financial: {
+            total_revenue: totalRevenue,
+            total_profit: totalProfit,
+            profit_margin: profitMargin
+        },
+        product_velocity: productVelocity
     };
 };
 

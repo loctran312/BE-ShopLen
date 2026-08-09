@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { applyDiscount, resolveCost, computeProfitAndMargin } = require('../utils/costing');
 
 // --- PUBLIC ---
 const getActivePromotions = async ({ page, limit }) => {
@@ -92,6 +93,49 @@ const getPromotionById = async (id) => {
 	promotion.applicable_products = await getPromotionProducts(id);
 	
 	return promotion;
+};
+
+const getPromotionVariantProfitPreview = async (promotionId) => {
+	const promoRes = await pool.query(
+		`SELECT kieu_giam_gia AS discount_type, gia_tri AS value
+         FROM khuyen_mai WHERE khuyen_mai_id = $1`,
+		[promotionId]
+	);
+	if (promoRes.rows.length === 0) return [];
+
+	const discount = promoRes.rows[0];
+
+	const variantsRes = await pool.query(
+		`SELECT b.bien_the_id AS variant_id, b.san_pham_id AS product_id, b.sku,
+                b.gia AS price, b.gia_von_binh_quan AS average_cost, sp.loai_san_pham_id
+         FROM khuyen_mai_san_pham kmsp
+         JOIN bien_the_san_pham b ON b.san_pham_id = kmsp.san_pham_id
+         JOIN san_pham sp ON sp.san_pham_id = b.san_pham_id
+         WHERE kmsp.khuyen_mai_id = $1
+         ORDER BY b.san_pham_id, b.bien_the_id`,
+		[promotionId]
+	);
+
+	return variantsRes.rows.map((row) => {
+		const finalPrice = applyDiscount(row.price, discount);
+		const cost = resolveCost({
+			loaiSanPhamId: row.loai_san_pham_id,
+			price: row.price,
+			averageCost: row.average_cost !== null ? Number(row.average_cost) : null,
+		});
+		const { profit, margin } = computeProfitAndMargin(finalPrice, cost);
+
+		return {
+			variant_id: row.variant_id,
+			product_id: row.product_id,
+			sku: row.sku,
+			final_price: finalPrice,
+			average_cost: cost,
+			expected_profit: profit,
+			expected_margin: margin,
+			is_loss: profit !== null ? profit < 0 : false,
+		};
+	});
 };
 
 const createPromotion = async (payload) => {
@@ -256,6 +300,7 @@ module.exports = {
 	getActivePromotions,
 	getAllPromotionsAdmin,
 	getPromotionById,
+	getPromotionVariantProfitPreview,
 	createPromotion,
 	updatePromotion,
 	deletePromotion,

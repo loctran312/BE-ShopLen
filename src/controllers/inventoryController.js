@@ -77,6 +77,24 @@ const adjustInventory = async (req, res) => {
                     });
                 }
             }
+
+            if (item.transaction_type === 'nhap_kho') {
+                const qty = Number(item.quantity_change);
+                const unitCost = Number(item.unit_cost);
+
+                if (!Number.isFinite(qty) || qty <= 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Nghiệp vụ NHẬP KHO bắt buộc 'quantity_change' phải lớn hơn 0 tại vị trí thứ ${i + 1}`
+                    });
+                }
+                if (item.unit_cost === undefined || item.unit_cost === null || !Number.isFinite(unitCost) || unitCost <= 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Nghiệp vụ NHẬP KHO bắt buộc phải truyền 'unit_cost' (giá nhập) lớn hơn 0 tại vị trí thứ ${i + 1}`
+                    });
+                }
+            }
         }
 
         const data = await inventoryRepository.adjustInventory(adminId, payloads);

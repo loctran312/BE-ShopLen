@@ -60,7 +60,8 @@ const createPromotion = async (req, res) => {
 		}
 
 		const promotion = await promotionRepository.createPromotion(payload);
-		return res.status(201).json({ success: true, message: 'Tạo khuyến mãi thành công', data: { promotion } });
+		const variant_profit_preview = await promotionRepository.getPromotionVariantProfitPreview(promotion.promotion_id);
+		return res.status(201).json({ success: true, message: 'Tạo khuyến mãi thành công', data: { promotion, variant_profit_preview } });
 	} catch (error) {
 		return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ khi tạo khuyến mãi' });
 	}
@@ -104,13 +105,14 @@ const updatePromotion = async (req, res) => {
         }
 
         const promotion = await promotionRepository.updatePromotion(id, updatePayload);
+        const variant_profit_preview = await promotionRepository.getPromotionVariantProfitPreview(id);
         
         let message = 'Cập nhật khuyến mãi thành công';
         if (isStarted) {
 			message = 'Cập nhật khuyến mãi thành công. (Chỉ cho phép đổi ngày kết thúc, trạng thái và danh sách sản phẩm khi chương trình đang chạy)';
         }
 
-        return res.json({ success: true, message, data: { promotion } });
+        return res.json({ success: true, message, data: { promotion, variant_profit_preview } });
     } catch (error) {
         return res.status(500).json({ success: false, message: error.message || 'Lỗi máy chủ' });
     }

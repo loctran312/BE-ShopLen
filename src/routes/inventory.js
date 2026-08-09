@@ -28,7 +28,11 @@ router.use(requireAuth, requireAdmin);
  *               stock_status: "in_stock"
  *     responses:
  *       200:
- *         description: Lấy dữ liệu thành công
+ *         description: >
+ *           Lấy dữ liệu thành công. Mỗi phần tử trong data.inventory có dạng:
+ *           { variant_id, product_id, product_name, sku, color, size, available_stock,
+ *             reserved_stock, physical_stock, selling_price, effective_price,
+ *             average_cost, latest_unit_cost, expected_profit, expected_margin, is_loss }
  */
 router.post('/overview', inventoryController.getInventoryOverview);
 
@@ -81,6 +85,7 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *           example:
  *             - variant_id: 1
  *               quantity_change: 5
+ *               unit_cost: 120000
  *               transaction_type: "nhap_kho"
  *               reference_code: "PXT-2026-06-03"
  *               note: "Nhập hàng đợt 1 tháng 6"
@@ -90,7 +95,14 @@ router.get('/:variant_id/history', inventoryController.getInventoryHistory);
  *               note: "Kiểm kho định kỳ"
  *     responses:
  *       200:
- *         description: Điều chỉnh thành công
+ *         description: >
+ *           Điều chỉnh thành công. Với 'nhap_kho', mỗi phần tử trả kèm:
+ *           unit_cost, total_cost, average_cost, latest_unit_cost, và loss_warning (nếu đang bán lỗ)
+ *           gồm { effective_price, average_cost, profit, message }.
+ *       400:
+ *         description: >
+ *           Dữ liệu không hợp lệ - ví dụ quantity_change <= 0, unit_cost thiếu/<=0 khi nhap_kho,
+ *           hoặc cố nhập kho cho biến thể thuộc loại Workshop.
  */
 router.post('/adjust', inventoryController.adjustInventory);
 
