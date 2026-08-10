@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const { resolveCost } = require('../utils/costing');
 const { uploadImageToImgBB } = require('../utils/imgbb');
 
 const normalizeText = (value) => (value === undefined || value === null ? '' : String(value)).trim();
@@ -326,6 +327,55 @@ const buildProductDetail = async (productId) => {
 
     const product = productResult.rows[0];
     return { ...product, variants: Array.from(variantMap.values()) };
+};
+
+const getProductVariantFinancials = async (productId) => {
+    const result = await pool.query(
+        `SELECT 
+            b.bien_the_id AS variant_id,
+            b.sku,
+            b.gia AS listed_price,
+            b.gia_von_binh_quan AS average_cost,
+            b.gia_nhap_gan_nhat AS latest_unit_cost,
+            sp.loai_san_pham_id,
+            sold.total_quantity_sold,
+            sold.total_revenue
+         FROM bien_the_san_pham b
+         JOIN san_pham sp ON sp.san_pham_id = b.san_pham_id
+         LEFT JOIN (
+             SELECT ct.bien_the_id, SUM(ct.so_luong) AS total_quantity_sold, SUM(ct.gia * ct.so_luong) AS total_revenue
+             FROM chi_tiet_don_hang ct
+             JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id
+             WHERE dh.trang_thai = 'completed'
+             GROUP BY ct.bien_the_id
+         ) sold ON sold.bien_the_id = b.bien_the_id
+         WHERE b.san_pham_id = $1
+         ORDER BY b.bien_the_id ASC`,
+        [productId]
+    );
+
+    return result.rows.map((row) => {
+        const totalQuantitySold = row.total_quantity_sold !== null ? Number(row.total_quantity_sold) : 0;
+        const averageSellingPrice = totalQuantitySold > 0
+            ? Number((Number(row.total_revenue) / totalQuantitySold).toFixed(2))
+            : null;
+
+        const cost = resolveCost({
+            loaiSanPhamId: row.loai_san_pham_id,
+            price: row.listed_price,
+            averageCost: row.average_cost !== null ? Number(row.average_cost) : null,
+        });
+
+        return {
+            variant_id: row.variant_id,
+            sku: row.sku,
+            listed_price: Number(row.listed_price),
+            average_cost: cost,
+            latest_unit_cost: row.latest_unit_cost !== null ? Number(row.latest_unit_cost) : null,
+            total_quantity_sold: totalQuantitySold,
+            average_selling_price: averageSellingPrice,
+        };
+    });
 };
 
 const ensureProductDependenciesAreClear = async (client, productId) => {
@@ -886,6 +936,6 @@ const getTopSellingProducts = async (limitNum = 10) => {
 };
 
 module.exports = {
-    getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, 
+    getAllProductTypes, getAllProducts, getProductDetail, getProductVariantFinancials, createProduct, updateProduct, deleteProduct, 
     parsePositiveInteger, getCategoryDescendants, filterProducts, getTopSellingProducts,
 };
