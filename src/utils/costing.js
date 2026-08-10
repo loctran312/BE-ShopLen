@@ -60,6 +60,7 @@ const computeOrderProfitSnapshot = async (client, orderId) => {
 
     let totalRevenue = 0;
     let revenueWithKnownCost = 0;
+    let totalProfit = 0;
 
     for (const row of itemsRes.rows) {
         const quantity = Number(row.quantity);
@@ -73,8 +74,6 @@ const computeOrderProfitSnapshot = async (client, orderId) => {
         });
 
         if (cost === null) {
-            // Không đủ dữ liệu giá vốn cho dòng này (variant đã xóa hoặc chưa từng nhập kho)
-            // -> loại khỏi phần tính lợi nhuận, không coi cost = 0 để tránh phồng lợi nhuận ảo.
             continue;
         }
 

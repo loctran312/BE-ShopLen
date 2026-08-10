@@ -81,44 +81,6 @@ const getProductDetail = async (req, res) => {
 	}
 };
 
-const getProductVariantFinancials = async (req, res) => {
-	try {
-		const productId = productRepository.parsePositiveInteger(req.params.product_id, 'product_id');
-		const product = await productRepository.getProductDetail(productId);
-
-		if (!product) {
-			return res.status(404).json({
-				success: false,
-				message: 'Sản phẩm không tồn tại',
-			});
-		}
-
-		const variants = await productRepository.getProductVariantFinancials(productId);
-
-		return res.json({
-			success: true,
-			message: 'Lấy dữ liệu giá vốn / giá bán trung bình theo biến thể thành công',
-			data: {
-				product_id: productId,
-				product_name: product.product_name,
-				variants,
-			},
-		});
-	} catch (error) {
-		if (error.message && error.message.endsWith('không hợp lệ')) {
-			return res.status(400).json({
-				success: false,
-				message: error.message,
-			});
-		}
-
-		return res.status(error.statusCode || 500).json({
-			success: false,
-			message: error.message || 'Lỗi máy chủ',
-		});
-	}
-};
-
 const createProduct = async (req, res) => {
 	try {
         const payload = Array.isArray(req.body) ? req.body : [req.body];
@@ -231,7 +193,6 @@ module.exports = {
 	getAllProductTypes,
 	getAllProducts,
 	getProductDetail,
-	getProductVariantFinancials,
 	createProduct,
 	updateProduct,
 	deleteProduct,

@@ -275,8 +275,12 @@ const buildProductDetail = async (productId) => {
 
     if (productResult.rows.length === 0) return null;
 
+    const product = productResult.rows[0];
+
     const variantResult = await pool.query(
         `SELECT pv.bien_the_id AS variant_id, pv.sku, pv.slug, pv.gia AS price, pv.mau_sac AS color, pv.kich_co AS size, COALESCE(i.so_luong_ton, 0) AS stock_quantity, vi.hinh_anh_id AS image_id, vi.duong_dan_anh AS image_url, vi.thu_tu_hien_thi AS sort_order,
+                pv.gia_von_binh_quan AS average_cost_raw, pv.gia_nhap_gan_nhat AS latest_unit_cost,
+                sold.total_quantity_sold, sold.total_revenue,
                 (SELECT row_to_json(d) FROM (
                     SELECT km.khuyen_mai_id AS voucher_id, km.tieu_de AS voucher_name, km.kieu_giam_gia AS type, km.gia_tri AS value
                     FROM khuyen_mai_san_pham kmsp
@@ -291,6 +295,13 @@ const buildProductDetail = async (productId) => {
          FROM bien_the_san_pham pv
          LEFT JOIN ton_kho i ON i.bien_the_id = pv.bien_the_id
          LEFT JOIN hinh_anh_bien_the vi ON vi.bien_the_id = pv.bien_the_id
+         LEFT JOIN (
+             SELECT ct.bien_the_id, SUM(ct.so_luong) AS total_quantity_sold, SUM(ct.gia * ct.so_luong) AS total_revenue
+             FROM chi_tiet_don_hang ct
+             JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id
+             WHERE dh.trang_thai = 'completed'
+             GROUP BY ct.bien_the_id
+         ) sold ON sold.bien_the_id = pv.bien_the_id
          WHERE pv.san_pham_id = $1
          ORDER BY pv.bien_the_id ASC, vi.thu_tu_hien_thi ASC, vi.hinh_anh_id ASC`,
         [productId]
@@ -299,7 +310,6 @@ const buildProductDetail = async (productId) => {
     const variantMap = new Map();
     for (const row of variantResult.rows) {
         if (!variantMap.has(row.variant_id)) {
-            // BỔ SUNG: Tính toán final_price cho detail
             const price = Number(row.price);
             let finalPrice = price;
             let discount = row.discount || null;
@@ -314,10 +324,24 @@ const buildProductDetail = async (productId) => {
                 if (finalPrice < 0) finalPrice = 0;
             }
 
+            const averageCost = resolveCost({
+                loaiSanPhamId: product.type_id,
+                price,
+                averageCost: row.average_cost_raw !== null ? Number(row.average_cost_raw) : null,
+            });
+            const totalQuantitySold = row.total_quantity_sold !== null ? Number(row.total_quantity_sold) : 0;
+            const averageSellingPrice = totalQuantitySold > 0
+                ? Number((Number(row.total_revenue) / totalQuantitySold).toFixed(2))
+                : null;
+
             variantMap.set(row.variant_id, {
                 variant_id: row.variant_id, sku: row.sku, slug: row.slug, 
                 price: price, discount: discount, final_price: finalPrice,
                 color: row.color, size: row.size, stock_quantity: Number(row.stock_quantity || 0), images: [],
+                average_cost: averageCost,
+                latest_unit_cost: row.latest_unit_cost !== null ? Number(row.latest_unit_cost) : null,
+                total_quantity_sold: totalQuantitySold,
+                average_selling_price: averageSellingPrice,
             });
         }
         if (row.image_id) {
@@ -325,57 +349,7 @@ const buildProductDetail = async (productId) => {
         }
     }
 
-    const product = productResult.rows[0];
     return { ...product, variants: Array.from(variantMap.values()) };
-};
-
-const getProductVariantFinancials = async (productId) => {
-    const result = await pool.query(
-        `SELECT 
-            b.bien_the_id AS variant_id,
-            b.sku,
-            b.gia AS listed_price,
-            b.gia_von_binh_quan AS average_cost,
-            b.gia_nhap_gan_nhat AS latest_unit_cost,
-            sp.loai_san_pham_id,
-            sold.total_quantity_sold,
-            sold.total_revenue
-         FROM bien_the_san_pham b
-         JOIN san_pham sp ON sp.san_pham_id = b.san_pham_id
-         LEFT JOIN (
-             SELECT ct.bien_the_id, SUM(ct.so_luong) AS total_quantity_sold, SUM(ct.gia * ct.so_luong) AS total_revenue
-             FROM chi_tiet_don_hang ct
-             JOIN don_hang dh ON ct.don_hang_id = dh.don_hang_id
-             WHERE dh.trang_thai = 'completed'
-             GROUP BY ct.bien_the_id
-         ) sold ON sold.bien_the_id = b.bien_the_id
-         WHERE b.san_pham_id = $1
-         ORDER BY b.bien_the_id ASC`,
-        [productId]
-    );
-
-    return result.rows.map((row) => {
-        const totalQuantitySold = row.total_quantity_sold !== null ? Number(row.total_quantity_sold) : 0;
-        const averageSellingPrice = totalQuantitySold > 0
-            ? Number((Number(row.total_revenue) / totalQuantitySold).toFixed(2))
-            : null;
-
-        const cost = resolveCost({
-            loaiSanPhamId: row.loai_san_pham_id,
-            price: row.listed_price,
-            averageCost: row.average_cost !== null ? Number(row.average_cost) : null,
-        });
-
-        return {
-            variant_id: row.variant_id,
-            sku: row.sku,
-            listed_price: Number(row.listed_price),
-            average_cost: cost,
-            latest_unit_cost: row.latest_unit_cost !== null ? Number(row.latest_unit_cost) : null,
-            total_quantity_sold: totalQuantitySold,
-            average_selling_price: averageSellingPrice,
-        };
-    });
 };
 
 const ensureProductDependenciesAreClear = async (client, productId) => {
@@ -936,6 +910,6 @@ const getTopSellingProducts = async (limitNum = 10) => {
 };
 
 module.exports = {
-    getAllProductTypes, getAllProducts, getProductDetail, getProductVariantFinancials, createProduct, updateProduct, deleteProduct, 
+    getAllProductTypes, getAllProducts, getProductDetail, createProduct, updateProduct, deleteProduct, 
     parsePositiveInteger, getCategoryDescendants, filterProducts, getTopSellingProducts,
 };
