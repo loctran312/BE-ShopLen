@@ -55,8 +55,8 @@ app.get('/health', (req, res) => {
     });
 });
 
-app.get('/loaderio-7ec1102c428dec2c57cbb0e4562b6c8a.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'loaderio-7ec1102c428dec2c57cbb0e4562b6c8a.txt'));
+app.get('/loaderio-d76e7040d4e46219cd93f3f139c941cd.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio-d76e7040d4e46219cd93f3f139c941cd.txt'));
 });
 
 app.use('/api/auth', authRoutes);
